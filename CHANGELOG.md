@@ -140,3 +140,34 @@
 - `--map` marks ruins (red/orange/cyan/purple) and prints the nearest of each kind.
 - 83 automated tests; clippy and rustdoc clean.
 - Project pushed to GitHub (private repository aizenprivai/Loredrop) with full history.
+- Phase 4 approved by director.
+
+### 2026-11-14 — Phase 5: core gameplay
+- **Interaction**: block raycasting (grid walk), selection outline, Creative
+  break/place/pick-block with Minecraft timings (break every 5 ticks, place
+  every 4) and reach (5 Creative / 4.5 Survival); placing respects the
+  player's hitbox, replaceable blocks and plant support; plants pop off when
+  their ground is removed.
+- **Items** (`ld_game::items`, `assets/data/items.toml`): every block is an
+  item; 13 materials and 25 tools (5 tiers × 5 kinds) with Minecraft's tier
+  stats; 38 original item sprites; isometric 3D block icons.
+- **Inventory** (`ld_game::inventory`): 36 slots + armour + off-hand,
+  Minecraft click rules (pick up, split, place one, merge, swap), shift-click,
+  storage sorting (QoL), hotbar with 1–9 and mouse wheel.
+- **UI**: hotbar HUD with counts and durability bars; inventory screen (E)
+  with searchable Creative item list; menus release the mouse and block game input.
+- **Crafting** (`ld_game::crafting`, `assets/data/recipes.toml`): shaped
+  (mirrorable) and shapeless recipes with item tags, 2×2 inventory grid,
+  crafting table 3×3, shift-click craft-max (QoL), searchable recipe browser (QoL).
+- **Survival mining** (`ld_game::mining`): hardness, effective tools, harvest
+  levels and drop tables in blocks.toml; Minecraft's break formula (verified
+  against known break times); crack overlay; tool durability and breaking;
+  F4 switches Creative/Survival.
+- **Dropped items**: item entities with physics, pickup, merging, despawn;
+  Q / Ctrl+Q to throw; new entity render pipeline (basis for creatures).
+- **Furnace** (`ld_game::furnace`): fuel, 200-tick smelting, cool-down,
+  lit/unlit block swap, furnace screen, contents drop when broken.
+- **Lore**: right-click tablets to read their fragment (era from the ruin
+  type); journal (J) collects discovered fragments.
+- New blocks: crafting table, furnace, lit furnace; 10 crack textures.
+- 106 automated tests; clippy and rustdoc clean.

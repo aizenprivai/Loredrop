@@ -43,6 +43,7 @@ struct Loaded {
     items: Arc<ld_game::ItemRegistry>,
     recipes: Arc<ld_game::RecipeBook>,
     drops: Arc<ld_game::mining::DropTable>,
+    lore: Arc<ld_assets::Lore>,
     icons: Vec<icons::Icon>,
     looks: Vec<crate::entities::ItemLook>,
     crack_layers: [u32; 10],
@@ -57,6 +58,7 @@ fn load_game(settings: &Settings, seed: Option<u64>) -> Result<Loaded, Box<dyn s
     let recipes =
         Arc::new(ld_game::RecipeBook::from_toml(&ld_assets::read_data(&assets, "recipes.toml")?, &items)?);
     let drops = Arc::new(ld_game::mining::DropTable::new(&world.registry, &items)?);
+    let lore = Arc::new(ld_assets::load_lore(&assets)?);
     let looks = item_looks(&items, &world.registry, &textures);
     let crack_layers = std::array::from_fn(|i| textures.layer_of(&format!("destroy_stage_{i}")) as u32);
     log::info!(
@@ -65,7 +67,7 @@ fn load_game(settings: &Settings, seed: Option<u64>) -> Result<Loaded, Box<dyn s
         icons.len(),
         recipes.shaped.len() + recipes.shapeless.len() + recipes.smelting.len()
     );
-    Ok(Loaded { world, textures, items, recipes, drops, icons, looks, crack_layers })
+    Ok(Loaded { world, textures, items, recipes, drops, lore, icons, looks, crack_layers })
 }
 
 /// How each item looks when dropped in the world.
@@ -372,7 +374,7 @@ struct App {
 
 impl App {
     fn new(options: Options, settings: Settings, loaded: Loaded) -> Self {
-        let Loaded { world, textures, items, recipes, drops, icons, looks, crack_layers } = loaded;
+        let Loaded { world, textures, items, recipes, drops, lore, icons, looks, crack_layers } = loaded;
         Self {
             bindings: settings.keybinds.clone(),
             show_debug: settings.interface.show_debug_overlay,
@@ -386,6 +388,7 @@ impl App {
             menu: crate::screens::MenuState::default(),
             game: {
                 let mut g = Game::new(world, items, recipes, drops, options.autopilot);
+                g.lore = lore;
                 g.apply_dev_start(options.start_pos, options.start_look, options.fly);
                 g
             },
@@ -491,6 +494,13 @@ impl App {
                 self.close_screen();
             }
         }
+        if self.input.take_press(Action::Journal) {
+            if self.screen == crate::screens::Screen::Journal {
+                self.close_screen();
+            } else if self.screen == crate::screens::Screen::None {
+                self.open_screen(crate::screens::Screen::Journal);
+            }
+        }
         if self.input.take_press(Action::SwitchGameMode) {
             self.game.mode = match self.game.mode {
                 GameMode::Creative => GameMode::Survival,
@@ -562,6 +572,7 @@ impl App {
         let show_debug = self.show_debug;
         let creative = self.game.mode == GameMode::Creative;
         let (inv, items, icons, recipes) = (&mut inv, &self.game.items, &r.icon_textures, &self.game.recipes);
+        let (lore, journal) = (&self.game.lore, &self.game.journal);
         let (screen, menu) = (&self.screen, &mut self.menu);
 
         let mut close_requested = false;
@@ -576,6 +587,8 @@ impl App {
                 state: menu,
                 recipes,
                 furnace: furnace.as_mut(),
+                lore,
+                journal,
             };
             close_requested = crate::screens::draw(ui.ctx(), screen, &mut m);
         });

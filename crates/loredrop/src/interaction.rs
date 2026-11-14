@@ -102,12 +102,37 @@ impl Game {
             self.open_request = Some(crate::screens::Screen::CraftingTable);
             return true;
         }
+        if id.is_some() && id == self.ids.lore_tablet {
+            let (era, index) = self.tablet_fragment(hit.pos);
+            if !self.journal.iter().any(|(e, i)| *e == era && *i == index) {
+                self.journal.push((era.clone(), index));
+            }
+            self.open_request = Some(crate::screens::Screen::Tablet { era, index });
+            return true;
+        }
         if id.is_some() && (id == self.ids.furnace || id == self.ids.lit_furnace) {
             self.furnaces.entry(hit.pos).or_default();
             self.open_request = Some(crate::screens::Screen::Furnace(hit.pos));
             return true;
         }
         false
+    }
+
+    /// Which story fragment a tablet holds. The era comes from the ruin it
+    /// stands in (recognised by its pedestal); the fragment within the era is
+    /// derived from the tablet's position, so it never changes.
+    fn tablet_fragment(&self, pos: BlockPos) -> (String, usize) {
+        let below = self.world.map.block(BlockPos::new(pos.x, pos.y - 1, pos.z));
+        let era = if below.is_some() && below == self.ids.deepslate_bricks {
+            "deep"
+        } else if (below.is_some() && below == self.ids.chiseled_sandstone) || pos.y < ld_worldgen::SEA_LEVEL
+        {
+            "expansion" // desert halls and (underwater) sunken towers
+        } else {
+            "golden"
+        };
+        let count = self.lore.era(era).len();
+        (era.to_string(), ld_worldgen::structures::tablet_fragment(pos.x, pos.y, pos.z, count))
     }
 
     /// Removes the targeted block (Creative: no drops). Returns true if broken.

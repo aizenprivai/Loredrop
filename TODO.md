@@ -54,7 +54,7 @@
 - [x] Oceans and rivers (water block + translucent pass)
 - [x] Lore outline approved; structure system + 4 ruin types with lore tablets
 - [ ] Final names for the Builders, realms, wanderers, boss, material (placeholders in lore.toml)
-- [ ] Director approval of Phase 4 report
+- [x] Director approval of Phase 4 report
 
 ## Deferred from Phase 4
 - [ ] Reading lore tablets + lore journal (needs interaction) — Phase 5
@@ -68,6 +68,27 @@
 - [ ] Biome-colour blend radius setting (fixed 3×3 now)
 - [ ] Underground biomes; "dramatic biomes"; underground layers (GDD originals)
 - [ ] Own equivalent of Minecraft's redstone (deliberately omitted; GDD §16)
+
+## Phase 5 — Core gameplay
+- [x] Block destruction and placement (Creative + Survival), pick block
+- [x] Interaction system (use blocks: crafting table, furnace, lore tablet)
+- [x] Inventory, hotbar, item management (click rules, shift-click, sorting)
+- [x] Crafting (2×2, 3×3, recipes data file, craft-max, recipe browser)
+- [x] Tools, mining speeds, harvest tiers, durability
+- [x] Basic progression: wood → stone → iron (furnace) → diamond
+- [x] Dropped items; lore tablets + journal
+- [ ] Director approval of Phase 5 report
+
+## Deferred from Phase 5
+- [ ] Falling blocks (sand, gravel) — Minecraft core behaviour, not yet implemented
+- [ ] Leaf decay, saplings, tree growth; seeds and farming (hoes till soil)
+- [ ] Chests (item storage block), torches (needs lighting, Phase 8), doors, ladders, beds, signs
+- [ ] Armour equipping and protection (Phase 6), off-hand use
+- [ ] Recipe-book "auto-fill" (place ingredients for a recipe automatically)
+- [ ] Items left on the cursor when a menu closes with a full inventory are lost (should drop)
+- [ ] Journal, inventory and furnaces are not saved yet (Phase 9)
+- [ ] Survival should start with an empty inventory (currently F4 keeps the Creative starter hotbar)
+- [ ] Final lore names (placeholders in lore.toml)
 
 ## Infrastructure
 - [x] Local git repository with history

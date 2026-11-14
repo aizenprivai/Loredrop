@@ -3,12 +3,13 @@
 A voxel sandbox game written in Rust: the feel of modern Minecraft, with its own
 world, art and lore. See `GDD.md` for the design and `ROADMAP.md` for progress.
 
-**Current state: Phase 4 (world generation)** — endless seeded
+**Current state: Phase 5 (core gameplay)** — endless seeded
 worlds with continents, oceans, rivers, 11 biomes, snow-capped mountains,
 caves, ores, deepslate, trees and plants, streamed on background threads and
 rendered Vulkan-first. F3 shows performance, chunk, biome and seed info. Ruins of the
-Builders (four kinds, with lore tablets) are scattered across the world. No
-block editing, survival or lighting yet.
+Builders hold lore tablets you can read. Break and place blocks, mine with
+tools in Survival (Minecraft's timings and drops), craft, smelt, and collect
+lore in your journal. No health/hunger, creatures, lighting or saving yet.
 
 ## Build & run
 
@@ -34,6 +35,14 @@ explained by a comment. Run `loredrop --help` for command-line options.
 | Space | jump · double-tap: start/stop flying · hold while flying: rise |
 | Left Shift | sneak · while flying: descend |
 | Left Ctrl | sprint |
+| Left click (hold) | break block |
+| Right click | place block / use crafting table, furnace, lore tablet (Shift = always place) |
+| Middle click | pick block |
+| 1–9, mouse wheel | select hotbar slot |
+| E | inventory & crafting |
+| Q / Ctrl+Q | drop one item / the whole stack |
+| J | lore journal |
+| F4 | switch Creative ↔ Survival |
 | F3 | debug & performance overlay |
 | F2 | screenshot (saved to `screenshots/`) |
 | F11 | fullscreen |

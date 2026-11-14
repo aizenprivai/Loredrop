@@ -17,5 +17,9 @@
 | KB-013 | Low | Open | Caves are as bright as the surface — no lighting system yet (Phase 8). |
 | KB-014 | Low | Open | Ore veins are clipped at chunk borders. |
 | KB-015 | Info | Open | Translucent faces inside one section aren't depth-sorted (only sections are). |
-| KB-016 | Low | Open | Lore tablets can't be read yet (Phase 5: interaction). |
+| KB-016 | — | Fixed (Phase 5) | ~~Lore tablets can't be read~~ — right-click to read; journal on J. |
 | KB-017 | Info | Open | Ruins may occasionally intersect caves or cut slightly into hillsides (they sit on the height at their centre). |
+| KB-018 | Low | Open | Sand and gravel don't fall when unsupported (falling blocks not implemented yet). |
+| KB-019 | Low | Open | If the inventory is full when a menu closes, items left on the cursor or in the crafting grid are lost instead of dropping. |
+| KB-020 | Low | Open | A tablet's story era is recognised from the block under it; a player-moved tablet may show a different era's fragment. |
+| KB-021 | Info | Open | Simulated input in the test environment doubles mouse-wheel events (like mouse motion); real hardware is unaffected. |

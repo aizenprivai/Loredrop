@@ -30,6 +30,9 @@ pub struct GameIds {
     pub crafting_table: Option<ld_world::BlockId>,
     pub furnace: Option<ld_world::BlockId>,
     pub lit_furnace: Option<ld_world::BlockId>,
+    pub lore_tablet: Option<ld_world::BlockId>,
+    pub chiseled_sandstone: Option<ld_world::BlockId>,
+    pub deepslate_bricks: Option<ld_world::BlockId>,
 }
 
 pub struct Game {
@@ -75,6 +78,10 @@ pub struct Game {
     pub(crate) rng: u64,
     /// Furnaces placed in the world, by position (created when first opened).
     pub furnaces: std::collections::HashMap<ld_core::coords::BlockPos, ld_game::furnace::Furnace>,
+    /// Story fragments for lore tablets.
+    pub lore: std::sync::Arc<ld_assets::Lore>,
+    /// Fragments the player has read, in discovery order: (era, index within era).
+    pub journal: Vec<(String, usize)>,
 }
 
 impl Game {
@@ -91,6 +98,9 @@ impl Game {
             crafting_table: world.registry.id("crafting_table"),
             furnace: world.registry.id("furnace"),
             lit_furnace: world.registry.id("lit_furnace"),
+            lore_tablet: world.registry.id("lore_tablet"),
+            chiseled_sandstone: world.registry.id("chiseled_sandstone"),
+            deepslate_bricks: world.registry.id("deepslate_bricks"),
         };
         // A starter hotbar of building blocks for Creative mode.
         let mut inventory = ld_game::Inventory::default();
@@ -148,6 +158,8 @@ impl Game {
             break_delay: 0,
             rng: 0x2545_F491_4F6C_DD1D,
             furnaces: Default::default(),
+            lore: std::sync::Arc::new(ld_assets::Lore { fragments: Vec::new() }),
+            journal: Vec::new(),
         }
     }
 

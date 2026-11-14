@@ -22,6 +22,10 @@ pub enum Screen {
     CraftingTable,
     /// The furnace at this position.
     Furnace(ld_core::coords::BlockPos),
+    /// Reading a lore tablet: fragment `index` of `era`.
+    Tablet { era: String, index: usize },
+    /// The journal of discovered lore.
+    Journal,
 }
 
 /// State that lives while menus are open.
@@ -48,6 +52,8 @@ pub struct MenuCtx<'a> {
     pub recipes: &'a RecipeBook,
     /// The open furnace, when the screen is a furnace.
     pub furnace: Option<&'a mut ld_game::furnace::Furnace>,
+    pub lore: &'a ld_assets::Lore,
+    pub journal: &'a [(String, usize)],
 }
 
 /// Draws the open screen. Returns true if it asked to close.
@@ -57,6 +63,8 @@ pub fn draw(ctx: &egui::Context, screen: &Screen, m: &mut MenuCtx) -> bool {
         Screen::Inventory => inventory_screen(ctx, m, 2),
         Screen::CraftingTable => inventory_screen(ctx, m, 3),
         Screen::Furnace(_) => inventory_screen(ctx, m, 0),
+        Screen::Tablet { era, index } => tablet_screen(ctx, m, era, *index),
+        Screen::Journal => journal_screen(ctx, m),
     }
 }
 
@@ -483,4 +491,120 @@ fn furnace_panel(ui: &mut egui::Ui, m: &mut MenuCtx) {
         });
     });
     m.furnace = Some(f);
+}
+
+/// Display name of a story era.
+fn era_title(era: &str) -> &'static str {
+    match era {
+        "golden" => "The Age of Building",
+        "expansion" => "The Gateways",
+        _ => "What They Became",
+    }
+}
+
+/// A parchment-coloured panel for lore text.
+fn parchment() -> egui::Frame {
+    egui::Frame::new()
+        .fill(Color32::from_rgb(222, 206, 168))
+        .stroke(Stroke::new(3.0, Color32::from_rgb(120, 92, 56)))
+        .inner_margin(20.0)
+}
+
+const INK: Color32 = Color32::from_rgb(54, 40, 26);
+
+fn tablet_screen(ctx: &egui::Context, m: &MenuCtx, era: &str, index: usize) -> bool {
+    let mut close = false;
+    egui::Area::new(egui::Id::unique("tablet"))
+        .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+        .order(egui::Order::Foreground)
+        .show(ctx, |ui| {
+            parchment().show(ui, |ui| {
+                ui.set_max_width(460.0);
+                ui.label(
+                    egui::RichText::new(era_title(era))
+                        .color(Color32::from_rgb(120, 70, 30))
+                        .size(14.0)
+                        .italics(),
+                );
+                ui.add_space(8.0);
+                let text = m.lore.era(era).get(index).copied().unwrap_or("The carving is worn away.");
+                ui.label(egui::RichText::new(text).color(INK).size(18.0));
+                ui.add_space(14.0);
+                ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "Added to your journal ({} of {} found) · press J to read it",
+                            m.journal.len(),
+                            m.lore.fragments.len()
+                        ))
+                        .color(INK)
+                        .size(12.0),
+                    );
+                    if ui.button("Close").clicked() {
+                        close = true;
+                    }
+                });
+            });
+        });
+    close
+}
+
+fn journal_screen(ctx: &egui::Context, m: &MenuCtx) -> bool {
+    let mut close = false;
+    egui::Area::new(egui::Id::unique("journal"))
+        .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+        .order(egui::Order::Foreground)
+        .show(ctx, |ui| {
+            parchment().show(ui, |ui| {
+                ui.set_width(520.0);
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("Journal").color(INK).size(22.0).strong());
+                    ui.add_space(12.0);
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "{} of {} fragments found",
+                            m.journal.len(),
+                            m.lore.fragments.len()
+                        ))
+                        .color(INK)
+                        .size(13.0),
+                    );
+                    if ui.button("Close").clicked() {
+                        close = true;
+                    }
+                });
+                ui.add_space(8.0);
+                egui::ScrollArea::vertical().max_height(420.0).show(ui, |ui| {
+                    if m.journal.is_empty() {
+                        ui.label(
+                            egui::RichText::new("You haven't found any lore tablets yet. Look for ruins.")
+                                .color(INK)
+                                .italics(),
+                        );
+                    }
+                    for era in ["golden", "expansion", "deep"] {
+                        let found: Vec<usize> =
+                            m.journal.iter().filter(|(e, _)| e == era).map(|(_, i)| *i).collect();
+                        if found.is_empty() {
+                            continue;
+                        }
+                        ui.add_space(6.0);
+                        ui.label(
+                            egui::RichText::new(era_title(era))
+                                .color(Color32::from_rgb(120, 70, 30))
+                                .size(15.0)
+                                .strong(),
+                        );
+                        let texts = m.lore.era(era);
+                        for i in found {
+                            if let Some(t) = texts.get(i) {
+                                ui.label(egui::RichText::new(format!("“{t}”")).color(INK).size(14.0));
+                                ui.add_space(4.0);
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    close
 }

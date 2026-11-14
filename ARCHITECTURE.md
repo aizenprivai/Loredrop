@@ -1,6 +1,6 @@
 # Loredrop — Technical Architecture
 
-> **Status:** APPROVED v1.0 (Phase 1) · updated v1.3 during Phase 4
+> **Status:** APPROVED v1.0 (Phase 1) · updated v1.4 after Phase 5
 > **Last updated:** 2026-11-14
 
 This document describes *how* Loredrop is built. *What* we build is in `GDD.md`.
@@ -302,6 +302,25 @@ measured on the director's hardware. CPU-side systems are measured here.
 - **Vertex format is 12 bytes** (+ per-vertex biome RGB). Biomes stored per column.
 - **Third render pass:** translucent (blended, no depth write, back-to-front).
 - **Shaders validated on the CPU in tests** (naga).
+
+### Changes made during Phase 5 (v1.4)
+
+- **New crate `ld_game`** (planned in §2): items, inventory and click rules,
+  crafting/smelting recipes, mining rules (break formula, harvest levels,
+  drop tables), furnace logic. Pure logic, fully unit-tested.
+- **New data files:** `items.toml`, `recipes.toml`; blocks gained
+  `hardness`, `tool`, `harvest_level`, `drops`, `item`.
+- **Entity rendering:** a free-form textured-triangle pipeline (camera-relative
+  f64 → f32 on the CPU) shares the block texture array, which now also holds
+  item sprites and crack stages. Used for dropped items and mining cracks;
+  creatures will reuse it.
+- **Menus** (`loredrop::screens`) are egui screens drawn with our own slot
+  painter; while open they release the mouse and set `Game::input_blocked`.
+  Mutable game state (inventory, the open furnace) is lent to the menu for the
+  frame and returned afterwards, so the overlay can read the game meanwhile.
+- **Block entities:** furnaces live in `Game::furnaces` keyed by position;
+  a general block-entity store (chests etc.) will follow the same pattern and
+  must be saved in Phase 9.
 
 ## 13. Decisions approved in Phase 1
 
