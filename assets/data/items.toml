@@ -1,0 +1,289 @@
+# Loredrop items (besides blocks — every placeable block is automatically an item).
+#
+#   name, display   stable ID / shown name
+#   max_stack       how many fit in one slot (default 64; tools are always 1)
+#   texture         sprite in assets/textures/item/ (default: same as name)
+#   tool, tier      makes it a tool: tool = pickaxe | axe | shovel | hoe | sword
+#   attack_damage   damage dealt (used from Phase 6), attack_speed hits/second
+#
+# Tier numbers follow Minecraft's so mining and progression feel the same.
+# `level` decides which blocks a tool can harvest (0 wood/gold, 1 stone, 2 iron, 3 diamond).
+
+[tiers.wooden]
+level = 0
+speed = 2.0
+durability = 59
+
+[tiers.stone]
+level = 1
+speed = 4.0
+durability = 131
+
+[tiers.iron]
+level = 2
+speed = 6.0
+durability = 250
+
+[tiers.golden]
+level = 0
+speed = 12.0
+durability = 32
+
+[tiers.diamond]
+level = 3
+speed = 8.0
+durability = 1561
+
+# --- Materials ---------------------------------------------------------------
+[[item]]
+name = "stick"
+display = "Stick"
+
+[[item]]
+name = "coal"
+display = "Coal"
+
+[[item]]
+name = "charcoal"
+display = "Charcoal"
+
+[[item]]
+name = "flint"
+display = "Flint"
+
+[[item]]
+name = "raw_iron"
+display = "Raw Iron"
+
+[[item]]
+name = "raw_copper"
+display = "Raw Copper"
+
+[[item]]
+name = "raw_gold"
+display = "Raw Gold"
+
+[[item]]
+name = "iron_ingot"
+display = "Iron Ingot"
+
+[[item]]
+name = "copper_ingot"
+display = "Copper Ingot"
+
+[[item]]
+name = "gold_ingot"
+display = "Gold Ingot"
+
+[[item]]
+name = "diamond"
+display = "Diamond"
+
+[[item]]
+name = "emerald"
+display = "Emerald"
+
+[[item]]
+name = "lapis_lazuli"
+display = "Lapis Lazuli"
+
+# --- Tools (5 tiers × 5 kinds) ------------------------------------------------
+[[item]]
+name = "wooden_pickaxe"
+display = "Wooden Pickaxe"
+tool = "pickaxe"
+tier = "wooden"
+attack_damage = 2.0
+attack_speed = 1.2
+
+[[item]]
+name = "wooden_axe"
+display = "Wooden Axe"
+tool = "axe"
+tier = "wooden"
+attack_damage = 7.0
+attack_speed = 0.8
+
+[[item]]
+name = "wooden_shovel"
+display = "Wooden Shovel"
+tool = "shovel"
+tier = "wooden"
+attack_damage = 2.5
+attack_speed = 1.0
+
+[[item]]
+name = "wooden_hoe"
+display = "Wooden Hoe"
+tool = "hoe"
+tier = "wooden"
+attack_damage = 1.0
+attack_speed = 1.0
+
+[[item]]
+name = "wooden_sword"
+display = "Wooden Sword"
+tool = "sword"
+tier = "wooden"
+attack_damage = 4.0
+attack_speed = 1.6
+
+[[item]]
+name = "stone_pickaxe"
+display = "Stone Pickaxe"
+tool = "pickaxe"
+tier = "stone"
+attack_damage = 3.0
+attack_speed = 1.2
+
+[[item]]
+name = "stone_axe"
+display = "Stone Axe"
+tool = "axe"
+tier = "stone"
+attack_damage = 9.0
+attack_speed = 0.8
+
+[[item]]
+name = "stone_shovel"
+display = "Stone Shovel"
+tool = "shovel"
+tier = "stone"
+attack_damage = 3.5
+attack_speed = 1.0
+
+[[item]]
+name = "stone_hoe"
+display = "Stone Hoe"
+tool = "hoe"
+tier = "stone"
+attack_damage = 1.0
+attack_speed = 2.0
+
+[[item]]
+name = "stone_sword"
+display = "Stone Sword"
+tool = "sword"
+tier = "stone"
+attack_damage = 5.0
+attack_speed = 1.6
+
+[[item]]
+name = "iron_pickaxe"
+display = "Iron Pickaxe"
+tool = "pickaxe"
+tier = "iron"
+attack_damage = 4.0
+attack_speed = 1.2
+
+[[item]]
+name = "iron_axe"
+display = "Iron Axe"
+tool = "axe"
+tier = "iron"
+attack_damage = 9.0
+attack_speed = 0.9
+
+[[item]]
+name = "iron_shovel"
+display = "Iron Shovel"
+tool = "shovel"
+tier = "iron"
+attack_damage = 4.5
+attack_speed = 1.0
+
+[[item]]
+name = "iron_hoe"
+display = "Iron Hoe"
+tool = "hoe"
+tier = "iron"
+attack_damage = 1.0
+attack_speed = 3.0
+
+[[item]]
+name = "iron_sword"
+display = "Iron Sword"
+tool = "sword"
+tier = "iron"
+attack_damage = 6.0
+attack_speed = 1.6
+
+[[item]]
+name = "golden_pickaxe"
+display = "Golden Pickaxe"
+tool = "pickaxe"
+tier = "golden"
+attack_damage = 2.0
+attack_speed = 1.2
+
+[[item]]
+name = "golden_axe"
+display = "Golden Axe"
+tool = "axe"
+tier = "golden"
+attack_damage = 7.0
+attack_speed = 1.0
+
+[[item]]
+name = "golden_shovel"
+display = "Golden Shovel"
+tool = "shovel"
+tier = "golden"
+attack_damage = 2.5
+attack_speed = 1.0
+
+[[item]]
+name = "golden_hoe"
+display = "Golden Hoe"
+tool = "hoe"
+tier = "golden"
+attack_damage = 1.0
+attack_speed = 1.0
+
+[[item]]
+name = "golden_sword"
+display = "Golden Sword"
+tool = "sword"
+tier = "golden"
+attack_damage = 4.0
+attack_speed = 1.6
+
+[[item]]
+name = "diamond_pickaxe"
+display = "Diamond Pickaxe"
+tool = "pickaxe"
+tier = "diamond"
+attack_damage = 5.0
+attack_speed = 1.2
+
+[[item]]
+name = "diamond_axe"
+display = "Diamond Axe"
+tool = "axe"
+tier = "diamond"
+attack_damage = 9.0
+attack_speed = 1.0
+
+[[item]]
+name = "diamond_shovel"
+display = "Diamond Shovel"
+tool = "shovel"
+tier = "diamond"
+attack_damage = 5.5
+attack_speed = 1.0
+
+[[item]]
+name = "diamond_hoe"
+display = "Diamond Hoe"
+tool = "hoe"
+tier = "diamond"
+attack_damage = 1.0
+attack_speed = 4.0
+
+[[item]]
+name = "diamond_sword"
+display = "Diamond Sword"
+tool = "sword"
+tier = "diamond"
+attack_damage = 7.0
+attack_speed = 1.6

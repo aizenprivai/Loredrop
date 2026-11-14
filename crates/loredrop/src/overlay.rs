@@ -18,6 +18,8 @@ pub struct OverlayData<'a> {
     pub mouse_captured: bool,
     pub world: WorldStats,
     pub render_distance: u32,
+    /// A menu is open: no crosshair or capture hint.
+    pub menu_open: bool,
 }
 
 /// Compass name for a yaw angle (Minecraft convention).
@@ -36,12 +38,14 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
 
     // Crosshair: small white plus with a dark outline so it's visible on any background.
     let c = screen.center();
-    for (w, col) in [(4.0, Color32::from_black_alpha(160)), (2.0, Color32::WHITE)] {
+    let crosshair: &[(f32, Color32)] =
+        if d.menu_open { &[] } else { &[(4.0, Color32::from_black_alpha(160)), (2.0, Color32::WHITE)] };
+    for &(w, col) in crosshair {
         painter.line_segment([c - egui::vec2(9.0, 0.0), c + egui::vec2(9.0, 0.0)], Stroke::new(w, col));
         painter.line_segment([c - egui::vec2(0.0, 9.0), c + egui::vec2(0.0, 9.0)], Stroke::new(w, col));
     }
 
-    if !d.mouse_captured {
+    if !d.mouse_captured && !d.menu_open {
         text_block(
             &painter,
             Pos2::new(c.x, screen.bottom() - 40.0),
@@ -60,6 +64,7 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
     let yes = |b: bool| if b { "yes" } else { "no" };
     let mode = match d.game.mode {
         GameMode::Creative => "Creative",
+        GameMode::Survival => "Survival",
     };
     let left = vec![
         format!("Loredrop {} (Phase 4 · world generation)", env!("CARGO_PKG_VERSION")),
@@ -79,6 +84,19 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
         format!("Sprinting: {}   Sneaking: {}", yes(p.sprinting), yes(p.sneaking)),
         format!("Standing on: {}", standing_on(d.game)),
         format!("Biome: {}", biome_here(d.game)),
+        match d.game.target {
+            Some(h) => {
+                let name = d
+                    .game
+                    .world
+                    .map
+                    .block(h.pos)
+                    .map(|id| d.game.world.registry.get(id).display.clone())
+                    .unwrap_or_default();
+                format!("Looking at: {name} ({} {} {})", h.pos.x, h.pos.y, h.pos.z)
+            }
+            None => "Looking at: nothing in reach".into(),
+        },
         format!("Seed: {}", d.game.world.seed as i64),
         String::new(),
         format!(

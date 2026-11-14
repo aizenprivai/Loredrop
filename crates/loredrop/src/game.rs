@@ -15,10 +15,18 @@ pub const TICKS_PER_SECOND: f64 = 20.0;
 /// Two jump presses within this many ticks count as a double-tap (fly toggle).
 const DOUBLE_TAP_TICKS: u64 = 7;
 
-/// Game modes (GDD §2). Only Creative exists so far.
+/// Game modes (GDD §2). Survival rules (mining time, drops) arrive later in
+/// Phase 5; health and hunger in Phase 6.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameMode {
     Creative,
+    Survival,
+}
+
+/// Block IDs the game logic needs often.
+pub struct GameIds {
+    pub water: Option<ld_world::BlockId>,
+    pub lava: Option<ld_world::BlockId>,
 }
 
 pub struct Game {
@@ -36,16 +44,46 @@ pub struct Game {
     /// Player position and eye height at the previous tick (for interpolation).
     prev_pos: DVec3,
     prev_eye: f64,
-    eye: f64,
+    pub(crate) eye: f64,
     last_jump_press: Option<u64>,
     sprint_toggled: bool,
     sneak_toggled: bool,
     /// Test mode: walk forward and jump on its own.
     pub autopilot: bool,
+    pub items: std::sync::Arc<ld_game::ItemRegistry>,
+    pub inventory: ld_game::Inventory,
+    /// The block under the crosshair, if within reach.
+    pub target: Option<ld_physics::RayHit>,
+    pub(crate) attack_cooldown: u32,
+    pub(crate) use_cooldown: u32,
+    pub(crate) ids: GameIds,
+    /// Set by the app while a menu is open: the world ignores game input.
+    pub input_blocked: bool,
 }
 
 impl Game {
-    pub fn new(world: World, autopilot: bool) -> Self {
+    pub fn new(world: World, items: std::sync::Arc<ld_game::ItemRegistry>, autopilot: bool) -> Self {
+        let ids = GameIds { water: world.registry.id("water"), lava: world.registry.id("lava") };
+        // A starter hotbar of building blocks for Creative mode.
+        let mut inventory = ld_game::Inventory::default();
+        for (i, name) in [
+            "grass_block",
+            "dirt",
+            "stone",
+            "cobblestone",
+            "oak_planks",
+            "oak_log",
+            "glass",
+            "stone_bricks",
+            "sand",
+        ]
+        .iter()
+        .enumerate()
+        {
+            if let Some(item) = items.id(name) {
+                inventory.slots[i] = Some(ld_game::ItemStack::new(item, 64));
+            }
+        }
         // Spawn on dry land near the world origin (the generator decides).
         let (sx, sy, sz) = world.generator().find_spawn();
         let spawn = DVec3::new(sx as f64 + 0.5, sy as f64, sz as f64 + 0.5);
@@ -67,6 +105,13 @@ impl Game {
             sprint_toggled: false,
             sneak_toggled: false,
             autopilot,
+            items,
+            inventory,
+            target: None,
+            attack_cooldown: 0,
+            use_cooldown: 0,
+            ids,
+            input_blocked: false,
         }
     }
 
@@ -134,7 +179,13 @@ impl Game {
             self.yaw += 1.5;
         }
 
+        if self.input_blocked {
+            mv = MoveInput::default(); // a menu is open: stand still
+        }
         self.player.tick(mv, self.yaw as f64, &self.world);
+        if !self.input_blocked {
+            self.interact(input);
+        }
 
         // Smoothly lower/raise the camera when sneaking (Minecraft eases this too).
         self.eye += (self.player.eye_height() - self.eye) * 0.5;
@@ -270,7 +321,12 @@ mod tests {
         let table = Arc::new(ld_mesh::MeshTable::new(&reg, None, |_| 0));
         let mut world = World::new(reg, crate::world::tests::test_biomes(), 1, course, table, 1);
         world.load_now(ChunkPos::new(0, 0), 2);
-        Game::new(world, false)
+        let items_toml =
+            std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/data/items.toml"))
+                .unwrap();
+        let blocks = BlockRegistry::from_toml(&text).unwrap();
+        let items = Arc::new(ld_game::ItemRegistry::new(&blocks, &items_toml).unwrap());
+        Game::new(world, items, false)
     }
 
     fn run(game: &mut Game, input: &mut InputState, ticks: u32) {

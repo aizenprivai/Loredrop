@@ -303,8 +303,6 @@ impl World {
     }
 
     /// Changes a block and schedules the affected meshes for rebuilding.
-    /// (Players can't edit blocks until Phase 5; this is used by tests/tools.)
-    #[allow(dead_code)]
     pub fn set_block(&mut self, pos: BlockPos, id: BlockId) {
         for s in self.map.set_block(pos, id) {
             *self.versions.entry(s).or_insert(0) += 1;

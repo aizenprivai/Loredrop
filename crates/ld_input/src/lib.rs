@@ -33,6 +33,22 @@ pub enum Action {
     ToggleDebugOverlay,
     ToggleFullscreen,
     Screenshot,
+    Attack,
+    UseItem,
+    PickBlock,
+    Inventory,
+    DropItem,
+    SwitchGameMode,
+    Journal,
+    Hotbar1,
+    Hotbar2,
+    Hotbar3,
+    Hotbar4,
+    Hotbar5,
+    Hotbar6,
+    Hotbar7,
+    Hotbar8,
+    Hotbar9,
 }
 
 impl Action {
@@ -48,7 +64,39 @@ impl Action {
         Action::ToggleDebugOverlay,
         Action::ToggleFullscreen,
         Action::Screenshot,
+        Action::Attack,
+        Action::UseItem,
+        Action::PickBlock,
+        Action::Inventory,
+        Action::DropItem,
+        Action::SwitchGameMode,
+        Action::Journal,
+        Action::Hotbar1,
+        Action::Hotbar2,
+        Action::Hotbar3,
+        Action::Hotbar4,
+        Action::Hotbar5,
+        Action::Hotbar6,
+        Action::Hotbar7,
+        Action::Hotbar8,
+        Action::Hotbar9,
     ];
+
+    /// The hotbar slot (0–8) this action selects, if it is a hotbar key.
+    pub fn hotbar_slot(self) -> Option<usize> {
+        const SLOTS: [Action; 9] = [
+            Action::Hotbar1,
+            Action::Hotbar2,
+            Action::Hotbar3,
+            Action::Hotbar4,
+            Action::Hotbar5,
+            Action::Hotbar6,
+            Action::Hotbar7,
+            Action::Hotbar8,
+            Action::Hotbar9,
+        ];
+        SLOTS.iter().position(|&a| a == self)
+    }
 
     /// Stable name used as the key in `settings.toml` (`[keybinds]` section).
     /// Never rename one of these: it would reset players' custom bindings.
@@ -64,6 +112,22 @@ impl Action {
             Action::ToggleDebugOverlay => "toggle_debug_overlay",
             Action::ToggleFullscreen => "toggle_fullscreen",
             Action::Screenshot => "screenshot",
+            Action::Attack => "attack",
+            Action::UseItem => "use_item",
+            Action::PickBlock => "pick_block",
+            Action::Inventory => "inventory",
+            Action::DropItem => "drop_item",
+            Action::SwitchGameMode => "switch_game_mode",
+            Action::Journal => "journal",
+            Action::Hotbar1 => "hotbar_1",
+            Action::Hotbar2 => "hotbar_2",
+            Action::Hotbar3 => "hotbar_3",
+            Action::Hotbar4 => "hotbar_4",
+            Action::Hotbar5 => "hotbar_5",
+            Action::Hotbar6 => "hotbar_6",
+            Action::Hotbar7 => "hotbar_7",
+            Action::Hotbar8 => "hotbar_8",
+            Action::Hotbar9 => "hotbar_9",
         }
     }
 
@@ -80,6 +144,22 @@ impl Action {
             Action::ToggleDebugOverlay => "Debug overlay",
             Action::ToggleFullscreen => "Fullscreen",
             Action::Screenshot => "Take screenshot",
+            Action::Attack => "Attack / break block",
+            Action::UseItem => "Use item / place block",
+            Action::PickBlock => "Pick block",
+            Action::Inventory => "Open inventory",
+            Action::DropItem => "Drop item",
+            Action::SwitchGameMode => "Switch game mode",
+            Action::Journal => "Lore journal",
+            Action::Hotbar1 => "Hotbar slot 1",
+            Action::Hotbar2 => "Hotbar slot 2",
+            Action::Hotbar3 => "Hotbar slot 3",
+            Action::Hotbar4 => "Hotbar slot 4",
+            Action::Hotbar5 => "Hotbar slot 5",
+            Action::Hotbar6 => "Hotbar slot 6",
+            Action::Hotbar7 => "Hotbar slot 7",
+            Action::Hotbar8 => "Hotbar slot 8",
+            Action::Hotbar9 => "Hotbar slot 9",
         }
     }
 
@@ -98,6 +178,24 @@ impl Action {
             }
             Action::ToggleFullscreen => "Switches between windowed and borderless fullscreen.",
             Action::Screenshot => "Saves a PNG of the current frame to the screenshots folder.",
+            Action::Attack => {
+                "Breaks the block you're looking at (hold in Survival). Later: attacks creatures."
+            }
+            Action::UseItem => {
+                "Places the held block, or uses the block you're looking at (crafting table, lore tablet…)."
+            }
+            Action::PickBlock => "Puts the block you're looking at into your hand.",
+            Action::Inventory => "Opens and closes your inventory and crafting grid.",
+            Action::DropItem => "Throws the held item on the ground (one at a time).",
+            Action::SwitchGameMode => "Switches between Creative and Survival (development shortcut).",
+            Action::Journal => "Opens the journal of lore fragments you have found.",
+            a => {
+                if a.hotbar_slot().is_some() {
+                    "Selects this hotbar slot. You can also use the mouse wheel."
+                } else {
+                    ""
+                }
+            }
         }
     }
 
@@ -114,6 +212,22 @@ impl Action {
             Action::ToggleDebugOverlay => "F3",
             Action::ToggleFullscreen => "F11",
             Action::Screenshot => "F2",
+            Action::Attack => "MouseLeft",
+            Action::UseItem => "MouseRight",
+            Action::PickBlock => "MouseMiddle",
+            Action::Inventory => "KeyE",
+            Action::DropItem => "KeyQ",
+            Action::SwitchGameMode => "F4",
+            Action::Journal => "KeyJ",
+            Action::Hotbar1 => "Digit1",
+            Action::Hotbar2 => "Digit2",
+            Action::Hotbar3 => "Digit3",
+            Action::Hotbar4 => "Digit4",
+            Action::Hotbar5 => "Digit5",
+            Action::Hotbar6 => "Digit6",
+            Action::Hotbar7 => "Digit7",
+            Action::Hotbar8 => "Digit8",
+            Action::Hotbar9 => "Digit9",
         }
     }
 }
@@ -172,6 +286,7 @@ pub struct InputState {
     held: HashMap<Action, u32>,
     pending_presses: HashMap<Action, u32>,
     mouse_delta: (f64, f64),
+    scroll: f64,
 }
 
 impl InputState {
@@ -213,6 +328,18 @@ impl InputState {
         std::mem::take(&mut self.mouse_delta)
     }
 
+    /// Accumulates mouse-wheel movement in "notches" (positive = scroll up).
+    pub fn add_scroll(&mut self, notches: f64) {
+        self.scroll += notches;
+    }
+
+    /// Returns and resets the accumulated whole wheel notches.
+    pub fn take_scroll(&mut self) -> i32 {
+        let whole = self.scroll.trunc();
+        self.scroll -= whole;
+        whole as i32
+    }
+
     /// Whether `action` is currently held down.
     pub fn is_held(&self, action: Action) -> bool {
         self.held.contains_key(&action)
@@ -236,6 +363,7 @@ impl InputState {
         self.held.clear();
         self.pending_presses.clear();
         self.mouse_delta = (0.0, 0.0);
+        self.scroll = 0.0;
     }
 }
 
@@ -253,12 +381,22 @@ mod tests {
     }
 
     #[test]
+    fn default_bindings_never_overlap() {
+        let mut seen = HashMap::new();
+        for &a in Action::ALL {
+            if let Some(other) = seen.insert(a.default_binding(), a) {
+                panic!("{:?} and {:?} share the default key {}", a, other, a.default_binding());
+            }
+        }
+    }
+
+    #[test]
     fn rebinding_moves_action() {
         let mut b = Bindings::defaults();
-        b.bind(Action::Jump, "KeyJ");
+        b.bind(Action::Jump, "KeyK");
         assert!(b.actions_for("Space").is_empty());
-        assert_eq!(b.actions_for("KeyJ"), &[Action::Jump]);
-        assert_eq!(b.input_for(Action::Jump), Some("KeyJ"));
+        assert_eq!(b.actions_for("KeyK"), &[Action::Jump]);
+        assert_eq!(b.input_for(Action::Jump), Some("KeyK"));
     }
 
     #[test]

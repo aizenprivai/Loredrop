@@ -29,6 +29,7 @@ ld_input   = { path = "crates/ld_input" }
 ld_physics = { path = "crates/ld_physics" }
 ld_worldgen = { path = "crates/ld_worldgen" }
 ld_assets  = { path = "crates/ld_assets" }
+ld_game    = { path = "crates/ld_game" }
 
 # --- platform / graphics ---
 wgpu     = "30"       # GPU abstraction; Vulkan is our primary backend.

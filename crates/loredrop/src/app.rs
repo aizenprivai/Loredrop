@@ -9,7 +9,8 @@
 
 use crate::Options;
 use crate::frame_stats::FrameStats;
-use crate::game::{Game, TICKS_PER_SECOND};
+use crate::game::{Game, GameMode, TICKS_PER_SECOND};
+use crate::icons;
 use crate::overlay::{self, OverlayData};
 use crate::world::World;
 use ld_config::Settings;
@@ -35,6 +36,24 @@ const FOLIAGE_TINT: [f32; 3] = [0.47, 0.67, 0.18];
 const UNDERWATER: [f32; 3] = [0.08, 0.22, 0.45];
 
 /// Loads game data and creates the (empty) world.
+/// Everything loaded from the assets folder that the app needs at startup.
+struct Loaded {
+    world: World,
+    textures: ld_assets::TextureSet,
+    items: Arc<ld_game::ItemRegistry>,
+    icons: Vec<icons::Icon>,
+}
+
+fn load_game(settings: &Settings, seed: Option<u64>) -> Result<Loaded, Box<dyn std::error::Error>> {
+    let (world, textures) = load_world(settings, seed)?;
+    let assets = ld_assets::find_assets_dir().ok_or("assets folder not found")?;
+    let items =
+        Arc::new(ld_game::ItemRegistry::new(&world.registry, &ld_assets::read_data(&assets, "items.toml")?)?);
+    let icons = icons::render_all(&items, &world.registry, &textures, &assets, [GRASS_TINT, FOLIAGE_TINT]);
+    log::info!("{} items, {} icons", items.len(), icons.len());
+    Ok(Loaded { world, textures, items, icons })
+}
+
 fn load_world(
     settings: &Settings,
     seed: Option<u64>,
@@ -233,10 +252,10 @@ pub fn draw_map(blocks: u32, path: &std::path::Path, settings: &Settings, seed: 
 
 pub fn run(options: Options, settings: Settings) -> Result<(), Box<dyn std::error::Error>> {
     // Load game data before opening a window, so data errors are reported clearly.
-    let (world, textures) = load_world(&settings, options.seed)?;
+    let loaded = load_game(&settings, options.seed)?;
 
     let event_loop = EventLoop::new()?;
-    let mut app = App::new(options, settings, world, textures);
+    let mut app = App::new(options, settings, loaded);
     event_loop.run_app(&mut app)?;
     if let Some(e) = app.fatal.take() {
         return Err(e.into());
@@ -250,6 +269,8 @@ struct Running {
     renderer: Renderer,
     egui_ctx: egui::Context,
     egui_state: egui_winit::State,
+    /// Item icons as egui textures, indexed by item ID.
+    icon_textures: Vec<egui::TextureHandle>,
 }
 
 struct App {
@@ -269,16 +290,28 @@ struct App {
     screenshot_requested: bool,
     fatal: Option<String>,
     textures: Option<ld_assets::TextureSet>,
+    egui_has_keyboard: bool,
+    /// A menu asked to close during drawing; handled at the start of the next frame.
+    pending_close: bool,
+    icons: Vec<icons::Icon>,
     world_ready_logged: bool,
+    screen: crate::screens::Screen,
+    menu: crate::screens::MenuState,
 }
 
 impl App {
-    fn new(options: Options, settings: Settings, world: World, textures: ld_assets::TextureSet) -> Self {
+    fn new(options: Options, settings: Settings, loaded: Loaded) -> Self {
+        let Loaded { world, textures, items, icons } = loaded;
         Self {
             bindings: settings.keybinds.clone(),
             show_debug: settings.interface.show_debug_overlay,
+            icons,
+            screen: crate::screens::Screen::None,
+            egui_has_keyboard: false,
+            pending_close: false,
+            menu: crate::screens::MenuState::default(),
             game: {
-                let mut g = Game::new(world, options.autopilot);
+                let mut g = Game::new(world, items, options.autopilot);
                 g.apply_dev_start(options.start_pos, options.start_look, options.fly);
                 g
             },
@@ -317,6 +350,22 @@ impl App {
         r.window.set_cursor_visible(!captured);
         self.mouse_captured = captured;
         self.input.take_mouse_delta(); // discard movement from before the change
+    }
+
+    fn open_screen(&mut self, screen: crate::screens::Screen) {
+        self.screen = screen;
+        self.game.input_blocked = true;
+        self.set_mouse_captured(false);
+        self.input.release_all();
+    }
+
+    fn close_screen(&mut self) {
+        let creative = self.game.mode == GameMode::Creative;
+        crate::screens::return_cursor(&mut self.menu, &mut self.game.inventory, &self.game.items, creative);
+        self.screen = crate::screens::Screen::None;
+        self.game.input_blocked = false;
+        self.input.release_all(); // don't let menu clicks leak into the world
+        self.set_mouse_captured(true);
     }
 
     fn toggle_fullscreen(&mut self) {
@@ -360,8 +409,29 @@ impl App {
         if self.input.take_press(Action::Screenshot) {
             self.screenshot_requested = true;
         }
+        if self.input.take_press(Action::Inventory) {
+            if self.screen == crate::screens::Screen::None {
+                self.open_screen(crate::screens::Screen::Inventory);
+            } else {
+                self.close_screen();
+            }
+        }
+        if self.input.take_press(Action::SwitchGameMode) {
+            self.game.mode = match self.game.mode {
+                GameMode::Creative => GameMode::Survival,
+                GameMode::Survival => GameMode::Creative,
+            };
+            if self.game.mode == GameMode::Survival {
+                self.game.player.flying = false;
+            }
+            log::info!("game mode: {:?}", self.game.mode);
+        }
         self.frames += 1;
         let auto_shot = self.options.screenshot_after == Some(self.frames);
+
+        if std::mem::take(&mut self.pending_close) {
+            self.close_screen();
+        }
 
         // --- world streaming ---
         let Some(r) = &mut self.running else { return };
@@ -383,6 +453,9 @@ impl App {
         }
 
         // --- UI + render ---
+        // The inventory is lent to the menus for this frame (and put back
+        // below), so the overlay can read the rest of the game at the same time.
+        let mut inv = std::mem::take(&mut self.game.inventory);
         let size = r.window.inner_size();
         r.egui_ctx.set_zoom_factor(self.settings.interface.gui_scale);
         let raw = r.egui_state.take_egui_input(&r.window);
@@ -397,10 +470,24 @@ impl App {
             mouse_captured: self.mouse_captured,
             world: self.game.world.stats(center),
             render_distance: self.settings.graphics.render_distance,
+            menu_open: self.screen != crate::screens::Screen::None,
         };
         let show_debug = self.show_debug;
-        let out = r.egui_ctx.run_ui(raw, |ui| overlay::draw(ui.ctx(), show_debug, &overlay_data));
+        let creative = self.game.mode == GameMode::Creative;
+        let (inv, items, icons) = (&mut inv, &self.game.items, &r.icon_textures);
+        let (screen, menu) = (&self.screen, &mut self.menu);
+        let mut close_requested = false;
+        let out = r.egui_ctx.run_ui(raw, |ui| {
+            overlay::draw(ui.ctx(), show_debug, &overlay_data);
+            crate::hud::draw_hotbar(ui.ctx(), inv, icons, items);
+            let mut m = crate::screens::MenuCtx { inventory: inv, items, icons, creative, state: menu };
+            close_requested = crate::screens::draw(ui.ctx(), screen, &mut m);
+        });
+        let _ = overlay_data; // end of the overlay's borrow of the game
+        self.game.inventory = std::mem::take(inv);
         r.egui_state.handle_platform_output(&r.window, out.platform_output);
+        let wants_keyboard = r.egui_ctx.egui_wants_keyboard_input();
+        self.egui_has_keyboard = wants_keyboard;
         let ui = UiFrame {
             primitives: r.egui_ctx.tessellate(out.shapes, out.pixels_per_point),
             textures_delta: out.textures_delta,
@@ -432,7 +519,12 @@ impl App {
             grass_tint: GRASS_TINT,
             foliage_tint: FOLIAGE_TINT,
         };
+        r.renderer.set_outline(self.game.target.map(|h| {
+            let min = glam::DVec3::new(h.pos.x as f64, h.pos.y as f64, h.pos.z as f64);
+            (min, min + glam::DVec3::ONE)
+        }));
         let want_shot = self.screenshot_requested || auto_shot;
+        self.pending_close |= close_requested;
         self.screenshot_requested = false;
         match r.renderer.render(&params, Some(ui), want_shot) {
             Ok(Some(shot)) => {
@@ -542,7 +634,17 @@ impl ApplicationHandler for App {
             None,
             Some(renderer.max_texture_side()),
         );
-        self.running = Some(Running { window, renderer, egui_ctx, egui_state });
+        let icon_textures = self
+            .icons
+            .iter()
+            .enumerate()
+            .map(|(i, px)| {
+                let img = egui::ColorImage::from_rgba_unmultiplied([icons::SIZE, icons::SIZE], px);
+                // Nearest filtering keeps pixel-art icons crisp.
+                egui_ctx.load_texture(format!("icon{i}"), img, egui::TextureOptions::NEAREST)
+            })
+            .collect();
+        self.running = Some(Running { window, renderer, egui_ctx, egui_state, icon_textures });
         self.last_frame = Instant::now();
         self.started = Instant::now();
     }
@@ -568,18 +670,38 @@ impl ApplicationHandler for App {
                 let name = format!("{code:?}");
                 let pressed = event.state == ElementState::Pressed;
                 if name == "Escape" && pressed {
-                    self.set_mouse_captured(false);
+                    if self.screen != crate::screens::Screen::None {
+                        self.close_screen();
+                    } else {
+                        self.set_mouse_captured(false);
+                    }
                     return;
+                }
+                if self.egui_has_keyboard && pressed {
+                    return; // typing in a search box: not a game key
                 }
                 self.input.handle_input(&self.bindings, &name, pressed);
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 let pressed = state == ElementState::Pressed;
+                if self.screen != crate::screens::Screen::None {
+                    return; // clicks belong to the menu (handled by egui)
+                }
                 if pressed && !self.mouse_captured && button == MouseButton::Left {
                     self.set_mouse_captured(true);
                     return; // the capturing click is not a game action
                 }
                 self.input.handle_input(&self.bindings, &mouse_button_name(button), pressed);
+            }
+            WindowEvent::MouseWheel { delta, .. } => {
+                if self.mouse_captured {
+                    let notches = match delta {
+                        winit::event::MouseScrollDelta::LineDelta(_, y) => y as f64,
+                        winit::event::MouseScrollDelta::PixelDelta(p) => p.y / 40.0,
+                    };
+                    log::trace!("mouse wheel {delta:?} -> {notches} notches");
+                    self.input.add_scroll(notches);
+                }
             }
             WindowEvent::RedrawRequested => self.frame(el),
             _ => {}

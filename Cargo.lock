@@ -1447,6 +1447,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ld_game"
+version = "0.1.0"
+dependencies = [
+ "ld_world",
+ "serde",
+ "toml",
+]
+
+[[package]]
 name = "ld_input"
 version = "0.1.0"
 
@@ -1601,6 +1610,7 @@ dependencies = [
  "ld_assets",
  "ld_config",
  "ld_core",
+ "ld_game",
  "ld_input",
  "ld_mesh",
  "ld_physics",

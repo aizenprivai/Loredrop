@@ -161,13 +161,13 @@ mod tests {
         s.graphics.fov = 95.0;
         s.graphics.backend = crate::Backend::Vulkan;
         s.controls.invert_mouse = true;
-        s.keybinds.bind(Action::Jump, "KeyJ");
+        s.keybinds.bind(Action::Jump, "KeyK");
         let (back, w) = Settings::from_toml(&s.to_toml());
         assert!(w.is_empty(), "{w:?}");
         assert_eq!(back.graphics.fov, 95.0);
         assert_eq!(back.graphics.backend, crate::Backend::Vulkan);
         assert!(back.controls.invert_mouse);
-        assert_eq!(back.keybinds.input_for(Action::Jump), Some("KeyJ"));
+        assert_eq!(back.keybinds.input_for(Action::Jump), Some("KeyK"));
     }
 
     #[test]

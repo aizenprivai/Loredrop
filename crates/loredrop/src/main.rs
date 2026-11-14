@@ -25,7 +25,11 @@
 mod app;
 mod frame_stats;
 mod game;
+mod hud;
+mod icons;
+mod interaction;
 mod overlay;
+mod screens;
 mod settings_file;
 mod world;
 

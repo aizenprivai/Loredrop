@@ -17,6 +17,7 @@ ld_world = { workspace = true }
 ld_mesh = { workspace = true }
 ld_worldgen = { workspace = true }
 ld_assets = { workspace = true }
+ld_game = { workspace = true }
 rayon = { workspace = true }
 crossbeam-channel = { workspace = true }
 ahash = { workspace = true }

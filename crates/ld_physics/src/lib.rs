@@ -5,6 +5,7 @@
 //!   through solid blocks.
 //! * [`player`] — the player's movement model, with Minecraft-faithful
 //!   constants (gravity, friction, jump height, sprint and fly speeds).
+//! * [`raycast`] — which block the player is looking at.
 //!
 //! Terrain is accessed through the [`VoxelCollider`] trait, so this crate
 //! doesn't care whether blocks come from a test scene or the real chunk system.
@@ -14,8 +15,10 @@
 
 mod aabb;
 pub mod player;
+mod raycast;
 
 pub use aabb::Aabb;
+pub use raycast::{RayHit, raycast};
 
 use glam::DVec3;
 use ld_core::coords::BlockPos;

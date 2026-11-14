@@ -94,6 +94,10 @@ pub struct Renderer {
     world_pipeline: wgpu::RenderPipeline,
     meshes: mesh::MeshStore,
     chunks: chunks::ChunkRenderer,
+    outline_pipeline: wgpu::RenderPipeline,
+    outline_buffer: wgpu::Buffer,
+    /// World-space box to outline this frame (min, max), if any.
+    outline: Option<(DVec3, DVec3)>,
     egui: egui_wgpu::Renderer,
     stats: RenderStats,
 }
@@ -193,6 +197,58 @@ impl Renderer {
         });
 
         let chunks = chunks::ChunkRenderer::new(device, &camera_layout, gpu.config.format, DEPTH_FORMAT);
+
+        // Selection outline: 12 edges = 24 line vertices, rewritten each frame.
+        let outline_shader = device.create_shader_module(wgpu::include_wgsl!("shaders/outline.wgsl"));
+        let outline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("outline layout"),
+            bind_group_layouts: &[Some(&camera_layout)],
+            immediate_size: 0,
+        });
+        let outline_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("outline pipeline"),
+            layout: Some(&outline_layout),
+            vertex: wgpu::VertexState {
+                module: &outline_shader,
+                entry_point: Some("vs_main"),
+                compilation_options: Default::default(),
+                buffers: &[Some(wgpu::VertexBufferLayout {
+                    array_stride: 12,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x3],
+                })],
+            },
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: DEPTH_FORMAT,
+                depth_write_enabled: Some(false),
+                depth_compare: Some(wgpu::CompareFunction::GreaterEqual),
+                stencil: Default::default(),
+                bias: Default::default(),
+            }),
+            multisample: Default::default(),
+            fragment: Some(wgpu::FragmentState {
+                module: &outline_shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: gpu.config.format,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            multiview_mask: None,
+            cache: None,
+        });
+        let outline_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("outline vertices"),
+            size: 24 * 12,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
         let egui = egui_wgpu::Renderer::new(device, gpu.ui_format, egui_wgpu::RendererOptions::default());
         let depth_view = create_depth(device, gpu.config.width, gpu.config.height);
 
@@ -205,6 +261,9 @@ impl Renderer {
             world_pipeline,
             meshes: mesh::MeshStore::default(),
             chunks,
+            outline_pipeline,
+            outline_buffer,
+            outline: None,
             egui,
             stats: RenderStats::default(),
         })
@@ -253,6 +312,11 @@ impl Renderer {
     /// Removes a section's mesh from the GPU.
     pub fn remove_section(&mut self, pos: ld_core::coords::SectionPos) {
         self.chunks.remove(pos);
+    }
+
+    /// Sets (or clears) the box outlined this frame — the targeted block.
+    pub fn set_outline(&mut self, bounds: Option<(DVec3, DVec3)>) {
+        self.outline = bounds;
     }
 
     /// Uploads a mesh whose vertices are relative to `origin` (world space).
@@ -334,6 +398,35 @@ impl Renderer {
         // The clear colour is written as-is: linear for sRGB frames, sRGB otherwise.
         let clear = if self.gpu.manual_gamma { frame.sky_color } else { sky_lin };
         let visible = self.chunks.prepare(device, queue, view_proj, frame.camera.position);
+        if let Some((min, max)) = self.outline {
+            // Grow the box a hair so the lines don't flicker against block faces.
+            let (a, b) = (
+                (min - DVec3::splat(0.002) - frame.camera.position).as_vec3(),
+                (max + DVec3::splat(0.002) - frame.camera.position).as_vec3(),
+            );
+            let c = |x: bool, y: bool, z: bool| {
+                [if x { b.x } else { a.x }, if y { b.y } else { a.y }, if z { b.z } else { a.z }]
+            };
+            let mut lines = Vec::with_capacity(24);
+            for &(p, q) in &[
+                ((0, 0, 0), (1, 0, 0)),
+                ((0, 1, 0), (1, 1, 0)),
+                ((0, 0, 1), (1, 0, 1)),
+                ((0, 1, 1), (1, 1, 1)),
+                ((0, 0, 0), (0, 1, 0)),
+                ((1, 0, 0), (1, 1, 0)),
+                ((0, 0, 1), (0, 1, 1)),
+                ((1, 0, 1), (1, 1, 1)),
+                ((0, 0, 0), (0, 0, 1)),
+                ((1, 0, 0), (1, 0, 1)),
+                ((0, 1, 0), (0, 1, 1)),
+                ((1, 1, 0), (1, 1, 1)),
+            ] {
+                lines.push(c(p.0 == 1, p.1 == 1, p.2 == 1));
+                lines.push(c(q.0 == 1, q.1 == 1, q.2 == 1));
+            }
+            queue.write_buffer(&self.outline_buffer, 0, bytemuck::cast_slice(&lines));
+        }
 
         let mut encoder =
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("frame") });
@@ -436,6 +529,12 @@ impl Renderer {
                 multiview_mask: None,
             });
             self.chunks.draw(&mut pass, &self.camera_bind_group, visible);
+            if self.outline.is_some() {
+                pass.set_pipeline(&self.outline_pipeline);
+                pass.set_bind_group(0, &self.camera_bind_group, &[]);
+                pass.set_vertex_buffer(0, self.outline_buffer.slice(..));
+                pass.draw(0..24, 0..1);
+            }
             pass.set_pipeline(&self.world_pipeline);
             pass.set_bind_group(0, &self.camera_bind_group, &[]);
             for m in self.meshes.iter() {
@@ -512,6 +611,7 @@ mod shader_tests {
         for (name, src) in [
             ("world.wgsl", include_str!("shaders/world.wgsl")),
             ("chunk.wgsl", include_str!("shaders/chunk.wgsl")),
+            ("outline.wgsl", include_str!("shaders/outline.wgsl")),
         ] {
             let module = naga::front::wgsl::parse_str(src)
                 .unwrap_or_else(|e| panic!("{name}: {}", e.emit_to_string(src)));
