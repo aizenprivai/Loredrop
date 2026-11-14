@@ -458,8 +458,72 @@ TEXTURES.update({
     "lore_tablet_top": lore_tablet_top,
 })
 
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: crafting table, furnace
+# ---------------------------------------------------------------------------
+
+def table_top():
+    img = planks(70, (176, 132, 80))
+    for i in range(N):  # dark frame with a crafting grid
+        for p in [(i, 0), (i, N - 1), (0, i), (N - 1, i)]:
+            img.putpixel(p, (84, 60, 34, 255))
+    for i in range(2, N - 2):
+        for p in [(i, 5), (i, 10), (5, i), (10, i)]:
+            img.putpixel(p, (110, 80, 46, 255))
+    return img
+
+
+def table_side(front):
+    img = planks(71 + front, (150, 112, 66))
+    rng = random.Random(72 + front)
+    for y in range(0, 4):  # top band
+        for x in range(N):
+            img.putpixel((x, y), (104, 74, 42, 255))
+    # Tools hanging on the side (saw / hammer shapes, original pixels)
+    for x in range(3, 7):
+        img.putpixel((x, 6), (170, 170, 176, 255))
+    for y in range(6, 11):
+        img.putpixel((5, y), (96, 70, 40, 255))
+    if front:
+        for y in range(6, 12):
+            img.putpixel((11, y), (96, 70, 40, 255))
+        for x in range(9, 14):
+            img.putpixel((x, 6), (150, 150, 156, 255))
+    return img
+
+
+def furnace_side():
+    return noise_tex(73, (112, 112, 112), 10, specks=[(90, 90, 90), (130, 130, 130)], speck_chance=0.15)
+
+
+def furnace_front(lit):
+    img = furnace_side()
+    for y in range(8, 14):  # fire opening
+        for x in range(4, 12):
+            c = (240, 150, 40) if lit and (x + y) % 3 else ((60, 50, 40) if lit else (30, 30, 30))
+            img.putpixel((x, y), c + (255,))
+    for x in range(3, 13):
+        img.putpixel((x, 7), (70, 70, 70, 255))
+        img.putpixel((x, 14), (70, 70, 70, 255))
+    for x in range(5, 11):  # vent slits at top
+        img.putpixel((x, 3), (40, 40, 40, 255))
+    return img
+
+
+TEXTURES.update({
+    "crafting_table_top": table_top,
+    "crafting_table_side": lambda: table_side(0),
+    "crafting_table_front": lambda: table_side(1),
+    "furnace_side": furnace_side,
+    "furnace_top": lambda: noise_tex(74, (120, 120, 120), 8),
+    "furnace_front": lambda: furnace_front(False),
+    "furnace_front_on": lambda: furnace_front(True),
+})
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     for name, fn in TEXTURES.items():
         fn().save(os.path.join(OUT, name + ".png"))
-    print(f"wrote {len(TEXTURES)} textures (incl. ruins) to {os.path.normpath(OUT)}")
+    print(f"wrote {len(TEXTURES)} textures (incl. Phase 5) to {os.path.normpath(OUT)}")

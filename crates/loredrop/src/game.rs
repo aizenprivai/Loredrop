@@ -27,6 +27,7 @@ pub enum GameMode {
 pub struct GameIds {
     pub water: Option<ld_world::BlockId>,
     pub lava: Option<ld_world::BlockId>,
+    pub crafting_table: Option<ld_world::BlockId>,
 }
 
 pub struct Game {
@@ -59,11 +60,23 @@ pub struct Game {
     pub(crate) ids: GameIds,
     /// Set by the app while a menu is open: the world ignores game input.
     pub input_blocked: bool,
+    pub recipes: std::sync::Arc<ld_game::RecipeBook>,
+    /// A menu the game wants opened (set when using a block like a crafting table).
+    pub open_request: Option<crate::screens::Screen>,
 }
 
 impl Game {
-    pub fn new(world: World, items: std::sync::Arc<ld_game::ItemRegistry>, autopilot: bool) -> Self {
-        let ids = GameIds { water: world.registry.id("water"), lava: world.registry.id("lava") };
+    pub fn new(
+        world: World,
+        items: std::sync::Arc<ld_game::ItemRegistry>,
+        recipes: std::sync::Arc<ld_game::RecipeBook>,
+        autopilot: bool,
+    ) -> Self {
+        let ids = GameIds {
+            water: world.registry.id("water"),
+            lava: world.registry.id("lava"),
+            crafting_table: world.registry.id("crafting_table"),
+        };
         // A starter hotbar of building blocks for Creative mode.
         let mut inventory = ld_game::Inventory::default();
         for (i, name) in [
@@ -75,7 +88,7 @@ impl Game {
             "oak_log",
             "glass",
             "stone_bricks",
-            "sand",
+            "crafting_table",
         ]
         .iter()
         .enumerate()
@@ -112,6 +125,8 @@ impl Game {
             use_cooldown: 0,
             ids,
             input_blocked: false,
+            recipes,
+            open_request: None,
         }
     }
 
@@ -326,7 +341,7 @@ mod tests {
                 .unwrap();
         let blocks = BlockRegistry::from_toml(&text).unwrap();
         let items = Arc::new(ld_game::ItemRegistry::new(&blocks, &items_toml).unwrap());
-        Game::new(world, items, false)
+        Game::new(world, items, Arc::new(ld_game::RecipeBook::default()), false)
     }
 
     fn run(game: &mut Game, input: &mut InputState, ticks: u32) {

@@ -41,6 +41,7 @@ struct Loaded {
     world: World,
     textures: ld_assets::TextureSet,
     items: Arc<ld_game::ItemRegistry>,
+    recipes: Arc<ld_game::RecipeBook>,
     icons: Vec<icons::Icon>,
 }
 
@@ -50,8 +51,15 @@ fn load_game(settings: &Settings, seed: Option<u64>) -> Result<Loaded, Box<dyn s
     let items =
         Arc::new(ld_game::ItemRegistry::new(&world.registry, &ld_assets::read_data(&assets, "items.toml")?)?);
     let icons = icons::render_all(&items, &world.registry, &textures, &assets, [GRASS_TINT, FOLIAGE_TINT]);
-    log::info!("{} items, {} icons", items.len(), icons.len());
-    Ok(Loaded { world, textures, items, icons })
+    let recipes =
+        Arc::new(ld_game::RecipeBook::from_toml(&ld_assets::read_data(&assets, "recipes.toml")?, &items)?);
+    log::info!(
+        "{} items, {} icons, {} recipes",
+        items.len(),
+        icons.len(),
+        recipes.shaped.len() + recipes.shapeless.len() + recipes.smelting.len()
+    );
+    Ok(Loaded { world, textures, items, recipes, icons })
 }
 
 fn load_world(
@@ -301,7 +309,7 @@ struct App {
 
 impl App {
     fn new(options: Options, settings: Settings, loaded: Loaded) -> Self {
-        let Loaded { world, textures, items, icons } = loaded;
+        let Loaded { world, textures, items, recipes, icons } = loaded;
         Self {
             bindings: settings.keybinds.clone(),
             show_debug: settings.interface.show_debug_overlay,
@@ -311,7 +319,7 @@ impl App {
             pending_close: false,
             menu: crate::screens::MenuState::default(),
             game: {
-                let mut g = Game::new(world, items, options.autopilot);
+                let mut g = Game::new(world, items, recipes, options.autopilot);
                 g.apply_dev_start(options.start_pos, options.start_look, options.fly);
                 g
             },
@@ -362,6 +370,7 @@ impl App {
     fn close_screen(&mut self) {
         let creative = self.game.mode == GameMode::Creative;
         crate::screens::return_cursor(&mut self.menu, &mut self.game.inventory, &self.game.items, creative);
+        crate::screens::return_grid(&mut self.menu, &mut self.game.inventory, &self.game.items);
         self.screen = crate::screens::Screen::None;
         self.game.input_blocked = false;
         self.input.release_all(); // don't let menu clicks leak into the world
@@ -432,6 +441,12 @@ impl App {
         if std::mem::take(&mut self.pending_close) {
             self.close_screen();
         }
+        // The game asked for a menu (e.g. right-clicked a crafting table).
+        if let Some(screen) = self.game.open_request.take()
+            && self.screen == crate::screens::Screen::None
+        {
+            self.open_screen(screen);
+        }
 
         // --- world streaming ---
         let Some(r) = &mut self.running else { return };
@@ -474,13 +489,14 @@ impl App {
         };
         let show_debug = self.show_debug;
         let creative = self.game.mode == GameMode::Creative;
-        let (inv, items, icons) = (&mut inv, &self.game.items, &r.icon_textures);
+        let (inv, items, icons, recipes) = (&mut inv, &self.game.items, &r.icon_textures, &self.game.recipes);
         let (screen, menu) = (&self.screen, &mut self.menu);
         let mut close_requested = false;
         let out = r.egui_ctx.run_ui(raw, |ui| {
             overlay::draw(ui.ctx(), show_debug, &overlay_data);
             crate::hud::draw_hotbar(ui.ctx(), inv, icons, items);
-            let mut m = crate::screens::MenuCtx { inventory: inv, items, icons, creative, state: menu };
+            let mut m =
+                crate::screens::MenuCtx { inventory: inv, items, icons, creative, state: menu, recipes };
             close_requested = crate::screens::draw(ui.ctx(), screen, &mut m);
         });
         let _ = overlay_data; // end of the overlay's borrow of the game

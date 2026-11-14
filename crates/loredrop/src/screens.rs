@@ -7,15 +7,19 @@
 
 use crate::hud::{SLOT, draw_slot};
 use egui::{Color32, FontId, Pos2, Rect, Sense, Stroke, TextureHandle, Vec2};
+use ld_game::crafting::{ShapedRecipe, ShapelessRecipe};
 use ld_game::inventory::{HOTBAR, click_slot};
-use ld_game::{Click, Inventory, ItemRegistry, ItemStack};
+use ld_game::{Click, Inventory, ItemRegistry, ItemStack, RecipeBook};
 
 /// Which menu is open.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub enum Screen {
     #[default]
     None,
+    /// The player inventory with its 2×2 crafting grid.
     Inventory,
+    /// A crafting table's 3×3 grid.
+    CraftingTable,
 }
 
 /// State that lives while menus are open.
@@ -25,6 +29,11 @@ pub struct MenuState {
     pub cursor: Option<ItemStack>,
     /// Creative item-list search text.
     pub search: String,
+    /// Crafting grid contents (row-major; 4 used for 2×2, 9 for 3×3).
+    pub grid: [Option<ItemStack>; 9],
+    /// Recipe browser search text and the recipe being shown.
+    pub recipe_search: String,
+    pub shown_recipe: Option<ld_game::ItemId>,
 }
 
 /// Everything a menu needs to read and change.
@@ -34,13 +43,15 @@ pub struct MenuCtx<'a> {
     pub icons: &'a [TextureHandle],
     pub creative: bool,
     pub state: &'a mut MenuState,
+    pub recipes: &'a RecipeBook,
 }
 
 /// Draws the open screen. Returns true if it asked to close.
 pub fn draw(ctx: &egui::Context, screen: &Screen, m: &mut MenuCtx) -> bool {
     match screen {
         Screen::None => false,
-        Screen::Inventory => inventory_screen(ctx, m),
+        Screen::Inventory => inventory_screen(ctx, m, 2),
+        Screen::CraftingTable => inventory_screen(ctx, m, 3),
     }
 }
 
@@ -55,12 +66,7 @@ fn panel_frame() -> egui::Frame {
 type ShiftClick<'a> = Option<&'a mut dyn FnMut(&mut Option<ItemStack>)>;
 
 /// One clickable slot bound to an `Option<ItemStack>`.
-fn slot_ui(
-    ui: &mut egui::Ui,
-    slot: &mut Option<ItemStack>,
-    m: &mut MenuCtx,
-    on_shift: Option<&mut dyn FnMut(&mut Option<ItemStack>)>,
-) {
+fn slot_ui(ui: &mut egui::Ui, slot: &mut Option<ItemStack>, m: &mut MenuCtx, on_shift: ShiftClick) {
     let (rect, resp) = ui.allocate_exact_size(Vec2::splat(SLOT - 2.0), Sense::click());
     draw_slot(ui.painter(), rect, *slot, m.icons, m.items, resp.hovered());
     let shift = ui.input(|i| i.modifiers.shift);
@@ -79,7 +85,7 @@ fn slot_ui(
     }
 }
 
-fn inventory_screen(ctx: &egui::Context, m: &mut MenuCtx) -> bool {
+fn inventory_screen(ctx: &egui::Context, m: &mut MenuCtx, grid_size: usize) -> bool {
     let mut close = false;
     egui::Area::new(egui::Id::unique("inventory"))
         .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
@@ -87,10 +93,16 @@ fn inventory_screen(ctx: &egui::Context, m: &mut MenuCtx) -> bool {
         .show(ctx, |ui| {
             panel_frame().show(ui, |ui| {
                 ui.spacing_mut().item_spacing = Vec2::splat(2.0);
-                if m.creative {
+                if m.creative && grid_size == 2 {
                     creative_list(ui, m);
                     ui.add_space(10.0);
                 }
+                ui.horizontal(|ui| {
+                    crafting_grid(ui, m, grid_size);
+                    ui.add_space(16.0);
+                    recipe_browser(ui, m);
+                });
+                ui.add_space(8.0);
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("Inventory").color(Color32::WHITE).size(16.0));
                     ui.add_space(12.0);
@@ -216,5 +228,169 @@ pub fn return_cursor(state: &mut MenuState, inventory: &mut Inventory, items: &I
         && !creative
     {
         let _ = inventory.add(s, items);
+    }
+}
+
+/// The crafting grid, an arrow and the result slot.
+fn crafting_grid(ui: &mut egui::Ui, m: &mut MenuCtx, size: usize) {
+    ui.vertical(|ui| {
+        ui.label(egui::RichText::new("Crafting").color(Color32::WHITE).size(16.0));
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                for row in 0..size {
+                    ui.horizontal(|ui| {
+                        for col in 0..size {
+                            let i = row * 3 + col;
+                            let mut s = m.state.grid[i];
+                            slot_ui(ui, &mut s, m, None);
+                            m.state.grid[i] = s;
+                        }
+                    });
+                }
+            });
+            ui.add_space(8.0);
+            // A drawn arrow (the UI font has no arrow glyph).
+            let (r, _) = ui.allocate_exact_size(Vec2::new(28.0, SLOT), Sense::hover());
+            let (y, x0, x1) = (r.center().y, r.left() + 2.0, r.right() - 2.0);
+            let col = Color32::from_gray(200);
+            ui.painter().line_segment([Pos2::new(x0, y), Pos2::new(x1 - 8.0, y)], Stroke::new(4.0, col));
+            ui.painter().add(egui::Shape::convex_polygon(
+                vec![Pos2::new(x1 - 10.0, y - 8.0), Pos2::new(x1, y), Pos2::new(x1 - 10.0, y + 8.0)],
+                col,
+                Stroke::NONE,
+            ));
+            ui.add_space(8.0);
+            let cells = grid_cells(&m.state.grid, size);
+            let result = m.recipes.craft_result(&cells, size);
+            let (rect, resp) = ui.allocate_exact_size(Vec2::splat(SLOT + 6.0), Sense::click());
+            draw_slot(ui.painter(), rect, result, m.icons, m.items, resp.hovered());
+            if let Some(r) = result {
+                let shift = ui.input(|i| i.modifiers.shift);
+                if resp.clicked() && shift {
+                    // QoL: craft as many as the ingredients allow, straight into the inventory.
+                    let mut guard = 0;
+                    while guard < 64 {
+                        guard += 1;
+                        let cells = grid_cells(&m.state.grid, size);
+                        if m.recipes.craft_result(&cells, size) != Some(r) {
+                            break;
+                        }
+                        if m.inventory.add(r, m.items).is_some() {
+                            break; // inventory full (the overflow is lost only if it can't fit at all)
+                        }
+                        consume_grid(&mut m.state.grid, size);
+                    }
+                } else if resp.clicked() || resp.secondary_clicked() {
+                    let max = m.items.get(r.item).max_stack;
+                    let ok = match m.state.cursor {
+                        None => true,
+                        Some(c) => c.stacks_with(&r) && c.count + r.count <= max,
+                    };
+                    if ok {
+                        match &mut m.state.cursor {
+                            Some(c) => c.count += r.count,
+                            None => m.state.cursor = Some(r),
+                        }
+                        consume_grid(&mut m.state.grid, size);
+                    }
+                }
+                resp.on_hover_text(&m.items.get(r.item).display);
+            }
+        });
+    });
+}
+
+/// The active part of the 3×3 storage as a `size`×`size` grid.
+fn grid_cells(grid: &[Option<ItemStack>; 9], size: usize) -> Vec<Option<ItemStack>> {
+    (0..size * size).map(|i| grid[(i / size) * 3 + i % size]).collect()
+}
+
+fn consume_grid(grid: &mut [Option<ItemStack>; 9], size: usize) {
+    let mut cells = grid_cells(grid, size);
+    RecipeBook::consume_ingredients(&mut cells);
+    for (i, c) in cells.into_iter().enumerate() {
+        grid[(i / size) * 3 + i % size] = c;
+    }
+}
+
+/// QoL recipe browser (GDD §6): search any item and see how it's made.
+fn recipe_browser(ui: &mut egui::Ui, m: &mut MenuCtx) {
+    ui.vertical(|ui| {
+        ui.horizontal(|ui| {
+            ui.label(egui::RichText::new("Recipes").color(Color32::WHITE).size(16.0));
+            ui.add(
+                egui::TextEdit::singleline(&mut m.state.recipe_search)
+                    .hint_text("How do I make…")
+                    .desired_width(150.0),
+            );
+        });
+        let q = m.state.recipe_search.to_lowercase();
+        if !q.is_empty() {
+            let hits: Vec<_> = m
+                .items
+                .iter()
+                .filter(|(id, d)| {
+                    d.display.to_lowercase().contains(&q) && {
+                        let (a, b, c) = m.recipes.recipes_for(*id);
+                        !(a.is_empty() && b.is_empty() && c.is_empty())
+                    }
+                })
+                .map(|(id, d)| (id, d.display.clone()))
+                .take(6)
+                .collect();
+            ui.horizontal_wrapped(|ui| {
+                for (id, name) in hits {
+                    if ui.small_button(name).clicked() {
+                        m.state.shown_recipe = Some(id);
+                    }
+                }
+            });
+        }
+        if let Some(id) = m.state.shown_recipe {
+            let (shaped, shapeless, smelt) = m.recipes.recipes_for(id);
+            ui.label(egui::RichText::new(&m.items.get(id).display).color(Color32::LIGHT_YELLOW));
+            if let Some(r) = shaped.first() {
+                show_shaped(ui, r, m);
+            } else if let Some(r) = shapeless.first() {
+                show_shapeless(ui, r, m);
+            } else if let Some(r) = smelt.first() {
+                ui.label(format!("Smelt {} in a furnace", m.items.get(r.input.0[0]).display));
+            }
+        }
+    });
+}
+
+/// Ghost (read-only) slots showing a shaped recipe; tags show their first item.
+fn show_shaped(ui: &mut egui::Ui, r: &ShapedRecipe, m: &MenuCtx) {
+    for y in 0..r.height {
+        ui.horizontal(|ui| {
+            for x in 0..r.width {
+                let item = r.cells[y * r.width + x].as_ref().map(|ing| ItemStack::new(ing.0[0], 1));
+                let (rect, _) = ui.allocate_exact_size(Vec2::splat(SLOT * 0.7), Sense::hover());
+                draw_slot(ui.painter(), rect, item, m.icons, m.items, false);
+            }
+        });
+    }
+    if r.result.count > 1 {
+        ui.label(format!("Makes {}", r.result.count));
+    }
+}
+
+fn show_shapeless(ui: &mut egui::Ui, r: &ShapelessRecipe, m: &MenuCtx) {
+    ui.horizontal(|ui| {
+        for ing in &r.ingredients {
+            let (rect, _) = ui.allocate_exact_size(Vec2::splat(SLOT * 0.7), Sense::hover());
+            draw_slot(ui.painter(), rect, Some(ItemStack::new(ing.0[0], 1)), m.icons, m.items, false);
+        }
+    });
+    ui.label(format!("Any arrangement · makes {}", r.result.count));
+}
+
+/// Returns crafting-grid items to the inventory when a menu closes.
+pub fn return_grid(state: &mut MenuState, inventory: &mut Inventory, items: &ItemRegistry) {
+    for cell in state.grid.iter_mut() {
+        if let Some(s) = cell.take() {
+            let _ = inventory.add(s, items);
+        }
     }
 }

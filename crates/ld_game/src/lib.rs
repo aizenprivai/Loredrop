@@ -5,11 +5,14 @@
 //! * [`inventory`] — item stacks, the player inventory and Minecraft's
 //!   click rules for moving items around.
 //!
-//! Later in Phase 5: crafting recipes, mining rules (hardness, tool tiers,
-//! drops) and smelting.
+//! * [`crafting`] — crafting and smelting recipes, fuels.
+//!
+//! Later in Phase 5: mining rules (hardness, tool tiers, drops).
 
+pub mod crafting;
 pub mod inventory;
 pub mod items;
 
+pub use crafting::RecipeBook;
 pub use inventory::{Click, Inventory, ItemStack};
 pub use items::{ItemDef, ItemId, ItemKind, ItemRegistry, ToolInfo, ToolKind};

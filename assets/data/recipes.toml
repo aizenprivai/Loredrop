@@ -1,0 +1,239 @@
+# Loredrop recipes — modelled on Minecraft's so progression feels the same.
+#
+# [tags]      named groups of items; use them in recipes as "#name".
+# [[shaped]]  pattern rows (1–3 rows of 1–3 characters; space = empty) and a
+#             key mapping characters to items or #tags. Patterns also match
+#             their mirror image, like in Minecraft.
+# [[shapeless]] a list of ingredients in any arrangement.
+# [[smelting]] furnace recipes: input → result, `time` in ticks (20 = 1 s).
+# [fuels]     furnace fuel burn times in ticks (an item smelts in 200 ticks).
+
+[tags]
+planks = ["oak_planks", "birch_planks", "spruce_planks"]
+logs = ["oak_log", "birch_log", "spruce_log"]
+stone_tool_materials = ["cobblestone"]
+
+# --- Basics -----------------------------------------------------------------
+[[shapeless]]
+result = "oak_planks"
+count = 4
+ingredients = ["oak_log"]
+
+[[shapeless]]
+result = "birch_planks"
+count = 4
+ingredients = ["birch_log"]
+
+[[shapeless]]
+result = "spruce_planks"
+count = 4
+ingredients = ["spruce_log"]
+
+[[shaped]]
+result = "stick"
+count = 4
+pattern = ["P", "P"]
+key = { P = "#planks" }
+
+[[shaped]]
+result = "crafting_table"
+pattern = ["PP", "PP"]
+key = { P = "#planks" }
+
+[[shaped]]
+result = "furnace"
+pattern = ["CCC", "C C", "CCC"]
+key = { C = "#stone_tool_materials" }
+
+# --- Building blocks ----------------------------------------------------------
+[[shaped]]
+result = "stone_bricks"
+count = 4
+pattern = ["SS", "SS"]
+key = { S = "stone" }
+
+[[shaped]]
+result = "sandstone"
+pattern = ["SS", "SS"]
+key = { S = "sand" }
+
+[[shaped]]
+result = "cut_sandstone"
+count = 4
+pattern = ["SS", "SS"]
+key = { S = "sandstone" }
+
+[[shaped]]
+result = "deepslate_bricks"
+count = 4
+pattern = ["DD", "DD"]
+key = { D = "deepslate" }
+
+# --- Tools: wood, stone, iron, gold, diamond ------------------------------------
+# (Pickaxe XXX/ | / | ; axe XX/X|/ | ; shovel X/|/| ; hoe XX/ |/ | ; sword X/X/|)
+[[shaped]]
+result = "wooden_pickaxe"
+pattern = ["XXX", " | ", " | "]
+key = { X = "#planks", "|" = "stick" }
+
+[[shaped]]
+result = "wooden_axe"
+pattern = ["XX", "X|", " |"]
+key = { X = "#planks", "|" = "stick" }
+
+[[shaped]]
+result = "wooden_shovel"
+pattern = ["X", "|", "|"]
+key = { X = "#planks", "|" = "stick" }
+
+[[shaped]]
+result = "wooden_hoe"
+pattern = ["XX", " |", " |"]
+key = { X = "#planks", "|" = "stick" }
+
+[[shaped]]
+result = "wooden_sword"
+pattern = ["X", "X", "|"]
+key = { X = "#planks", "|" = "stick" }
+
+[[shaped]]
+result = "stone_pickaxe"
+pattern = ["XXX", " | ", " | "]
+key = { X = "#stone_tool_materials", "|" = "stick" }
+
+[[shaped]]
+result = "stone_axe"
+pattern = ["XX", "X|", " |"]
+key = { X = "#stone_tool_materials", "|" = "stick" }
+
+[[shaped]]
+result = "stone_shovel"
+pattern = ["X", "|", "|"]
+key = { X = "#stone_tool_materials", "|" = "stick" }
+
+[[shaped]]
+result = "stone_hoe"
+pattern = ["XX", " |", " |"]
+key = { X = "#stone_tool_materials", "|" = "stick" }
+
+[[shaped]]
+result = "stone_sword"
+pattern = ["X", "X", "|"]
+key = { X = "#stone_tool_materials", "|" = "stick" }
+
+[[shaped]]
+result = "iron_pickaxe"
+pattern = ["XXX", " | ", " | "]
+key = { X = "iron_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "iron_axe"
+pattern = ["XX", "X|", " |"]
+key = { X = "iron_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "iron_shovel"
+pattern = ["X", "|", "|"]
+key = { X = "iron_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "iron_hoe"
+pattern = ["XX", " |", " |"]
+key = { X = "iron_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "iron_sword"
+pattern = ["X", "X", "|"]
+key = { X = "iron_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "golden_pickaxe"
+pattern = ["XXX", " | ", " | "]
+key = { X = "gold_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "golden_axe"
+pattern = ["XX", "X|", " |"]
+key = { X = "gold_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "golden_shovel"
+pattern = ["X", "|", "|"]
+key = { X = "gold_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "golden_hoe"
+pattern = ["XX", " |", " |"]
+key = { X = "gold_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "golden_sword"
+pattern = ["X", "X", "|"]
+key = { X = "gold_ingot", "|" = "stick" }
+
+[[shaped]]
+result = "diamond_pickaxe"
+pattern = ["XXX", " | ", " | "]
+key = { X = "diamond", "|" = "stick" }
+
+[[shaped]]
+result = "diamond_axe"
+pattern = ["XX", "X|", " |"]
+key = { X = "diamond", "|" = "stick" }
+
+[[shaped]]
+result = "diamond_shovel"
+pattern = ["X", "|", "|"]
+key = { X = "diamond", "|" = "stick" }
+
+[[shaped]]
+result = "diamond_hoe"
+pattern = ["XX", " |", " |"]
+key = { X = "diamond", "|" = "stick" }
+
+[[shaped]]
+result = "diamond_sword"
+pattern = ["X", "X", "|"]
+key = { X = "diamond", "|" = "stick" }
+
+# --- Smelting -----------------------------------------------------------------
+[[smelting]]
+input = "raw_iron"
+result = "iron_ingot"
+
+[[smelting]]
+input = "raw_gold"
+result = "gold_ingot"
+
+[[smelting]]
+input = "raw_copper"
+result = "copper_ingot"
+
+[[smelting]]
+input = "cobblestone"
+result = "stone"
+
+[[smelting]]
+input = "sand"
+result = "glass"
+
+[[smelting]]
+input = "#logs"
+result = "charcoal"
+
+[fuels]
+coal = 1600
+charcoal = 1600
+oak_log = 300
+birch_log = 300
+spruce_log = 300
+oak_planks = 300
+birch_planks = 300
+spruce_planks = 300
+crafting_table = 300
+stick = 100
+wooden_pickaxe = 200
+wooden_axe = 200
+wooden_shovel = 200
+wooden_hoe = 200
+wooden_sword = 200

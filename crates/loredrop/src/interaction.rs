@@ -70,12 +70,29 @@ impl Game {
             self.attack_cooldown = BREAK_REPEAT_TICKS;
         }
         let use_pressed = input.take_press(Action::UseItem);
-        if (use_pressed || (input.is_held(Action::UseItem) && self.use_cooldown == 0)) && self.place_held() {
+        // Using a block (crafting table…) takes priority over placing, unless
+        // sneaking — exactly like Minecraft.
+        if use_pressed && !input.is_held(Action::Sneak) && self.use_target_block() {
+            self.use_cooldown = PLACE_REPEAT_TICKS;
+        } else if (use_pressed || (input.is_held(Action::UseItem) && self.use_cooldown == 0))
+            && self.place_held()
+        {
             self.use_cooldown = PLACE_REPEAT_TICKS;
         }
         if input.take_press(Action::PickBlock) {
             self.pick_block();
         }
+    }
+
+    /// Right-click on an interactive block. Returns true if it did something.
+    fn use_target_block(&mut self) -> bool {
+        let Some(hit) = self.target else { return false };
+        let id = self.world.map.block(hit.pos);
+        if id.is_some() && id == self.ids.crafting_table {
+            self.open_request = Some(crate::screens::Screen::CraftingTable);
+            return true;
+        }
+        false
     }
 
     /// Removes the targeted block. Returns true if something was broken.
