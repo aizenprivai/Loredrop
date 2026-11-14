@@ -71,7 +71,7 @@
 
 ## Infrastructure
 - [x] Local git repository with history
-- [ ] Push to GitHub — director must create an empty repository and connect it
+- [x] Pushed to GitHub: https://github.com/aizenprivai/Loredrop (2026-11-14)
 
 ## Open design items
 See GDD.md §16.

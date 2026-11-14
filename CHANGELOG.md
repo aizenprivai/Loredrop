@@ -139,3 +139,4 @@
 - **Underwater view**: blue fog and tint when the camera is in water.
 - `--map` marks ruins (red/orange/cyan/purple) and prints the nearest of each kind.
 - 83 automated tests; clippy and rustdoc clean.
+- Project pushed to GitHub (private repository aizenprivai/Loredrop) with full history.
