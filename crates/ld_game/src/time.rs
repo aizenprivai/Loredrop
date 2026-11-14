@@ -87,6 +87,12 @@ impl WorldTime {
         self.sun_height_factor() < 0.25
     }
 
+    /// How many light levels the night takes off sky light (0 at day, 11 at
+    /// night — Minecraft's "sky darkening"). Spawning uses sky light minus this.
+    pub fn sky_darkening(self) -> u8 {
+        ((1.0 - self.sun_height_factor()) * 11.0).round() as u8
+    }
+
     pub fn moon_phase(self) -> u32 {
         (self.day() % MOON_PHASES) as u32
     }
@@ -186,6 +192,12 @@ mod tests {
         assert!(!WorldTime::at(12_000).is_night());
         assert!(WorldTime::at(14_000).is_night());
         assert!(!WorldTime::at(23_500).is_night());
+    }
+
+    #[test]
+    fn sky_darkening_matches_minecraft_extremes() {
+        assert_eq!(WorldTime::at(6_000).sky_darkening(), 0);
+        assert_eq!(WorldTime::at(18_000).sky_darkening(), 11);
     }
 
     #[test]

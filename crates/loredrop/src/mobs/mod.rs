@@ -16,9 +16,13 @@
 //!   slowly grow. Placed positions are remembered in [`Mobs::placed`].
 //!
 //! Spawning: animals appear in groups when a column is first loaded; hostile
-//! creatures appear near the player in dark places with no sky above (caves
-//! and covered areas — until the day/night cycle of Phase 8 makes the surface
-//! dark at night). Peaceful difficulty spawns no hostiles.
+//! (and neutral) creatures appear near the player where it is dark enough —
+//! Minecraft's rule: no block light, and sky light minus the night's
+//! darkening at most 7. That means caves, and the surface at night.
+//! Peaceful difficulty spawns no hostiles.
+//!
+//! Daylight: zombies and skeletons catch fire under open sky by day (unless
+//! in water); spiders don't attack in bright light unless hurt first.
 
 pub mod path;
 pub mod render;
@@ -89,6 +93,8 @@ pub struct Mob {
     pub anger: u32,
     /// The block held in its arms (block-moving creatures).
     pub carrying: Option<BlockId>,
+    /// Ticks of fire left (burning in daylight); 0 = not burning.
+    pub burning: u32,
 }
 
 /// An arrow in flight (shot by skeletons).
@@ -216,6 +222,7 @@ impl Mobs {
             horizontal_collision: false,
             anger: 0,
             carrying: None,
+            burning: 0,
         });
         self.next_id += 1;
     }
@@ -250,7 +257,8 @@ impl Mobs {
                     m.path.clear();
                 }
                 Category::Neutral => self.provoke(index),
-                Category::Hostile => {}
+                // Remembered so light-shy hostiles (spiders) fight back by day.
+                Category::Hostile => m.anger = ANGER_TICKS,
             }
         }
         true
@@ -298,6 +306,7 @@ impl Mobs {
         world: &World,
         target: Target,
         difficulty: Difficulty,
+        sky_darkening: u8,
     ) -> (Vec<MobEvent>, Vec<Death>) {
         self.tick += 1;
         self.claimed.clear();
@@ -325,8 +334,13 @@ impl Mobs {
                 physics(m, def, world, None, 0.0);
                 continue;
             }
+            self.daylight_fire(i, def, world, sky_darkening);
+            if self.list[i].death_time > 0 {
+                continue; // burned to death this tick
+            }
             // --- Decide where to go ---
-            let (goal_dir, speed_mod) = self.think(i, def, &view, &target, difficulty, &mut events);
+            let (goal_dir, speed_mod) =
+                self.think(i, def, &view, &target, difficulty, sky_darkening, &mut events);
             let m = &mut self.list[i];
             physics(m, def, world, goal_dir, speed_mod);
         }
@@ -335,7 +349,33 @@ impl Mobs {
         (events, deaths)
     }
 
+    /// Zombies and skeletons catch fire in sunlight (8 s of fire, renewed while
+    /// in the sun, put out by water) and take 1 damage per second while burning.
+    fn daylight_fire(&mut self, i: usize, def: &MobDef, world: &World, sky_darkening: u8) {
+        let m = &self.list[i];
+        let eyes = feet_block(m.pos + DVec3::new(0.0, def.height * 0.85, 0.0));
+        let in_water =
+            world.map.block(feet_block(m.pos)).is_some_and(|b| world.registry.get(b).name == "water");
+        let sunny = sky_darkening < 4 && world.light_at(eyes).0 == 15;
+        let m = &mut self.list[i];
+        if in_water {
+            m.burning = 0;
+        } else if def.burns_in_daylight && sunny {
+            m.burning = m.burning.max(160);
+        }
+        if m.burning > 0 {
+            m.burning -= 1;
+            // Once a second (the fire timer is refilled while in the sun, so
+            // count by age instead).
+            if m.age.is_multiple_of(20) {
+                let pos = m.pos;
+                self.hurt(i, 1.0, pos, 0.0);
+            }
+        }
+    }
+
     /// AI for creature `i`: returns the direction to move (if any) and a speed multiplier.
+    #[allow(clippy::too_many_arguments)]
     fn think(
         &mut self,
         i: usize,
@@ -343,6 +383,7 @@ impl Mobs {
         view: &WorldView,
         target: &Target,
         difficulty: Difficulty,
+        sky_darkening: u8,
         events: &mut Vec<MobEvent>,
     ) -> (Option<DVec3>, f64) {
         let height = def.height.ceil() as i32;
@@ -352,7 +393,18 @@ impl Mobs {
             self.list[i].anger = 0; // nothing to be angry at (Creative, dead, Peaceful)
         }
         let angry = neutral && self.list[i].anger > 0;
-        let hostile = def.category == Category::Hostile && can_fight;
+        let mut hostile = def.category == Category::Hostile && can_fight;
+        if hostile && def.calm_in_light && self.list[i].anger == 0 {
+            // Spiders: peaceful in bright light (level 12+) unless provoked.
+            let (sky, block) = view.0.light_at(feet_block(self.list[i].pos));
+            if sky.saturating_sub(sky_darkening).max(block) >= 12 {
+                hostile = false;
+                if self.list[i].brain == Brain::Chase {
+                    self.list[i].brain = Brain::Idle(20);
+                    self.list[i].path.clear();
+                }
+            }
+        }
         let m_pos = self.list[i].pos;
         let to_player = target.feet - m_pos;
         let dist = to_player.length();
@@ -665,7 +717,13 @@ impl Mobs {
 
     /// Tries to spawn hostile (and neutral, e.g. Hollow) creatures in dark
     /// spots 24–64 blocks from the player. Peaceful spawns neither.
-    pub fn spawn_hostiles(&mut self, world: &World, player: DVec3, difficulty: Difficulty) {
+    pub fn spawn_hostiles(
+        &mut self,
+        world: &World,
+        player: DVec3,
+        difficulty: Difficulty,
+        sky_darkening: u8,
+    ) {
         if difficulty == Difficulty::Peaceful {
             self.list.retain(|m| self.defs.get(m.kind).category != Category::Hostile);
             return;
@@ -705,7 +763,12 @@ impl Mobs {
                 })
                 .expect("total > 0");
             let p = BlockPos::new(x, y, z);
-            if !standable(&view, p, h.ceil() as i32) || view.is_water(p) || !roofed(world, p) {
+            if !standable(&view, p, h.ceil() as i32) || view.is_water(p) {
+                continue;
+            }
+            // Minecraft: no block light, and dark enough sky light.
+            let (sky, block) = world.light_at(p);
+            if block > 0 || sky.saturating_sub(sky_darkening) > 7 {
                 continue;
             }
             let n = self.range(group[0] as i32, group[1] as i32);
@@ -733,16 +796,6 @@ impl Mobs {
             loaded && !(hostile && (d > 128.0 || (d > 32.0 && r < 1.0 / 800.0)))
         });
     }
-}
-
-/// True if there is a solid block somewhere above `p` (no sky access).
-fn roofed(world: &World, p: BlockPos) -> bool {
-    for y in (p.y + 2)..320 {
-        if world.map.block(BlockPos::new(p.x, y, p.z)).is_some_and(|id| world.registry.get(id).is_opaque()) {
-            return true;
-        }
-    }
-    false
 }
 
 fn feet_block(p: DVec3) -> BlockPos {

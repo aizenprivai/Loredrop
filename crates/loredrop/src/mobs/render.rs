@@ -95,7 +95,14 @@ impl Mobs {
         let swing_amount = ((m.pos - m.prev_pos).length() as f32 * 6.0).min(1.0);
         let phase = m.walk_dist * 3.0;
         // Red tint while hurt or dying.
-        let tint = if m.hurt_time > 0 || m.death_time > 0 { 0xFF_8080 } else { 0xFF_FFFF };
+        let tint = if m.hurt_time > 0 || m.death_time > 0 {
+            0xFF_8080
+        } else if m.burning > 0 {
+            // Flickering orange while on fire.
+            if (m.age / 3).is_multiple_of(2) { 0xFF_B060 } else { 0xFF_D080 }
+        } else {
+            0xFF_FFFF
+        };
         let wing_flap = if m.on_ground { 0.0 } else { (m.age as f32 * 1.5).sin() * 60.0 };
         let carried = if m.death_time == 0 { m.carrying.and_then(block_look) } else { None };
         for part in &def.parts {

@@ -25,7 +25,7 @@
 | KB-021 | Info | Open | Simulated input in the test environment doubles mouse-wheel events (like mouse motion); real hardware is unaffected. |
 | KB-022 | — | Fixed (Phase 7) | ~~Attacks have nothing to hit~~ — creatures can now be attacked. |
 | KB-023 | — | Fixed (Phase 7) | ~~Apples are the only food~~ — animals drop meat, which can be cooked. |
-| KB-024 | Low | By design (until Phase 8) | Hostile creatures only spawn in dark places with no sky above (caves, covered areas); without a day/night cycle the surface never gets dark. |
+| KB-024 | — | Fixed (Phase 8) | ~~Hostiles only spawn under a roof~~ — they now spawn by light level: caves, and the surface at night. |
 | KB-025 | — | Fixed (Phase 7) | ~~The Hollow has no behaviour~~ — anger, block moving and natural spawning implemented. |
 | KB-026 | Low | Open (Phase 9) | Creatures are not saved: any creature in an area that unloads (or when the game closes) is removed. The list of Hollow-placed blocks is not saved either, so after a restart breaking them angers nobody. |
 | KB-027 | Info | By design | Hollows leave one-block holes in the ground where they pick blocks up (like their Minecraft counterpart). They never take blocks from under the player or another creature, or blocks a Hollow placed. |

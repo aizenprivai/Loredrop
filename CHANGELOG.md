@@ -289,3 +289,12 @@
   light per section 2.0 → ~0.9 ms; render-distance-8 load 1.2 s → 1.9 s.
 - Developer examples: `cargo run -p ld_worldgen --example find_cave` /
   `--example light_bench`.
+
+### 2026-11-14 — Phase 8 (part 3): creatures and light
+- Hostile and neutral creatures spawn by Minecraft's light rule (block light
+  0, sky light minus the night's darkening ≤ 7): caves, and the surface at
+  night. Replaces the temporary "roofed" check.
+- `burns_in_daylight` (zombie, skeleton): catch fire under open sky by day,
+  1 damage per second, put out by water; flickering orange while burning.
+- `calm_in_light` (spider): ignores the player in light level 12+ unless hurt.
+- `WorldTime::sky_darkening` (0 by day, 11 at night). 3 new tests.

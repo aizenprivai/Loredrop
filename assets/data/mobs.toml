@@ -7,6 +7,8 @@
 #   width, height      hitbox in blocks
 #   attack_damage      melee damage on Normal difficulty (Easy ×0.5+1, Hard ×1.5)
 #   ranged             true: shoots arrows instead of melee (skeleton-style)
+#   burns_in_daylight  catches fire under open sky during the day (zombie, skeleton)
+#   calm_in_light      won't attack in bright light (level 12+) unless hurt first (spider)
 #   drops              "item", "item:min-max" or "item@chance", rolled on death
 #   carries            neutral block-movers only: block names it picks up and places
 #   angry_speed        neutral only: speed multiplier while provoked (default 1.0)
@@ -105,6 +107,7 @@ parts = [
 name = "zombie"
 display = "Zombie"
 category = "hostile"
+burns_in_daylight = true
 health = 20
 speed = 0.23
 width = 0.6
@@ -125,6 +128,7 @@ parts = [
 name = "skeleton"
 display = "Skeleton"
 category = "hostile"
+burns_in_daylight = true
 health = 20
 speed = 0.25
 width = 0.6
@@ -146,6 +150,7 @@ parts = [
 name = "spider"
 display = "Spider"
 category = "hostile"
+calm_in_light = true
 health = 16
 speed = 0.3
 width = 1.4

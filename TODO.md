@@ -134,17 +134,15 @@
 - [x] Director approval of Phase 7 report
 
 ## Deferred from Phase 7
-- [ ] Hostiles on the surface at night — needs the day/night cycle (Phase 8)
 - [ ] Creatures are not saved (Phase 9)
 - [ ] Creature sounds (Phase 8 audio)
 - [ ] Hollow-placed block list is not saved (Phase 9)
-- [ ] Hollows on the surface at night (needs day/night, Phase 8)
 - [ ] Long-legged walk animation looks exaggerated on the Hollow (tune swing by leg length)
 
 ## Phase 8 — World simulation & atmosphere
 - [x] Part 1: day/night cycle (Minecraft timing), sky gradient, sunrise/sunset glow, sun, moon phases, stars; daylight dims the world; settings + `--time`; F3 clock
 - [x] Part 2: lighting — sky + block light (flood fill per mesh job), smooth lighting, dark caves, cave fog, lava/lit furnace/torch light, torch block + recipe, brightness setting
-- [ ] Part 3: hostiles (and Hollows) spawn on the surface at night by light level
+- [x] Part 3: spawning by light level (surface at night, caves), zombies/skeletons burn in daylight, spiders calm in bright light
 - [ ] Part 4: weather (rain, snow, thunderstorms)
 - [ ] Part 5: water/lava flow; falling sand and gravel
 - [ ] Part 6: seasons (design questions for the director first)

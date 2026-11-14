@@ -484,14 +484,15 @@ impl Game {
         for chunk in std::mem::take(&mut self.world.newly_loaded) {
             self.mobs.spawn_animals_in(&self.world, chunk);
         }
-        self.mobs.spawn_hostiles(&self.world, self.player.pos, self.difficulty);
+        let darkening = self.time.sky_darkening();
+        self.mobs.spawn_hostiles(&self.world, self.player.pos, self.difficulty, darkening);
         let target = crate::mobs::Target {
             feet: self.player.pos,
             eyes: self.player.pos + DVec3::new(0.0, self.eye, 0.0),
             aabb: self.player.aabb(),
             attackable: self.mode == GameMode::Survival && !self.stats.is_dead(),
         };
-        let (events, deaths) = self.mobs.tick(&self.world, target, self.difficulty);
+        let (events, deaths) = self.mobs.tick(&self.world, target, self.difficulty, darkening);
         for e in events {
             let (damage, from) = match e {
                 crate::mobs::MobEvent::HurtPlayer { damage, from } => (damage, from),
@@ -1174,6 +1175,60 @@ mod tests {
             g.tick(&mut input, &s);
         }
         assert_eq!(g.time.ticks, 150, "frozen");
+    }
+
+    #[test]
+    fn zombies_burn_in_daylight_but_not_at_night() {
+        for (time, burns) in [(6_000, true), (18_000, false)] {
+            let mut g = game_with_mobs();
+            g.set_start_mode(GameMode::Creative);
+            g.time = ld_game::time::WorldTime::at(time);
+            let mut input = InputState::new();
+            run(&mut g, &mut input, 1);
+            let zombie = g.mobs.defs.id("zombie").unwrap();
+            g.mobs.spawn(zombie, glam::DVec3::new(10.5, 0.0, 10.5));
+            g.mobs.list[0].brain = crate::mobs::Brain::Idle(10_000);
+            run(&mut g, &mut input, 100);
+            let z = &g.mobs.list[0];
+            assert_eq!(z.burning > 0, burns, "time {time}");
+            assert_eq!(z.health < 20.0, burns, "time {time}: health {}", z.health);
+        }
+    }
+
+    #[test]
+    fn spiders_leave_you_alone_in_daylight_unless_hit() {
+        let mut g = game_with_mobs();
+        g.set_start_mode(GameMode::Survival);
+        g.time = ld_game::time::WorldTime::at(6_000);
+        let mut input = InputState::new();
+        run(&mut g, &mut input, 1);
+        let spider = g.mobs.defs.id("spider").unwrap();
+        g.mobs.spawn(spider, glam::DVec3::new(0.5, 0.0, -3.5));
+        run(&mut g, &mut input, 100);
+        assert_eq!(g.stats.health, 20.0, "calm in bright light");
+        let from = g.player.pos;
+        g.mobs.hurt(0, 1.0, from, 0.0);
+        run(&mut g, &mut input, 100);
+        assert!(g.stats.health < 20.0, "fights back once hit");
+    }
+
+    #[test]
+    fn hostiles_spawn_on_the_surface_at_night_only() {
+        let count = |time: u64| {
+            let mut g = game_with_mobs();
+            g.set_start_mode(GameMode::Creative);
+            g.time = ld_game::time::WorldTime::at(time);
+            run(&mut g, &mut InputState::new(), 1);
+            let mut spawned = 0;
+            for _ in 0..3000 {
+                let before = g.mobs.list.len();
+                g.tick_mobs();
+                spawned += g.mobs.list.len().saturating_sub(before);
+            }
+            spawned
+        };
+        assert!(count(18_000) > 0, "monsters appear at midnight on open ground");
+        assert_eq!(count(6_000), 0, "none at noon");
     }
 
     #[test]

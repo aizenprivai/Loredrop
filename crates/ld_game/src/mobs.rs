@@ -75,6 +75,10 @@ pub struct MobDef {
     pub height: f64,
     pub attack_damage: f32,
     pub ranged: bool,
+    /// Catches fire in sunlight (zombies, skeletons).
+    pub burns_in_daylight: bool,
+    /// Ignores the player in bright light unless hurt first (spiders).
+    pub calm_in_light: bool,
     pub drops: Vec<Drop>,
     pub spawn: SpawnRule,
     pub parts: Vec<ModelPart>,
@@ -117,6 +121,10 @@ struct MobEntry {
     height: f64,
     attack_damage: Option<f32>,
     ranged: Option<bool>,
+    #[serde(default)]
+    burns_in_daylight: bool,
+    #[serde(default)]
+    calm_in_light: bool,
     #[serde(default)]
     drops: Vec<String>,
     spawn: Option<SpawnEntry>,
@@ -171,6 +179,8 @@ impl MobRegistry {
                 height: e.height,
                 attack_damage: e.attack_damage.unwrap_or(0.0),
                 ranged: e.ranged.unwrap_or(false),
+                burns_in_daylight: e.burns_in_daylight,
+                calm_in_light: e.calm_in_light,
                 drops,
                 spawn,
                 parts: e.parts,
