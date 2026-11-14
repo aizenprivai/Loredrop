@@ -231,7 +231,26 @@
 - Director-approved design for **the Hollow** (Loredrop original, placeholder
   name): 2.5-block weathered stone figure, gold glow in its cracks, blank face;
   neutral; 40 health, 7 damage; rare (8 %) `lore_fragment` drop.
-- Data entry, skins and the `lore_fragment` item added. Behaviour not yet
-  implemented (see TODO).
+- Data entry, skins and the `lore_fragment` item added.
 - Added `CLAUDE.md` (working agreement and status for new sessions).
 - Brought all project documents up to date with Phase 7.
+
+### 2026-11-14 — Phase 7 (part 3): the Hollow's behaviour
+- **Neutral anger** (`loredrop::mobs`): Hollows ignore the player until hit;
+  then they chase for 30 s (`ANGER_TICKS`) at 1.4× speed (`angry_speed` in
+  mobs.toml) and hit for 7. Anger clears in Creative, on death or on Peaceful.
+- **Block moving**: while calm, a Hollow sometimes picks up a nearby natural
+  block (`carries` list in mobs.toml) with open air above, and later places
+  it on solid ground, preferring spots touching earlier Hollow-placed blocks
+  so its "builds" grow. Never takes blocks under the player or a creature, or
+  blocks a Hollow placed. Placed positions are kept in `Mobs::placed`.
+- **Provocation**: breaking a Hollow-placed block angers every Hollow within
+  16 blocks. A dying Hollow drops the block it carries.
+- **Rendering**: carried block drawn between the hands; arms held forward.
+- **Spawning**: Hollows now spawn naturally in dark, roofed places (sharing
+  the hostile cap; none on Peaceful) and despawn like hostiles.
+- **Lore fragments**: right-click to read a fragment not yet in your journal
+  (consumed in Survival); if all are known it shows one again and is kept.
+- 9 new tests (138 total) plus an ignored timing test (`creature_tick_cost`).
+- Toolchain: fixed warnings raised by Rust 1.100 (clippy `as_chunks`, three
+  unused dependencies); clippy clean again.

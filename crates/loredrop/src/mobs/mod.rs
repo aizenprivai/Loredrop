@@ -8,6 +8,12 @@
 //!   Spiders climb walls.
 //! * Creatures take damage from players with Minecraft's knockback and a
 //!   10-tick invulnerability, fall over when they die, and drop loot.
+//! * **Neutral** creatures (the Hollow) ignore the player until provoked —
+//!   attacked, or a block a Hollow placed is broken — then chase and fight
+//!   like hostiles for 30 seconds. While calm, Hollows pick up natural blocks
+//!   (listed under `carries` in mobs.toml) and put them down elsewhere,
+//!   preferring spots next to blocks they placed before, so their "builds"
+//!   slowly grow. Placed positions are remembered in [`Mobs::placed`].
 //!
 //! Spawning: animals appear in groups when a column is first loaded; hostile
 //! creatures appear near the player in dark places with no sky above (caves
@@ -24,8 +30,24 @@ use ld_game::mobs::{Category, MobDef, MobKind, MobRegistry};
 use ld_game::stats::Difficulty;
 use ld_physics::player::Fluid;
 use ld_physics::{Aabb, move_and_collide};
+use ld_world::BlockId;
 use path::{PathWorld, find_path, standable};
+use std::collections::HashSet;
 use std::sync::Arc;
+
+/// How long a provoked neutral creature stays angry (30 s, within Minecraft's
+/// 20–39 s range for neutral mobs).
+pub const ANGER_TICKS: u32 = 600;
+
+/// Breaking a Hollow-placed block angers every Hollow within this many blocks.
+pub const PROVOKE_RADIUS: f64 = 16.0;
+
+/// Chance that a calm block-mover, when it stops to think, moves a block
+/// instead of wandering off.
+const BLOCK_ACTION_CHANCE: f64 = 0.4;
+
+/// How far (in blocks, horizontally) a creature reaches to pick up or place.
+const BLOCK_REACH: i32 = 2;
 
 /// What a creature is currently doing.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -63,6 +85,10 @@ pub struct Mob {
     attack_cooldown: u32,
     pub age: u32,
     horizontal_collision: bool,
+    /// Ticks of anger left (neutral creatures; 0 = calm).
+    pub anger: u32,
+    /// The block held in its arms (block-moving creatures).
+    pub carrying: Option<BlockId>,
 }
 
 /// An arrow in flight (shot by skeletons).
@@ -79,6 +105,16 @@ pub struct Arrow {
 pub enum MobEvent {
     /// The player was hit: damage and the attacker's position (for knockback).
     HurtPlayer { damage: f32, from: DVec3 },
+    /// A creature changed a block (picked one up: `block` is air; or put one down).
+    SetBlock { pos: BlockPos, block: BlockId },
+}
+
+/// A creature that finished dying this tick: where, what, and the block it
+/// was carrying (dropped as an item).
+pub struct Death {
+    pub pos: DVec3,
+    pub kind: MobKind,
+    pub carrying: Option<BlockId>,
 }
 
 /// The player as creatures see them.
@@ -98,6 +134,12 @@ pub struct Mobs {
     pub list: Vec<Mob>,
     pub arrows: Vec<Arrow>,
     pub defs: Arc<MobRegistry>,
+    /// Blocks placed by Hollows. Breaking one provokes nearby Hollows; Hollows
+    /// never pick these up again. (Not saved yet — Phase 9.)
+    pub placed: HashSet<BlockPos>,
+    /// Positions already changed this tick, so two creatures can't take or
+    /// fill the same spot before the world is updated.
+    claimed: HashSet<BlockPos>,
     next_id: u32,
     rng: u64,
     tick: u64,
@@ -126,7 +168,16 @@ impl PathWorld for WorldView<'_> {
 
 impl Mobs {
     pub fn new(defs: Arc<MobRegistry>) -> Self {
-        Self { list: Vec::new(), arrows: Vec::new(), defs, next_id: 1, rng: 0x5DEE_CE66_D1CE_4E5B, tick: 0 }
+        Self {
+            list: Vec::new(),
+            arrows: Vec::new(),
+            defs,
+            placed: HashSet::new(),
+            claimed: HashSet::new(),
+            next_id: 1,
+            rng: 0x5DEE_CE66_D1CE_4E5B,
+            tick: 0,
+        }
     }
 
     fn rand(&mut self) -> f64 {
@@ -163,6 +214,8 @@ impl Mobs {
             attack_cooldown: 0,
             age: 0,
             horizontal_collision: false,
+            anger: 0,
+            carrying: None,
         });
         self.next_id += 1;
     }
@@ -190,10 +243,52 @@ impl Mobs {
         }
         if m.health <= 0.0 {
             m.death_time = 1;
-        } else if self.defs.get(m.kind).category == Category::Passive {
-            m.brain = Brain::Panic(60);
-            m.path.clear();
+        } else {
+            match self.defs.get(m.kind).category {
+                Category::Passive => {
+                    m.brain = Brain::Panic(60);
+                    m.path.clear();
+                }
+                Category::Neutral => self.provoke(index),
+                Category::Hostile => {}
+            }
         }
+        true
+    }
+
+    /// Makes neutral creature `index` angry at the player.
+    fn provoke(&mut self, index: usize) {
+        let m = &mut self.list[index];
+        m.anger = ANGER_TICKS;
+        m.brain = Brain::Chase;
+        m.path.clear();
+    }
+
+    /// Angers every living neutral creature within `radius` of `center`
+    /// (used when a Hollow-placed block is broken). Returns how many.
+    pub fn provoke_near(&mut self, center: DVec3, radius: f64) -> usize {
+        let mut n = 0;
+        for i in 0..self.list.len() {
+            let m = &self.list[i];
+            if m.death_time == 0
+                && self.defs.get(m.kind).category == Category::Neutral
+                && m.pos.distance(center) <= radius
+            {
+                self.provoke(i);
+                n += 1;
+            }
+        }
+        n
+    }
+
+    /// Call when the player removes the block at `pos`: if a Hollow placed it,
+    /// nearby Hollows become angry. Returns true if that happened.
+    pub fn block_broken(&mut self, pos: BlockPos) -> bool {
+        if !self.placed.remove(&pos) {
+            return false;
+        }
+        let center = DVec3::new(pos.x as f64 + 0.5, pos.y as f64 + 0.5, pos.z as f64 + 0.5);
+        self.provoke_near(center, PROVOKE_RADIUS);
         true
     }
 
@@ -203,8 +298,9 @@ impl Mobs {
         world: &World,
         target: Target,
         difficulty: Difficulty,
-    ) -> (Vec<MobEvent>, Vec<(DVec3, MobKind)>) {
+    ) -> (Vec<MobEvent>, Vec<Death>) {
         self.tick += 1;
+        self.claimed.clear();
         let mut events = Vec::new();
         let mut deaths = Vec::new();
         let view = WorldView(world);
@@ -218,18 +314,19 @@ impl Mobs {
                 m.age += 1;
                 m.hurt_time = m.hurt_time.saturating_sub(1);
                 m.attack_cooldown = m.attack_cooldown.saturating_sub(1);
+                m.anger = m.anger.saturating_sub(1);
             }
             if self.list[i].death_time > 0 {
                 let m = &mut self.list[i];
                 m.death_time += 1;
                 if m.death_time == 20 {
-                    deaths.push((m.pos, m.kind));
+                    deaths.push(Death { pos: m.pos, kind: m.kind, carrying: m.carrying.take() });
                 }
                 physics(m, def, world, None, 0.0);
                 continue;
             }
             // --- Decide where to go ---
-            let (goal_dir, speed_mod) = self.think(i, def, &view, target, difficulty, &mut events);
+            let (goal_dir, speed_mod) = self.think(i, def, &view, &target, difficulty, &mut events);
             let m = &mut self.list[i];
             physics(m, def, world, goal_dir, speed_mod);
         }
@@ -244,17 +341,34 @@ impl Mobs {
         i: usize,
         def: &MobDef,
         view: &WorldView,
-        target: Target,
+        target: &Target,
         difficulty: Difficulty,
         events: &mut Vec<MobEvent>,
     ) -> (Option<DVec3>, f64) {
         let height = def.height.ceil() as i32;
-        let hostile =
-            def.category == Category::Hostile && target.attackable && difficulty != Difficulty::Peaceful;
+        let can_fight = target.attackable && difficulty != Difficulty::Peaceful;
+        let neutral = def.category == Category::Neutral;
+        if neutral && !can_fight {
+            self.list[i].anger = 0; // nothing to be angry at (Creative, dead, Peaceful)
+        }
+        let angry = neutral && self.list[i].anger > 0;
+        let hostile = def.category == Category::Hostile && can_fight;
         let m_pos = self.list[i].pos;
         let to_player = target.feet - m_pos;
         let dist = to_player.length();
+        // Provoked creatures are faster (the Hollow: "fast and strong when angry").
+        let chase_speed = if angry { def.angry_speed as f64 } else { 1.0 };
 
+        if neutral {
+            // Angry: hunt the player (they know who did it, no need to see them).
+            // Calm again: stop chasing.
+            if angry && dist < 48.0 {
+                self.list[i].brain = Brain::Chase;
+            } else if self.list[i].brain == Brain::Chase {
+                self.list[i].brain = Brain::Idle(40);
+                self.list[i].path.clear();
+            }
+        }
         // Hostiles notice the player within 16 blocks if they can see them (or very close).
         if hostile {
             let eyes = m_pos + DVec3::new(0.0, def.height * 0.85, 0.0);
@@ -271,7 +385,15 @@ impl Mobs {
         let brain = self.list[i].brain;
         match brain {
             Brain::Idle(t) => {
-                if t == 0 {
+                if t == 0
+                    && !angry
+                    && !def.carries.is_empty()
+                    && self.rand() < BLOCK_ACTION_CHANCE
+                    && self.block_action(i, def, view.0, target, events)
+                {
+                    let wait = self.range(40, 100) as u32;
+                    self.list[i].brain = Brain::Idle(wait);
+                } else if t == 0 {
                     // Pick a random spot within 8 blocks to wander to.
                     let (dx, dz) = (self.range(-8, 8), self.range(-8, 8));
                     let start = feet_block(m_pos);
@@ -350,16 +472,108 @@ impl Mobs {
                 m.path_timer = m.path_timer.saturating_sub(1);
                 if dist < 2.5 {
                     m.path.clear();
-                    return (Some(DVec3::new(to_player.x, 0.0, to_player.z).normalize_or_zero()), 1.0);
+                    return (
+                        Some(DVec3::new(to_player.x, 0.0, to_player.z).normalize_or_zero()),
+                        chase_speed,
+                    );
                 }
                 if m.path_timer == 0 || m.path.is_empty() {
                     m.path_timer = 10;
                     let start = feet_block(m.pos);
                     m.path = find_path(view, start, feet_block(target.feet), height);
                 }
-                (follow_path(m), 1.0)
+                (follow_path(m), chase_speed)
             }
         }
+    }
+
+    /// A calm block-mover picks up a nearby natural block (if its arms are
+    /// empty) or puts its block down (preferring spots touching blocks Hollows
+    /// placed before). Returns true if it did either.
+    fn block_action(
+        &mut self,
+        i: usize,
+        def: &MobDef,
+        world: &World,
+        target: &Target,
+        events: &mut Vec<MobEvent>,
+    ) -> bool {
+        let reg = &world.registry;
+        let feet = feet_block(self.list[i].pos);
+        let air_at = |p: BlockPos| world.map.block(p) == Some(BlockId::AIR);
+        let mut spots: Vec<(BlockPos, i32)> = Vec::new(); // (position, preference score)
+        for dy in -2..=1 {
+            for dz in -BLOCK_REACH..=BLOCK_REACH {
+                for dx in -BLOCK_REACH..=BLOCK_REACH {
+                    let p = BlockPos::new(feet.x + dx, feet.y + dy, feet.z + dz);
+                    if self.claimed.contains(&p) {
+                        continue;
+                    }
+                    let up = BlockPos::new(p.x, p.y + 1, p.z);
+                    let cell = Aabb::block(p.x, p.y, p.z);
+                    match self.list[i].carrying {
+                        None => {
+                            // A carriable block with open air on top (so no plant
+                            // is left floating), not one that the player or a
+                            // creature stands on, never one a Hollow built.
+                            let Some(id) = world.map.block(p) else { continue };
+                            let down = DVec3::new(0.0, -0.1, 0.0);
+                            let standing_on = cell.intersects(&target.aabb.offset(down))
+                                || self.list.iter().any(|m| cell.intersects(&self.hitbox(m).offset(down)));
+                            if self.placed.contains(&p)
+                                || standing_on
+                                || !air_at(up)
+                                || !def.carries.iter().any(|n| *n == reg.get(id).name)
+                            {
+                                continue;
+                            }
+                            spots.push((p, 0));
+                        }
+                        Some(_) => {
+                            // An air cell on solid ground, clear of the player and creatures.
+                            let below = BlockPos::new(p.x, p.y - 1, p.z);
+                            let ground = world.map.block(below).is_some_and(|b| reg.get(b).solid);
+                            if !air_at(p)
+                                || !ground
+                                || cell.intersects(&target.aabb)
+                                || self
+                                    .list
+                                    .iter()
+                                    .any(|m| m.death_time == 0 && cell.intersects(&self.hitbox(m)))
+                            {
+                                continue;
+                            }
+                            // Prefer growing earlier builds: count touching Hollow-placed blocks.
+                            let n = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)]
+                                .iter()
+                                .filter(|(x, y, z)| {
+                                    self.placed.contains(&BlockPos::new(p.x + x, p.y + y, p.z + z))
+                                })
+                                .count() as i32;
+                            spots.push((p, n));
+                        }
+                    }
+                }
+            }
+        }
+        let Some(best) = spots.iter().map(|s| s.1).max() else { return false };
+        spots.retain(|s| s.1 == best);
+        let pick = spots[(self.rand() * spots.len() as f64) as usize % spots.len()].0;
+        self.claimed.insert(pick);
+        let center = DVec3::new(pick.x as f64 + 0.5, pick.y as f64 + 0.5, pick.z as f64 + 0.5);
+        let m = &mut self.list[i];
+        m.yaw = yaw_towards(center - m.pos);
+        match m.carrying.take() {
+            None => {
+                m.carrying = world.map.block(pick);
+                events.push(MobEvent::SetBlock { pos: pick, block: BlockId::AIR });
+            }
+            Some(block) => {
+                self.placed.insert(pick);
+                events.push(MobEvent::SetBlock { pos: pick, block });
+            }
+        }
+        true
     }
 
     fn tick_arrows(&mut self, world: &World, target: Target, events: &mut Vec<MobEvent>) {
@@ -449,21 +663,22 @@ impl Mobs {
         }
     }
 
-    /// Tries to spawn hostile creatures in dark spots 24–64 blocks from the player.
+    /// Tries to spawn hostile (and neutral, e.g. Hollow) creatures in dark
+    /// spots 24–64 blocks from the player. Peaceful spawns neither.
     pub fn spawn_hostiles(&mut self, world: &World, player: DVec3, difficulty: Difficulty) {
         if difficulty == Difficulty::Peaceful {
             self.list.retain(|m| self.defs.get(m.kind).category != Category::Hostile);
             return;
         }
         let hostiles =
-            self.list.iter().filter(|m| self.defs.get(m.kind).category == Category::Hostile).count();
+            self.list.iter().filter(|m| self.defs.get(m.kind).category != Category::Passive).count();
         if hostiles >= HOSTILE_CAP || !self.tick.is_multiple_of(20) {
             return;
         }
         let candidates: Vec<(MobKind, u32, [u32; 2], f64)> = self
             .defs
             .iter()
-            .filter(|(_, d)| d.category == Category::Hostile && d.spawn.dark)
+            .filter(|(_, d)| d.category != Category::Passive && d.spawn.dark)
             .map(|(k, d)| (k, d.spawn.weight, d.spawn.group, d.height))
             .collect();
         let total: u32 = candidates.iter().map(|c| c.1).sum();
@@ -504,8 +719,9 @@ impl Mobs {
         }
     }
 
-    /// Removes creatures in unloaded areas, and hostiles far from the player
-    /// (instantly beyond 128 blocks, now and then beyond 32 — like Minecraft).
+    /// Removes creatures in unloaded areas, and hostile/neutral ones far from
+    /// the player (instantly beyond 128 blocks, now and then beyond 32 — like
+    /// Minecraft). A despawning Hollow's carried block is lost, as in Minecraft.
     pub fn despawn(&mut self, world: &World, player: DVec3) {
         let defs = self.defs.clone();
         let mut r = self.rand();
@@ -513,7 +729,7 @@ impl Mobs {
             r = (r * 9301.0 + 0.4929) % 1.0; // cheap per-creature randomness
             let loaded = world.is_loaded(feet_block(m.pos).chunk());
             let d = m.pos.distance(player);
-            let hostile = defs.get(m.kind).category == Category::Hostile;
+            let hostile = defs.get(m.kind).category != Category::Passive;
             loaded && !(hostile && (d > 128.0 || (d > 32.0 && r < 1.0 / 800.0)))
         });
     }

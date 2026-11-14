@@ -10,4 +10,3 @@ publish.workspace = true
 [dependencies]
 ld_input = { workspace = true }
 toml_edit = { workspace = true }
-log = { workspace = true }

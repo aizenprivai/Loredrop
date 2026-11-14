@@ -6,9 +6,24 @@ use super::{Arrow, Mob, Mobs};
 use glam::{DVec3, Mat3, Vec3};
 use ld_game::mobs::PartRole;
 use ld_render::EntityVertex;
+use ld_world::BlockId;
 
 /// Texture-array layer for each creature texture name.
 pub type LayerOf<'a> = &'a dyn Fn(&str) -> u32;
+
+/// How a carried block looks: texture layers and tints per face (East,
+/// West, Up, Down, South, North), as for dropped block items.
+pub type BlockLook<'a> = &'a dyn Fn(BlockId) -> Option<([u32; 6], [u32; 6])>;
+
+/// Arm angle (degrees, forward and slightly down) while carrying a block.
+const CARRY_ARM_PITCH: f32 = -60.0;
+
+/// Where a carried block sits in model space (blocks): between the hands,
+/// which at `CARRY_ARM_PITCH` end ≈1.3 up and ≈1.1 forward on a Hollow.
+const CARRY_OFFSET: Vec3 = Vec3::new(0.0, 1.3, 0.85);
+
+/// Half the edge of a carried block (a half-size block, like a held item).
+const CARRY_HALF_SIZE: f32 = 0.25;
 
 fn lerp_angle(a: f32, b: f32, t: f32) -> f32 {
     let mut d = (b - a) % 360.0;
@@ -34,18 +49,27 @@ impl Mobs {
         camera: DVec3,
         alpha: f64,
         layer_of: LayerOf,
+        block_look: BlockLook,
         arrow_layer: u32,
         out: &mut Vec<EntityVertex>,
     ) {
         for m in &self.list {
-            self.build_mob(m, camera, alpha, layer_of, out);
+            self.build_mob(m, camera, alpha, layer_of, block_look, out);
         }
         for a in &self.arrows {
             build_arrow(a, camera, alpha, arrow_layer, out);
         }
     }
 
-    fn build_mob(&self, m: &Mob, camera: DVec3, alpha: f64, layer_of: LayerOf, out: &mut Vec<EntityVertex>) {
+    fn build_mob(
+        &self,
+        m: &Mob,
+        camera: DVec3,
+        alpha: f64,
+        layer_of: LayerOf,
+        block_look: BlockLook,
+        out: &mut Vec<EntityVertex>,
+    ) {
         let def = self.defs.get(m.kind);
         let pos = m.prev_pos.lerp(m.pos, alpha);
         let base = (pos - camera).as_vec3();
@@ -66,9 +90,12 @@ impl Mobs {
         // Red tint while hurt or dying.
         let tint = if m.hurt_time > 0 || m.death_time > 0 { 0xFF_8080 } else { 0xFF_FFFF };
         let wing_flap = if m.on_ground { 0.0 } else { (m.age as f32 * 1.5).sin() * 60.0 };
+        let carried = if m.death_time == 0 { m.carrying.and_then(block_look) } else { None };
         for part in &def.parts {
             let mut anim = [0.0f32; 3];
             match part.role {
+                // Arms held out in front while carrying a block.
+                PartRole::Arm if carried.is_some() => anim[0] = CARRY_ARM_PITCH,
                 PartRole::Leg | PartRole::Arm => {
                     let p = phase + if part.phase == 1 { std::f32::consts::PI } else { 0.0 };
                     if def.name == "spider" {
@@ -163,6 +190,11 @@ impl Mobs {
             for (p, layer, shade) in faces {
                 push_quad(out, p, layer, shade_color(tint, shade));
             }
+        }
+        if let Some((layers, tints)) = carried {
+            // `cube` turns by `angle` the same way `body` does for `yaw`.
+            let center = base + body * CARRY_OFFSET;
+            crate::entities::cube(out, center, CARRY_HALF_SIZE, yaw, layers, tints);
         }
     }
 }

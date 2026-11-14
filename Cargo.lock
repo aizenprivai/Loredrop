@@ -1435,16 +1435,12 @@ name = "ld_config"
 version = "0.1.0"
 dependencies = [
  "ld_input",
- "log",
  "toml_edit",
 ]
 
 [[package]]
 name = "ld_core"
 version = "0.1.0"
-dependencies = [
- "glam",
-]
 
 [[package]]
 name = "ld_game"

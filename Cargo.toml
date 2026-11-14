@@ -48,7 +48,6 @@ image = { version = "0.25", default-features = false, features = ["png"] } # Scr
 # --- concurrency ---
 rayon             = "1"   # Work-stealing thread pool for chunk jobs.
 crossbeam-channel = "0.5" # Lock-free channels between threads.
-parking_lot       = "0.13"
 
 # --- config / serialization ---
 serde     = { version = "1", features = ["derive"] }

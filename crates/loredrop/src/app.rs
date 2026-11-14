@@ -704,7 +704,19 @@ impl App {
         let layers = &self.layers;
         let layer_of = |name: &str| layers.get(&format!("entity/{name}")).copied().unwrap_or(0);
         let arrow_layer = layers.get("item/arrow").copied().unwrap_or(0);
-        self.game.mobs.build_vertices(eye, alpha, &layer_of, arrow_layer, &mut self.entity_vertices);
+        let (items, looks) = (&self.game.items, &self.looks);
+        let block_look = |b: ld_world::BlockId| match looks.get(items.for_block(b)?.0 as usize)? {
+            crate::entities::ItemLook::Cube { layers, tints } => Some((*layers, *tints)),
+            crate::entities::ItemLook::Flat { .. } => None,
+        };
+        self.game.mobs.build_vertices(
+            eye,
+            alpha,
+            &layer_of,
+            &block_look,
+            arrow_layer,
+            &mut self.entity_vertices,
+        );
         if let Some((pos, progress)) = self.game.breaking {
             let stage = ((progress * 10.0) as usize).min(9);
             let min = glam::DVec3::new(pos.x as f64, pos.y as f64, pos.z as f64);

@@ -75,7 +75,7 @@ impl PendingCopy {
         };
         let mut rgba = Vec::with_capacity((self.width * self.height * 4) as usize);
         for row in data.chunks(self.padded_row as usize) {
-            for px in row[..(self.width * 4) as usize].chunks_exact(4) {
+            for px in row[..(self.width * 4) as usize].as_chunks::<4>().0 {
                 if self.bgra {
                     rgba.extend_from_slice(&[px[2], px[1], px[0], 255]);
                 } else {

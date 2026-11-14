@@ -3,7 +3,7 @@
 A voxel sandbox game written in Rust: the feel of modern Minecraft, with its own
 world, art and lore. See `GDD.md` for the design and `ROADMAP.md` for progress.
 
-**Current state: Phase 7 (creatures & AI, in progress)** — endless seeded
+**Current state: Phase 7 (creatures & AI) — awaiting approval** — endless seeded
 worlds with continents, oceans, rivers, 11 biomes, snow-capped mountains,
 caves, ores, deepslate, trees and plants, streamed on background threads and
 rendered Vulkan-first. F3 shows performance, chunk, biome and seed info. Ruins of the
@@ -11,8 +11,10 @@ Builders hold lore tablets you can read. Break and place blocks, mine with
 tools in Survival (Minecraft's timings and drops), craft, smelt, and collect
 lore in your journal. Survive with health, hunger, breath and armour; eat, swim, die and respawn.
 Animals (cow, pig, sheep, chicken) roam in herds and drop meat, leather and
-wool; zombies, skeletons and spiders lurk in dark places. No day/night cycle,
-lighting or saving yet.
+wool; zombies, skeletons and spiders lurk in dark places. In caves you may meet
+the Hollow: a silent stone figure that moves blocks around, harmless until you
+hit it or break what it built. It sometimes drops a lore fragment you can read
+(right click). No day/night cycle, lighting or saving yet.
 
 ## Build & run
 

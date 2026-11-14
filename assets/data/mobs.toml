@@ -8,6 +8,8 @@
 #   attack_damage      melee damage on Normal difficulty (Easy ×0.5+1, Hard ×1.5)
 #   ranged             true: shoots arrows instead of melee (skeleton-style)
 #   drops              "item", "item:min-max" or "item@chance", rolled on death
+#   carries            neutral block-movers only: block names it picks up and places
+#   angry_speed        neutral only: speed multiplier while provoked (default 1.0)
 #   spawn              where it appears:
 #                        surface = grassy biomes (list) when a chunk is first generated
 #                        dark    = places without sky access (caves) near the player
@@ -180,7 +182,10 @@ speed = 0.3
 width = 0.6
 height = 2.5
 attack_damage = 7
+angry_speed = 1.4
 drops = ["lore_fragment@0.08"]
+carries = ["stone", "cobblestone", "dirt", "grass_block", "sand", "gravel", "deepslate",
+           "granite", "diorite", "andesite", "sandstone", "clay", "snow_block"]
 spawn = { dark = true, group = [1, 2], weight = 12 }
 parts = [
   { name = "head", box = [-4, 32, -4, 8, 8, 8], pivot = [0, 32, 0], role = "head", tex = "hollow_head", front = "hollow_face" },

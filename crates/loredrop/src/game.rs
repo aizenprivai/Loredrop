@@ -473,7 +473,13 @@ impl Game {
         };
         let (events, deaths) = self.mobs.tick(&self.world, target, self.difficulty);
         for e in events {
-            let crate::mobs::MobEvent::HurtPlayer { damage, from } = e;
+            let (damage, from) = match e {
+                crate::mobs::MobEvent::HurtPlayer { damage, from } => (damage, from),
+                crate::mobs::MobEvent::SetBlock { pos, block } => {
+                    self.world.set_block(pos, block);
+                    continue;
+                }
+            };
             let before = self.stats.health;
             self.hurt(damage, ld_game::stats::DamageSource::Attack);
             if self.stats.health < before {
@@ -487,9 +493,14 @@ impl Game {
                 }
             }
         }
-        for (pos, kind) in deaths {
+        for crate::mobs::Death { pos, kind, carrying } in deaths {
             let drops = self.mobs.defs.get(kind).drops.clone();
-            for s in ld_game::mining::roll_drops(&drops, || self.next_random_pub()) {
+            let mut stacks = ld_game::mining::roll_drops(&drops, || self.next_random_pub());
+            // A Hollow drops the block it was carrying.
+            if let Some(item) = carrying.and_then(|b| self.items.for_block(b)) {
+                stacks.push(ld_game::ItemStack::new(item, 1));
+            }
+            for s in stacks {
                 self.entities.drop_from_block(
                     pos.x.floor() as i32,
                     pos.y.floor() as i32,
@@ -624,7 +635,7 @@ mod tests {
     //! Headless tests of the real game-loop logic against a real `World`,
     //! using a hand-built test generator (floor, wall, staircase, tunnel).
     use super::*;
-    use ld_core::coords::ChunkPos;
+    use ld_core::coords::{BlockPos, ChunkPos};
     use ld_input::Bindings;
     use ld_world::{BlockId, BlockRegistry, ChunkColumn};
     use ld_worldgen::TerrainGenerator;
@@ -951,6 +962,177 @@ mod tests {
         g.mobs.spawn(zombie, glam::DVec3::new(0.5, 0.0, -6.5));
         run(&mut g, &mut InputState::new(), 2);
         assert!(g.mobs.list.is_empty());
+    }
+
+    /// A Survival test game with one Hollow `dz` blocks in front (−Z) of the player.
+    fn game_with_hollow(dz: f64) -> (Game, InputState) {
+        let mut g = game_with_mobs();
+        g.set_start_mode(GameMode::Survival);
+        let mut input = InputState::new();
+        run(&mut g, &mut input, 1);
+        let hollow = g.mobs.defs.id("hollow").unwrap();
+        g.mobs.spawn(hollow, glam::DVec3::new(0.5, 0.0, -dz));
+        (g, input)
+    }
+
+    #[test]
+    fn hollow_ignores_the_player_until_attacked() {
+        let (mut g, mut input) = game_with_hollow(2.5);
+        run(&mut g, &mut input, 200);
+        assert_eq!(g.stats.health, 20.0, "a calm Hollow never attacks");
+        assert_eq!(g.mobs.list[0].anger, 0);
+        let from = g.player.pos;
+        assert!(g.mobs.hurt(0, 1.0, from, 0.0));
+        assert_eq!(g.mobs.list[0].anger, crate::mobs::ANGER_TICKS);
+        assert_eq!(g.mobs.list[0].brain, crate::mobs::Brain::Chase);
+        run(&mut g, &mut input, 60);
+        assert!(g.stats.health < 20.0, "the angry Hollow hit back (health {})", g.stats.health);
+        // 7 damage on Normal (no armour): one hit takes the player to 13 or below.
+        assert!(g.stats.health <= 13.0);
+    }
+
+    #[test]
+    fn hollow_calms_down_after_its_anger_runs_out() {
+        let (mut g, mut input) = game_with_hollow(20.0);
+        let from = g.player.pos;
+        g.mobs.hurt(0, 1.0, from, 0.0);
+        g.player.pos = glam::DVec3::new(0.5, 0.0, 30.0); // out of reach behind the wall
+        g.mobs.list[0].anger = 5;
+        run(&mut g, &mut input, 10);
+        assert_eq!(g.mobs.list[0].anger, 0);
+        assert_ne!(g.mobs.list[0].brain, crate::mobs::Brain::Chase);
+    }
+
+    #[test]
+    fn hollow_picks_up_and_places_natural_blocks() {
+        let (mut g, mut input) = game_with_hollow(6.5);
+        g.set_start_mode(GameMode::Creative); // keep the test about blocks, not combat
+        let stone = g.world.registry.id("stone").unwrap();
+        let mut picked_up = false;
+        for _ in 0..4000 {
+            run(&mut g, &mut input, 1);
+            picked_up |= g.mobs.list[0].carrying == Some(stone);
+            if !g.mobs.placed.is_empty() {
+                break;
+            }
+        }
+        assert!(picked_up, "the Hollow picked up a stone block");
+        let &pos = g.mobs.placed.iter().next().expect("the Hollow placed a block");
+        assert_eq!(g.world.map.block(pos), Some(stone), "placed block is in the world");
+        assert!(g.world.map.block(BlockPos::new(pos.x, pos.y - 1, pos.z)).is_some_and(|b| b != BlockId::AIR));
+    }
+
+    #[test]
+    fn hollow_never_takes_the_block_under_the_player() {
+        let (mut g, mut input) = game_with_hollow(1.5);
+        g.set_start_mode(GameMode::Creative);
+        let under = BlockPos::new(0, -1, 0);
+        for _ in 0..3000 {
+            run(&mut g, &mut input, 1);
+            g.player.pos = glam::DVec3::new(0.5, 0.0, 0.5);
+            g.player.vel = glam::DVec3::ZERO;
+            assert_ne!(g.world.map.block(under), Some(BlockId::AIR), "the floor under the player was taken");
+        }
+    }
+
+    #[test]
+    fn hollow_carries_only_real_blocks() {
+        let g = game_with_mobs();
+        let hollow = g.mobs.defs.id("hollow").unwrap();
+        for name in &g.mobs.defs.get(hollow).carries {
+            assert!(g.world.registry.id(name).is_some(), "unknown block '{name}' in carries");
+        }
+    }
+
+    #[test]
+    fn breaking_a_hollow_block_angers_nearby_hollows_only() {
+        let (mut g, _) = game_with_hollow(6.5);
+        let hollow = g.mobs.defs.id("hollow").unwrap();
+        g.mobs.spawn(hollow, glam::DVec3::new(3.5, 0.0, -5.5)); // near
+        g.mobs.spawn(hollow, glam::DVec3::new(0.5, 0.0, -30.5)); // too far (beyond 16)
+        let stone = g.world.registry.id("stone").unwrap();
+        let pos = BlockPos::new(2, 0, -3);
+        g.world.set_block(pos, stone);
+        g.mobs.placed.insert(pos);
+        // Breaking an ordinary block does nothing.
+        g.remove_block(BlockPos::new(5, -1, 5), false);
+        assert!(g.mobs.list.iter().all(|m| m.anger == 0));
+        g.remove_block(pos, false);
+        assert!(g.mobs.list[0].anger > 0 && g.mobs.list[1].anger > 0);
+        assert_eq!(g.mobs.list[2].anger, 0, "the distant Hollow stays calm");
+        assert!(!g.mobs.placed.contains(&pos));
+    }
+
+    #[test]
+    fn dying_hollow_drops_its_carried_block() {
+        let (mut g, mut input) = game_with_hollow(3.5);
+        let stone = g.world.registry.id("stone").unwrap();
+        g.mobs.list[0].carrying = Some(stone);
+        let from = g.player.pos;
+        g.mobs.hurt(0, 100.0, from, 0.0);
+        run(&mut g, &mut input, 25);
+        assert!(g.mobs.list.is_empty());
+        assert!(
+            g.entities.list.iter().any(|e| g.items.get(e.stack.item).name == "stone"),
+            "the carried stone dropped"
+        );
+    }
+
+    #[test]
+    fn reading_a_lore_fragment_adds_an_unread_entry() {
+        let mut g = game();
+        g.set_start_mode(GameMode::Survival);
+        g.lore = Arc::new(ld_assets::Lore {
+            fragments: vec![("golden".into(), "a".into()), ("deep".into(), "b".into())],
+        });
+        g.journal.push(("golden".into(), 0));
+        g.inventory.slots[0] = Some(ld_game::ItemStack::new(g.items.id("lore_fragment").unwrap(), 2));
+        g.pitch = -90.0; // look at the sky
+        let mut input = InputState::new();
+        press(&mut input, "MouseRight", true);
+        run(&mut g, &mut input, 1);
+        press(&mut input, "MouseRight", false);
+        assert_eq!(g.journal, vec![("golden".into(), 0), ("deep".into(), 0)], "the unread fragment");
+        assert_eq!(g.inventory.slots[0].unwrap().count, 1, "one fragment used up");
+        // Everything known now: the item shows an old fragment and is kept.
+        run(&mut g, &mut input, 5);
+        press(&mut input, "MouseRight", true);
+        run(&mut g, &mut input, 1);
+        assert_eq!(g.journal.len(), 2);
+        assert_eq!(g.inventory.slots[0].unwrap().count, 1);
+    }
+
+    /// Rough cost of creature AI per tick (run with `--ignored --nocapture`):
+    /// 50 zombies chasing a Survival player plus 20 calm Hollows moving blocks.
+    #[test]
+    #[ignore]
+    fn creature_tick_cost() {
+        let mut g = game_with_mobs();
+        g.set_start_mode(GameMode::Survival);
+        g.stats.health = 1.0e9; // keep the player alive
+        let mut input = InputState::new();
+        run(&mut g, &mut input, 1);
+        let (zombie, hollow) = (g.mobs.defs.id("zombie").unwrap(), g.mobs.defs.id("hollow").unwrap());
+        for i in 0..50 {
+            g.mobs.spawn(
+                zombie,
+                glam::DVec3::new(-12.5 + (i % 10) as f64 * 2.5, 0.0, -14.5 - (i / 10) as f64 * 2.0),
+            );
+        }
+        for i in 0..20 {
+            g.mobs.spawn(
+                hollow,
+                glam::DVec3::new(-20.5 + (i % 10) as f64 * 4.0, 0.0, 20.5 + (i / 10) as f64 * 4.0),
+            );
+        }
+        let start = std::time::Instant::now();
+        let ticks = 400;
+        for _ in 0..ticks {
+            g.tick_mobs();
+            g.stats.health = 1.0e9;
+        }
+        let per_tick = start.elapsed().as_secs_f64() * 1000.0 / ticks as f64;
+        println!("{} creatures: {per_tick:.3} ms per tick (budget 50 ms)", g.mobs.list.len());
     }
 
     #[test]

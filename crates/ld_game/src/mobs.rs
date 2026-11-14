@@ -78,6 +78,11 @@ pub struct MobDef {
     pub drops: Vec<Drop>,
     pub spawn: SpawnRule,
     pub parts: Vec<ModelPart>,
+    /// Block names this creature picks up and places elsewhere (the Hollow).
+    /// Empty for creatures that don't move blocks.
+    pub carries: Vec<String>,
+    /// Speed multiplier while a neutral creature is angry (1.0 = normal).
+    pub angry_speed: f32,
 }
 
 /// Numeric creature type ID.
@@ -116,6 +121,9 @@ struct MobEntry {
     drops: Vec<String>,
     spawn: Option<SpawnEntry>,
     parts: Vec<ModelPart>,
+    #[serde(default)]
+    carries: Vec<String>,
+    angry_speed: Option<f32>,
 }
 
 #[derive(Debug, Clone)]
@@ -166,6 +174,8 @@ impl MobRegistry {
                 drops,
                 spawn,
                 parts: e.parts,
+                carries: e.carries,
+                angry_speed: e.angry_speed.unwrap_or(1.0),
             });
         }
         Ok(Self { defs })

@@ -89,9 +89,17 @@ emulating a GPU — not meaningful for real hardware; draw calls are a Phase 10 
 
 ## Phases 5–7
 
-No new measurements were taken during Phases 5–7 (gameplay, survival,
-creatures). **To do before the Phase 7 report:** re-run `--bench-world 8`
-and the worldgen bench, and measure creature AI/pathfinding cost per tick.
+Measured on the **director's laptop** (Linux, 3 worker threads) on
+2026-11-14, so not directly comparable with the cloud numbers above.
+
+| Benchmark | Result |
+|---|---|
+| Creature AI, 67 creatures (≈50 zombies chasing + ≈20 Hollows moving blocks), flat test world, release | **0.086 ms per tick** (budget: 50 ms) |
+| `--bench-world 8`, seed 12345 | 361 columns, 1 730 sections, 292 906 quads in 1.19 s (304 columns/s); world 7.0 MB, meshes 14.1 MB |
+
+Creature cost is negligible. Re-run with `cargo test --release -p loredrop
+creature_tick_cost -- --ignored --nocapture`. The test world is flat, so
+pathfinding around real terrain will cost more, but there's plenty of headroom.
 
 ## First real-hardware test (director's PC, 2026-11-14)
 

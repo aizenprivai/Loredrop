@@ -93,6 +93,7 @@ impl Game {
         // sneaking — exactly like Minecraft.
         let used = use_pressed && !input.is_held(Action::Sneak) && self.use_target_block();
         let used = used || (use_pressed && self.equip_held_armor());
+        let used = used || (use_pressed && self.read_lore_fragment());
         self.update_eating(!used && input.is_held(Action::UseItem));
         // Only place if the click wasn't used on a block (short-circuit order matters).
         let placed = !used
@@ -206,6 +207,42 @@ impl Game {
         true
     }
 
+    /// Right-click with a lore fragment (dropped by Hollows): reads a story
+    /// fragment you haven't found yet, adds it to the journal and uses up the
+    /// item (Survival). If every fragment is already known, it shows one you
+    /// have read and the item is kept. Returns true if the click was used.
+    fn read_lore_fragment(&mut self) -> bool {
+        let Some(stack) = self.inventory.held() else { return false };
+        if self.items.get(stack.item).name != "lore_fragment" {
+            return false;
+        }
+        let mut unread: Vec<(String, usize)> = Vec::new();
+        for era in ["golden", "expansion", "deep"] {
+            for index in 0..self.lore.era(era).len() {
+                if !self.journal.iter().any(|(e, i)| e == era && *i == index) {
+                    unread.push((era.to_string(), index));
+                }
+            }
+        }
+        let (era, index) = if unread.is_empty() {
+            if self.journal.is_empty() {
+                return false; // no lore loaded at all
+            }
+            let k = (self.next_random() * self.journal.len() as f32) as usize % self.journal.len();
+            self.journal[k].clone()
+        } else {
+            let k = (self.next_random() * unread.len() as f32) as usize % unread.len();
+            let pick = unread.swap_remove(k);
+            self.journal.push(pick.clone());
+            if self.mode == GameMode::Survival {
+                self.inventory.consume_held();
+            }
+            pick
+        };
+        self.open_request = Some(crate::screens::Screen::Tablet { era, index });
+        true
+    }
+
     /// Holding use with food: eat after 32 ticks (1.6 s), like Minecraft.
     fn update_eating(&mut self, holding_use: bool) {
         let food = self.inventory.held().and_then(|s| self.items.get(s.item).food);
@@ -249,7 +286,7 @@ impl Game {
 
     /// Removes a block; plants standing on it lose their support and pop
     /// off too. With `drop_items`, popped plants drop as items (Survival).
-    fn remove_block(&mut self, pos: BlockPos, drop_items: bool) {
+    pub(crate) fn remove_block(&mut self, pos: BlockPos, drop_items: bool) {
         // A furnace spills its contents when broken (in any mode).
         if let Some(f) = self.furnaces.remove(&pos) {
             for s in f.contents() {
@@ -257,6 +294,8 @@ impl Game {
             }
         }
         self.world.set_block(pos, BlockId::AIR);
+        // Breaking something a Hollow built angers the Hollows nearby.
+        self.mobs.block_broken(pos);
         let above = BlockPos::new(pos.x, pos.y + 1, pos.z);
         if let Some(id) = self.world.map.block(above)
             && self.world.registry.get(id).shape == Shape::Cross

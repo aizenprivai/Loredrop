@@ -124,19 +124,22 @@
 - [x] Spawning (herds on chunk load; hostiles in dark roofed spots), despawning, loot
 - [x] New foods + cooking, leather armour, wool; `--summon` developer option
 - [x] The Hollow: design approved, data, skins, `lore_fragment` item
-- [ ] Hollow: neutral anger state (chase only when provoked)
-- [ ] Hollow: pick up / carry / place natural blocks; remember placed positions
-- [ ] Hollow: breaking a Hollow-placed block angers nearby Hollows
-- [ ] Hollow: render the carried block in its arms
-- [ ] Hollow: natural spawning (currently only via `--summon`)
-- [ ] Right-click `lore_fragment` → read an undiscovered fragment into the journal
-- [ ] Tests, screenshots, docs, Phase 7 report
+- [x] Hollow: neutral anger state (30 s, faster when angry; chase only when provoked)
+- [x] Hollow: pick up / carry / place natural blocks; remember placed positions
+- [x] Hollow: breaking a Hollow-placed block angers Hollows within 16 blocks
+- [x] Hollow: render the carried block in its arms (arms forward)
+- [x] Hollow: natural spawning in dark roofed places (with the hostiles)
+- [x] Right-click `lore_fragment` → read an undiscovered fragment into the journal
+- [x] Tests, screenshots, docs, Phase 7 report
 - [ ] Director approval of Phase 7 report
 
 ## Deferred from Phase 7
 - [ ] Hostiles on the surface at night — needs the day/night cycle (Phase 8)
 - [ ] Creatures are not saved (Phase 9)
 - [ ] Creature sounds (Phase 8 audio)
+- [ ] Hollow-placed block list is not saved (Phase 9)
+- [ ] Hollows on the surface at night (needs day/night, Phase 8)
+- [ ] Long-legged walk animation looks exaggerated on the Hollow (tune swing by leg length)
 
 ## Infrastructure
 - [x] Local git repository with history

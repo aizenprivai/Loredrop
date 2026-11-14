@@ -348,13 +348,23 @@ measured on the director's hardware. CPU-side systems are measured here.
   `mobs.toml`; AI, spawning and physics live in `loredrop::mobs`, rendering
   in `loredrop::mobs::render`.
 - **AI** is a small state machine per creature (`Brain`: Idle, Wander, Panic,
-  Chase). The Hollow's neutral anger state will extend it.
+  Chase). Neutral creatures add an `anger` countdown: while it runs they use
+  the hostile Chase logic.
+- **Creatures never edit the world directly.** `Mobs::tick` only reads the
+  world; block changes come back as `MobEvent::SetBlock` and `Game` applies
+  them with `World::set_block` (so remeshing works as for the player). A
+  per-tick `claimed` set stops two creatures using the same spot in one tick.
+- **Hollow-placed blocks** are tracked in `Mobs::placed`; the player's block
+  removal path (`Game::remove_block`) calls `Mobs::block_broken`, which
+  provokes nearby Hollows. Must be saved with the world in Phase 9.
+- Deaths are reported as `Death { pos, kind, carrying }` so carried blocks drop.
 - **Pathfinding** (`loredrop::mobs::path`) is A* behind a `PathWorld` trait,
   so it is unit-tested without a real world; searches are node-capped.
 - **Events:** creature attacks reach the player as `MobEvent::HurtPlayer`,
   applied through `Game::hurt` (armour applies, like all other damage).
 - Box models render through the Phase 5 entity pipeline, with creature skins
-  added to the shared texture array.
+  added to the shared texture array. Carried blocks reuse the dropped-item
+  cube look (`ItemLook::Cube`), passed to the renderer as a lookup closure.
 
 ## 13. Decisions approved in Phase 1
 
