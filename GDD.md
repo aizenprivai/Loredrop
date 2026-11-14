@@ -1,6 +1,6 @@
 # Loredrop — Game Design Document
 
-> **Status:** APPROVED v1.0 (2026-11-14)
+> **Status:** APPROVED v1.0 (2026-11-14) · v1.1 adds the approved Hollow design
 > **Last updated:** 2026-11-14
 > **Director:** Project owner · **Technical lead:** Claude
 
@@ -87,7 +87,7 @@ types, cave biomes, ores and hazards. 🔓 OPEN: number of layers and their them
 2. They open gateways to the **fire realm** and mine a wondrous material (the top tool tier).
 3. Reaching further, they enter the **final realm**; something there transforms
    them into the **hollow wanderers** that roam at night, still moving blocks with
-   no memory why (our own iconic hostile creature).
+   no memory why (our own iconic creature — neutral, see §5.1 "The Hollow").
 4. **The awakened one** — what they touched — is the final boss.
 5. Some Builders hid their knowledge in ruins as **lore tablets** ("lore drops");
    the player collects them in a journal and follows the trail.
@@ -127,7 +127,20 @@ Tool and armor tiers: **wood → stone → iron → gold → diamond → [own to
 ### 5.1 Creatures
 - Three categories: **passive**, **neutral**, **hostile** (hostiles mostly spawn in darkness).
 - Genre staples used as-is: zombies, skeletons, spiders, common farm and wild animals.
-- Minecraft-iconic mobs replaced by our own designs. 🔓 OPEN: designed in Phase 7.
+- Minecraft-iconic mobs replaced by our own designs. 🔓 OPEN: further designs.
+- Implemented (Phase 7): cow, pig, sheep, chicken (passive); zombie, skeleton,
+  spider (hostile). All defined in `assets/data/mobs.toml`.
+
+#### The Hollow (approved 2026-11-14; placeholder name)
+Our first original creature, from the lore's hollow wanderers.
+- **Look:** tall (2.5 blocks) weathered-stone figure, gold glow in the cracks, blank face.
+- **Behaviour:** neutral. Wanders at night and in caves, picking up and placing
+  natural blocks "as if building something only it can see".
+- **Provocation:** turns hostile if attacked, or if the player breaks a block
+  a Hollow placed (nearby Hollows join in).
+- **When angry:** fast and strong — 7 damage, 40 health.
+- **Drop:** rarely a `lore_fragment` item; right-click to read an undiscovered
+  lore fragment into the journal.
 
 ### 5.2 Combat — modern (1.9+ style)
 Attack cooldown with timing-based damage, weapon speed differences, shields,
@@ -286,6 +299,7 @@ palette-compressed chunks, multithreaded generation/meshing/lighting/saving, LOD
 - Dramatic biome list; underground layer themes
 - Top tool tier name/material
 - Fire realm and final realm: names, look, travel method, boss
-- Own designs for iconic mobs
+- Own designs for further iconic mobs (the Hollow is done)
+- Experience/XP and enchanting
 - Multiplayer: scope and timing
 - Logo and visual identity

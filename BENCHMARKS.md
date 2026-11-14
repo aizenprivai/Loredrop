@@ -87,6 +87,12 @@ uses ~21 MB for world + meshes, far within the 4 GB minimum target.
 In-game software rendering: ~24 FPS, ~186 k triangles, ~650 draw calls (CPU
 emulating a GPU — not meaningful for real hardware; draw calls are a Phase 10 target).
 
+## Phases 5–7
+
+No new measurements were taken during Phases 5–7 (gameplay, survival,
+creatures). **To do before the Phase 7 report:** re-run `--bench-world 8`
+and the worldgen bench, and measure creature AI/pathfinding cost per tick.
+
 ## First real-hardware test (director's PC, 2026-11-14)
 
 Linux, prebuilt release binary, default settings (render distance 8, VSync on):

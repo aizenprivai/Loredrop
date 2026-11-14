@@ -200,3 +200,38 @@
   `gameplay.game_mode` (new games start in Survival with an empty inventory).
 - Fixed: `--pos` no longer moves the world spawn.
 - 123 automated tests; clippy and rustdoc clean.
+- Phase 6 approved by director.
+
+### 2026-11-14 — Phase 7 (part 1): creatures, AI, pathfinding, combat and loot
+- **Creature data** (`ld_game::mobs`, `assets/data/mobs.toml`): stats, drops,
+  spawn rules and box models per creature. Cow, pig, sheep, chicken, zombie,
+  skeleton and spider, each with original skins (`tools/gen_entity_textures.py`).
+- **Rendering** (`loredrop::mobs::render`): box models on the entity pipeline
+  with walk, head-turn, wing-flap, hurt-flash and death (fall-over) animation.
+- **Movement**: Minecraft-style creature physics — swimming, jumping up
+  one-block steps, spiders climbing walls.
+- **Pathfinding** (`loredrop::mobs::path`): A* over the block grid; walk, step
+  up 1, drop down at most 3; capped search falls back to the closest reachable spot.
+- **AI**: passive creatures idle, wander and panic when hurt; hostiles notice
+  a visible player within 16 blocks and chase; melee attacks once per second;
+  skeletons keep their distance and shoot arrows.
+- **Combat**: the Phase 6 rules now hit creatures — cooldown scaling, crits,
+  sweep, knockback, 10-tick invulnerability, weapon wear; creatures damage the
+  player through armour, scaled by difficulty.
+- **Spawning**: animal herds when a column is first loaded; hostiles near the
+  player in dark, roofed spots; none on Peaceful. Hostiles despawn far from
+  the player (always beyond 128 blocks, occasionally beyond 32); creatures in
+  unloaded areas are removed.
+- **Items**: raw and cooked beef, porkchop, mutton and chicken (furnace
+  recipes), rotten flesh, bone, arrow, feather, string, leather, white wool,
+  leather armour set.
+- `--summon a,b` developer option; F3 counts creatures.
+
+### 2026-11-14 — Phase 7 (part 2, in progress): the Hollow
+- Director-approved design for **the Hollow** (Loredrop original, placeholder
+  name): 2.5-block weathered stone figure, gold glow in its cracks, blank face;
+  neutral; 40 health, 7 damage; rare (8 %) `lore_fragment` drop.
+- Data entry, skins and the `lore_fragment` item added. Behaviour not yet
+  implemented (see TODO).
+- Added `CLAUDE.md` (working agreement and status for new sessions).
+- Brought all project documents up to date with Phase 7.

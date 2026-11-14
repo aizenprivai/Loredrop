@@ -13,7 +13,7 @@
 | KB-009 | Low | Open | Leaves in the far distance can look thinner because mipmapped alpha is averaged before the cut-out test (same behaviour as Minecraft). |
 | KB-010 | Low | Open | Rivers sometimes form closed loops and tiny ponds appear inland. Tuning planned. |
 | KB-011 | Low | Open | Mountain peaks are smoother than Minecraft's jagged peaks. |
-| KB-012 | Low | Open | Water is a full block, doesn't flow, and there is no swimming (player sinks). Phases 6/8. |
+| KB-012 | Low | Open (Phase 8) | Water is a full block and doesn't flow. (Swimming was added in Phase 6.) |
 | KB-013 | Low | Open | Caves are as bright as the surface — no lighting system yet (Phase 8). |
 | KB-014 | Low | Open | Ore veins are clipped at chunk borders. |
 | KB-015 | Info | Open | Translucent faces inside one section aren't depth-sorted (only sections are). |
@@ -23,5 +23,8 @@
 | KB-019 | Low | Open | If the inventory is full when a menu closes, items left on the cursor or in the crafting grid are lost instead of dropping. |
 | KB-020 | Low | Open | A tablet's story era is recognised from the block under it; a player-moved tablet may show a different era's fragment. |
 | KB-021 | Info | Open | Simulated input in the test environment doubles mouse-wheel events (like mouse motion); real hardware is unaffected. |
-| KB-022 | Low | Open | Attacks have nothing to hit until creatures exist (Phase 7); the cooldown indicator still works. |
-| KB-023 | Low | Open | The only food so far is apples (rare from oak leaves); Survival food is scarce until animals arrive in Phase 7. |
+| KB-022 | — | Fixed (Phase 7) | ~~Attacks have nothing to hit~~ — creatures can now be attacked. |
+| KB-023 | — | Fixed (Phase 7) | ~~Apples are the only food~~ — animals drop meat, which can be cooked. |
+| KB-024 | Low | By design (until Phase 8) | Hostile creatures only spawn in dark places with no sky above (caves, covered areas); without a day/night cycle the surface never gets dark. |
+| KB-025 | Low | Open (in progress) | The Hollow exists only via `--summon`: it has no behaviour yet (no block moving, no anger) and doesn't spawn naturally. |
+| KB-026 | Low | Open (Phase 9) | Creatures are not saved: any creature in an area that unloads (or when the game closes) is removed. |

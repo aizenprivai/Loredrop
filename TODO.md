@@ -100,16 +100,43 @@
 - [x] Combat rules (cooldown, crits, sweep) + indicator
 - [x] Death screen, item drops on death, respawn
 - [x] Difficulty and starting game-mode settings
-- [ ] Director approval of Phase 6 report
+- [x] Director approval of Phase 6 report
 
 ## Deferred from Phase 6
-- [ ] Hitting creatures, knockback, mob damage to the player — Phase 7 (combat rules are ready)
-- [ ] More food: meat from animals (Phase 7), bread/farming, cooked food in the furnace
-- [ ] Leather and chainmail armour (needs leather from animals — Phase 7)
+- [x] Hitting creatures, knockback, mob damage to the player (Phase 7)
+- [x] Meat from animals and cooked food in the furnace (Phase 7)
+- [ ] Bread / farming
+- [x] Leather armour (Phase 7)
+- [ ] Chainmail armour (Minecraft has no recipe for it; source to decide)
 - [ ] Experience/XP and enchanting — not planned yet (design decision needed)
 - [ ] Bed / custom spawn point
 - [ ] Hunger effects on movement while eating (Minecraft slows you)
 - [ ] Health/hunger saved between sessions — Phase 9
+
+## Phase 7 — Entities & AI
+- [x] Data-driven creatures (`assets/data/mobs.toml`): stats, drops, spawn rules, box models
+- [x] Original skins: cow, pig, sheep, chicken, zombie, skeleton, spider
+- [x] Box-model rendering with walk/head/wing/hurt/death animation
+- [x] Creature physics (swimming, step jumping, spider wall climbing)
+- [x] A* pathfinding (capped search, avoids drops over 3 blocks)
+- [x] Passive AI (idle, wander, panic) and hostile AI (chase, melee, ranged with arrows)
+- [x] Player attacks on creatures (1.9+ rules, knockback, sweep, weapon wear); creature attacks by difficulty
+- [x] Spawning (herds on chunk load; hostiles in dark roofed spots), despawning, loot
+- [x] New foods + cooking, leather armour, wool; `--summon` developer option
+- [x] The Hollow: design approved, data, skins, `lore_fragment` item
+- [ ] Hollow: neutral anger state (chase only when provoked)
+- [ ] Hollow: pick up / carry / place natural blocks; remember placed positions
+- [ ] Hollow: breaking a Hollow-placed block angers nearby Hollows
+- [ ] Hollow: render the carried block in its arms
+- [ ] Hollow: natural spawning (currently only via `--summon`)
+- [ ] Right-click `lore_fragment` → read an undiscovered fragment into the journal
+- [ ] Tests, screenshots, docs, Phase 7 report
+- [ ] Director approval of Phase 7 report
+
+## Deferred from Phase 7
+- [ ] Hostiles on the surface at night — needs the day/night cycle (Phase 8)
+- [ ] Creatures are not saved (Phase 9)
+- [ ] Creature sounds (Phase 8 audio)
 
 ## Infrastructure
 - [x] Local git repository with history

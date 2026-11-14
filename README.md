@@ -3,13 +3,16 @@
 A voxel sandbox game written in Rust: the feel of modern Minecraft, with its own
 world, art and lore. See `GDD.md` for the design and `ROADMAP.md` for progress.
 
-**Current state: Phase 6 (survival)** — endless seeded
+**Current state: Phase 7 (creatures & AI, in progress)** — endless seeded
 worlds with continents, oceans, rivers, 11 biomes, snow-capped mountains,
 caves, ores, deepslate, trees and plants, streamed on background threads and
 rendered Vulkan-first. F3 shows performance, chunk, biome and seed info. Ruins of the
 Builders hold lore tablets you can read. Break and place blocks, mine with
 tools in Survival (Minecraft's timings and drops), craft, smelt, and collect
-lore in your journal. Survive with health, hunger, breath and armour; eat, swim, die and respawn. No creatures, lighting or saving yet.
+lore in your journal. Survive with health, hunger, breath and armour; eat, swim, die and respawn.
+Animals (cow, pig, sheep, chicken) roam in herds and drop meat, leather and
+wool; zombies, skeletons and spiders lurk in dark places. No day/night cycle,
+lighting or saving yet.
 
 ## Build & run
 
@@ -57,6 +60,7 @@ cargo bench -p ld_mesh      # meshing benchmarks (also: -p ld_world)
 cargo run --release -- --bench-world 8   # headless world-loading benchmark
 cargo run --release -- --map 4096 map.png --seed 42   # top-down world map
 cargo run --release -- --seed "my world"  # play a specific seed
+cargo run --release -- --summon cow,zombie  # spawn creatures next to you
 cargo clippy --workspace --all-targets
 cargo doc --no-deps --open  # browsable docs from code comments
 ```

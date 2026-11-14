@@ -10,8 +10,8 @@ Each phase ends with a report and requires director approval before the next beg
 | 3 | Voxel engine & chunk system | ✅ Complete (approved) |
 | 4 | Procedural world generation | ✅ Complete (approved) |
 | 5 | Core gameplay | ✅ Complete (approved) |
-| 6 | Survival systems | 🟡 Implemented & tested — awaiting approval |
-| 7 | Entities & AI | ⏳ |
+| 6 | Survival systems | ✅ Complete (approved) |
+| 7 | Entities & AI | 🟡 In progress (creatures done; the Hollow's behaviour next) |
 | 8 | World simulation & atmosphere (incl. seasons) | ⏳ |
 | 9 | Persistence & advanced systems (incl. mod runtime investigation) | ⏳ |
 | 10 | Optimisation & performance (incl. LOD) | ⏳ |

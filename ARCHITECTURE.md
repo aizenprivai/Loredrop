@@ -1,6 +1,6 @@
 # Loredrop — Technical Architecture
 
-> **Status:** APPROVED v1.0 (Phase 1) · updated v1.5 after Phase 6
+> **Status:** APPROVED v1.0 (Phase 1) · updated v1.6 during Phase 7
 > **Last updated:** 2026-11-14
 
 This document describes *how* Loredrop is built. *What* we build is in `GDD.md`.
@@ -335,6 +335,26 @@ measured on the director's hardware. CPU-side systems are measured here.
   armour, so creatures in Phase 7 use the same path.
 - New `Screen::Death`; app-level flow: death detected after the tick →
   inventory spilled once → death screen → Respawn resets the game state.
+
+### Changes made during Phase 7 (v1.6, in progress)
+
+- **No ECS yet:** `hecs` (proposed in §1.2) was not adopted. Creatures are a
+  plain `Vec<Mob>` inside `loredrop::mobs::Mobs`, owned by `Game`. With a few
+  dozen creatures this is simpler and fast enough; an ECS will be reconsidered
+  if entity counts or kinds grow (e.g. for mods). The planned `ld_entity`
+  crate is therefore not created.
+- **Data vs behaviour split:** `ld_game::mobs` holds pure data (stats, drops,
+  spawn rules, box models, `Category` = passive/neutral/hostile) loaded from
+  `mobs.toml`; AI, spawning and physics live in `loredrop::mobs`, rendering
+  in `loredrop::mobs::render`.
+- **AI** is a small state machine per creature (`Brain`: Idle, Wander, Panic,
+  Chase). The Hollow's neutral anger state will extend it.
+- **Pathfinding** (`loredrop::mobs::path`) is A* behind a `PathWorld` trait,
+  so it is unit-tested without a real world; searches are node-capped.
+- **Events:** creature attacks reach the player as `MobEvent::HurtPlayer`,
+  applied through `Game::hurt` (armour applies, like all other damage).
+- Box models render through the Phase 5 entity pipeline, with creature skins
+  added to the shared texture array.
 
 ## 13. Decisions approved in Phase 1
 
