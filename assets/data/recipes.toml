@@ -196,6 +196,68 @@ result = "diamond_sword"
 pattern = ["X", "X", "|"]
 key = { X = "diamond", "|" = "stick" }
 
+
+# --- Armour -------------------------------------------------------------------
+[[shaped]]
+result = "iron_helmet"
+pattern = ["XXX", "X X"]
+key = { X = "iron_ingot" }
+
+[[shaped]]
+result = "iron_chestplate"
+pattern = ["X X", "XXX", "XXX"]
+key = { X = "iron_ingot" }
+
+[[shaped]]
+result = "iron_leggings"
+pattern = ["XXX", "X X", "X X"]
+key = { X = "iron_ingot" }
+
+[[shaped]]
+result = "iron_boots"
+pattern = ["X X", "X X"]
+key = { X = "iron_ingot" }
+
+[[shaped]]
+result = "golden_helmet"
+pattern = ["XXX", "X X"]
+key = { X = "gold_ingot" }
+
+[[shaped]]
+result = "golden_chestplate"
+pattern = ["X X", "XXX", "XXX"]
+key = { X = "gold_ingot" }
+
+[[shaped]]
+result = "golden_leggings"
+pattern = ["XXX", "X X", "X X"]
+key = { X = "gold_ingot" }
+
+[[shaped]]
+result = "golden_boots"
+pattern = ["X X", "X X"]
+key = { X = "gold_ingot" }
+
+[[shaped]]
+result = "diamond_helmet"
+pattern = ["XXX", "X X"]
+key = { X = "diamond" }
+
+[[shaped]]
+result = "diamond_chestplate"
+pattern = ["X X", "XXX", "XXX"]
+key = { X = "diamond" }
+
+[[shaped]]
+result = "diamond_leggings"
+pattern = ["XXX", "X X", "X X"]
+key = { X = "diamond" }
+
+[[shaped]]
+result = "diamond_boots"
+pattern = ["X X", "X X"]
+key = { X = "diamond" }
+
 # --- Smelting -----------------------------------------------------------------
 [[smelting]]
 input = "raw_iron"

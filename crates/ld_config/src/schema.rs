@@ -3,7 +3,7 @@
 //! Descriptions are written for players, not programmers: say what it does,
 //! what it looks/feels like, and when to change it.
 
-use crate::{Backend, Settings};
+use crate::{Backend, Difficulty, GameModeSetting, Settings};
 use ld_input::Action;
 
 /// A setting's value in a type-erased form, used for loading, saving and menus.
@@ -276,6 +276,30 @@ pub fn schema() -> Vec<SettingDef> {
             kind: Kind::Int { min: 1, max: 256 },
             apply: Apply::Immediately,
             access: int_field!(performance.chunk_uploads_per_frame as u32),
+        },
+        // ---------------- Gameplay ----------------
+        SettingDef {
+            section: "gameplay",
+            name: "difficulty",
+            label: "Difficulty",
+            description: "Peaceful: no hunger loss and health regenerates. Easy: starving stops at \
+                5 hearts. Normal: starving stops at half a heart. Hard: starvation can kill. \
+                (From Phase 7 it also controls how dangerous creatures are.)",
+            performance: "none",
+            kind: Kind::Choice(Difficulty::OPTIONS),
+            apply: Apply::Immediately,
+            access: choice_field!(gameplay.difficulty: Difficulty),
+        },
+        SettingDef {
+            section: "gameplay",
+            name: "game_mode",
+            label: "Starting game mode",
+            description: "Survival: gather, craft, eat and stay alive. Creative: unlimited blocks, \
+                flying, no damage. You can switch at any time with F4 (development shortcut).",
+            performance: "none",
+            kind: Kind::Choice(GameModeSetting::OPTIONS),
+            apply: Apply::OnRestart,
+            access: choice_field!(gameplay.game_mode: GameModeSetting),
         },
         // ---------------- Controls ----------------
         SettingDef {

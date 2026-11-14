@@ -82,6 +82,8 @@ impl Game {
         // Using a block (crafting table…) takes priority over placing, unless
         // sneaking — exactly like Minecraft.
         let used = use_pressed && !input.is_held(Action::Sneak) && self.use_target_block();
+        let used = used || (use_pressed && self.equip_held_armor());
+        self.update_eating(!used && input.is_held(Action::UseItem));
         // Only place if the click wasn't used on a block (short-circuit order matters).
         let placed = !used
             && (use_pressed || (input.is_held(Action::UseItem) && self.use_cooldown == 0))
@@ -116,6 +118,33 @@ impl Game {
             return true;
         }
         false
+    }
+
+    /// Right-click with armour in hand: wear it (swapping with what's worn).
+    fn equip_held_armor(&mut self) -> bool {
+        let Some(stack) = self.inventory.held() else { return false };
+        let ItemKind::Armor(a) = &self.items.get(stack.item).kind else { return false };
+        let slot = a.slot as usize;
+        let old = self.inventory.armor[slot].replace(stack);
+        *self.inventory.held_mut() = old;
+        true
+    }
+
+    /// Holding use with food: eat after 32 ticks (1.6 s), like Minecraft.
+    fn update_eating(&mut self, holding_use: bool) {
+        let food = self.inventory.held().and_then(|s| self.items.get(s.item).food);
+        let can_eat = self.mode == GameMode::Survival && self.stats.food < ld_game::stats::MAX_FOOD;
+        match food {
+            Some((points, saturation)) if holding_use && can_eat => {
+                self.eating += 1;
+                if self.eating >= 32 {
+                    self.eating = 0;
+                    self.stats.eat(points, saturation);
+                    self.inventory.consume_held();
+                }
+            }
+            _ => self.eating = 0,
+        }
     }
 
     /// Which story fragment a tablet holds. The era comes from the ruin it
@@ -204,10 +233,13 @@ impl Game {
         let Some(id) = self.world.map.block(hit.pos) else { return };
         let def = self.world.registry.get(id).clone();
         let tool = self.held_tool();
-        let Some(per_tick) = break_progress_per_tick(&def, tool.as_ref(), self.player.on_ground) else {
+        let Some(mut per_tick) = break_progress_per_tick(&def, tool.as_ref(), self.player.on_ground) else {
             self.breaking = None; // unbreakable
             return;
         };
+        if self.player.fluid == ld_physics::player::Fluid::Water && per_tick < 1.0 {
+            per_tick /= 5.0; // mining under water is 5× slower (Minecraft)
+        }
         let progress = match self.breaking {
             Some((pos, p)) if pos == hit.pos => p + per_tick,
             _ => per_tick,
@@ -223,6 +255,7 @@ impl Game {
         }
         self.spawn_drops(hit.pos, id, tool.as_ref());
         self.remove_block(hit.pos, true);
+        self.stats.exhaust(0.005);
         // Tools wear out: 1 durability per block (2 for swords), not for instant blocks.
         if let Some(t) = tool
             && def.hardness > 0.0

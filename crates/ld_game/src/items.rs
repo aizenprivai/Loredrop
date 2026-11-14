@@ -37,12 +37,32 @@ pub struct ToolInfo {
     pub attack_speed: f32,
 }
 
+/// Which armour slot a piece goes in (index into `Inventory::armor`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ArmorSlot {
+    Helmet = 0,
+    Chestplate = 1,
+    Leggings = 2,
+    Boots = 3,
+}
+
+/// Armour stats (Minecraft scale).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ArmorInfo {
+    pub slot: ArmorSlot,
+    pub defense: i32,
+    pub toughness: f32,
+    pub durability: u16,
+}
+
 /// What an item is.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ItemKind {
     /// Places this block.
     Block(BlockId),
     Tool(ToolInfo),
+    Armor(ArmorInfo),
     /// Materials and everything else.
     Plain,
 }
@@ -56,6 +76,8 @@ pub struct ItemDef {
     pub max_stack: u16,
     /// Sprite in `textures/item/` (non-block items).
     pub texture: String,
+    /// If edible: (hunger points, saturation modifier).
+    pub food: Option<(i32, f32)>,
 }
 
 #[derive(Deserialize)]
@@ -83,6 +105,12 @@ struct ItemEntry {
     tier: Option<String>,
     attack_damage: Option<f32>,
     attack_speed: Option<f32>,
+    food: Option<i32>,
+    saturation: Option<f32>,
+    armor: Option<ArmorSlot>,
+    defense: Option<i32>,
+    toughness: Option<f32>,
+    durability: Option<u16>,
 }
 
 /// All items, indexed by [`ItemId`].
@@ -112,6 +140,7 @@ impl ItemRegistry {
                 kind: ItemKind::Block(id),
                 max_stack: 64,
                 texture: String::new(),
+                food: None,
             })?;
             reg.by_block.insert(id, ItemId(reg.defs.len() as u16 - 1));
         }
@@ -133,12 +162,22 @@ impl ItemRegistry {
                         attack_speed: e.attack_speed.unwrap_or(4.0),
                     })
                 }
-                (None, None) => ItemKind::Plain,
+                (None, None) => match e.armor {
+                    Some(slot) => ItemKind::Armor(ArmorInfo {
+                        slot,
+                        defense: e.defense.unwrap_or(0),
+                        toughness: e.toughness.unwrap_or(0.0),
+                        durability: e.durability.unwrap_or(100),
+                    }),
+                    None => ItemKind::Plain,
+                },
                 _ => return Err(format!("item '{}': `tool` and `tier` must be given together", e.name)),
             };
             let max_stack =
                 if matches!(kind, ItemKind::Tool(_)) { 1 } else { e.max_stack.unwrap_or(64).clamp(1, 64) };
+            let food = e.food.map(|f| (f, e.saturation.unwrap_or(0.6)));
             reg.push(ItemDef {
+                food,
                 display: e.display.unwrap_or_else(|| e.name.clone()),
                 texture: e.texture.unwrap_or_else(|| e.name.clone()),
                 name: e.name,

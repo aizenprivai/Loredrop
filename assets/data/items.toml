@@ -5,6 +5,10 @@
 #   texture         sprite in assets/textures/item/ (default: same as name)
 #   tool, tier      makes it a tool: tool = pickaxe | axe | shovel | hoe | sword
 #   attack_damage   damage dealt (used from Phase 6), attack_speed hits/second
+#   armor           makes it wearable: helmet | chestplate | leggings | boots,
+#                   with `defense` points, `toughness` and `durability`
+#   food, saturation  makes it edible: hunger points restored and saturation
+#                   modifier (Minecraft values; saturation gained = food × modifier × 2)
 #
 # Tier numbers follow Minecraft's so mining and progression feel the same.
 # `level` decides which blocks a tool can harvest (0 wood/gold, 1 stone, 2 iron, 3 diamond).
@@ -33,6 +37,13 @@ durability = 32
 level = 3
 speed = 8.0
 durability = 1561
+
+# --- Food -------------------------------------------------------------------
+[[item]]
+name = "apple"
+display = "Apple"
+food = 4
+saturation = 0.3
 
 # --- Materials ---------------------------------------------------------------
 [[item]]
@@ -287,3 +298,101 @@ tool = "sword"
 tier = "diamond"
 attack_damage = 7.0
 attack_speed = 1.6
+
+# --- Armour (Minecraft values: defense points, toughness, durability) ---------
+[[item]]
+name = "iron_helmet"
+display = "Iron Helmet"
+armor = "helmet"
+defense = 2
+toughness = 0.0
+durability = 165
+
+[[item]]
+name = "iron_chestplate"
+display = "Iron Chestplate"
+armor = "chestplate"
+defense = 6
+toughness = 0.0
+durability = 240
+
+[[item]]
+name = "iron_leggings"
+display = "Iron Leggings"
+armor = "leggings"
+defense = 5
+toughness = 0.0
+durability = 225
+
+[[item]]
+name = "iron_boots"
+display = "Iron Boots"
+armor = "boots"
+defense = 2
+toughness = 0.0
+durability = 195
+
+[[item]]
+name = "golden_helmet"
+display = "Golden Helmet"
+armor = "helmet"
+defense = 2
+toughness = 0.0
+durability = 77
+
+[[item]]
+name = "golden_chestplate"
+display = "Golden Chestplate"
+armor = "chestplate"
+defense = 5
+toughness = 0.0
+durability = 112
+
+[[item]]
+name = "golden_leggings"
+display = "Golden Leggings"
+armor = "leggings"
+defense = 3
+toughness = 0.0
+durability = 105
+
+[[item]]
+name = "golden_boots"
+display = "Golden Boots"
+armor = "boots"
+defense = 1
+toughness = 0.0
+durability = 91
+
+[[item]]
+name = "diamond_helmet"
+display = "Diamond Helmet"
+armor = "helmet"
+defense = 3
+toughness = 2.0
+durability = 363
+
+[[item]]
+name = "diamond_chestplate"
+display = "Diamond Chestplate"
+armor = "chestplate"
+defense = 8
+toughness = 2.0
+durability = 528
+
+[[item]]
+name = "diamond_leggings"
+display = "Diamond Leggings"
+armor = "leggings"
+defense = 6
+toughness = 2.0
+durability = 495
+
+[[item]]
+name = "diamond_boots"
+display = "Diamond Boots"
+armor = "boots"
+defense = 3
+toughness = 2.0
+durability = 429
+

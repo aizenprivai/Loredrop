@@ -134,11 +134,21 @@ fn inventory_screen(ctx: &egui::Context, m: &mut MenuCtx, grid_size: usize) -> b
                         close = true;
                     }
                 });
-                // Armour + off-hand (functional in Phase 6).
+                // Armour (helmet, chestplate, leggings, boots) + off-hand.
                 ui.horizontal(|ui| {
                     for i in 0..4 {
+                        // An armour slot only accepts the matching piece.
+                        let fits = match m.state.cursor {
+                            None => true,
+                            Some(c) => matches!(&m.items.get(c.item).kind, ld_game::ItemKind::Armor(a) if a.slot as usize == i),
+                        };
                         let mut s = m.inventory.armor[i];
-                        slot_ui(ui, &mut s, m, None);
+                        if fits {
+                            slot_ui(ui, &mut s, m, None);
+                        } else {
+                            let (rect, _) = ui.allocate_exact_size(Vec2::splat(SLOT - 2.0), Sense::hover());
+                            draw_slot(ui.painter(), rect, s, m.icons, m.items, false);
+                        }
                         m.inventory.armor[i] = s;
                     }
                     ui.add_space(SLOT / 2.0);

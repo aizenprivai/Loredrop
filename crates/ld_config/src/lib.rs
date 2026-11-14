@@ -35,6 +35,7 @@ use ld_input::Bindings;
 pub struct Settings {
     pub graphics: GraphicsSettings,
     pub performance: PerformanceSettings,
+    pub gameplay: GameplaySettings,
     pub controls: ControlSettings,
     pub interface: InterfaceSettings,
     pub keybinds: Bindings,
@@ -58,6 +59,13 @@ pub struct GraphicsSettings {
 pub struct PerformanceSettings {
     pub worker_threads: u32,
     pub chunk_uploads_per_frame: u32,
+}
+
+/// Settings in the **Gameplay** tab.
+#[derive(Debug, Clone)]
+pub struct GameplaySettings {
+    pub difficulty: Difficulty,
+    pub game_mode: GameModeSetting,
 }
 
 /// Settings in the **Controls** tab.
@@ -90,6 +98,10 @@ impl Default for Settings {
                 mipmap_levels: 4,
             },
             performance: PerformanceSettings { worker_threads: 0, chunk_uploads_per_frame: 16 },
+            gameplay: GameplaySettings {
+                difficulty: Difficulty::Normal,
+                game_mode: GameModeSetting::Survival,
+            },
             controls: ControlSettings {
                 mouse_sensitivity: 100,
                 invert_mouse: false,
@@ -136,6 +148,24 @@ choice_enum! {
         Dx12 => "dx12",
         Metal => "metal",
         OpenGl => "opengl",
+    }
+}
+
+choice_enum! {
+    /// How hard the game is (starvation now; creatures from Phase 7).
+    Difficulty {
+        Peaceful => "peaceful",
+        Easy => "easy",
+        Normal => "normal",
+        Hard => "hard",
+    }
+}
+
+choice_enum! {
+    /// Game mode a new game starts in.
+    GameModeSetting {
+        Survival => "survival",
+        Creative => "creative",
     }
 }
 

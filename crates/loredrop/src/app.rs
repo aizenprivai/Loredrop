@@ -340,6 +340,7 @@ struct Running {
     egui_state: egui_winit::State,
     /// Item icons as egui textures, indexed by item ID.
     icon_textures: Vec<egui::TextureHandle>,
+    stat_icons: crate::hud::StatIcons,
 }
 
 struct App {
@@ -389,6 +390,10 @@ impl App {
             game: {
                 let mut g = Game::new(world, items, recipes, drops, options.autopilot);
                 g.lore = lore;
+                g.set_start_mode(match settings.gameplay.game_mode {
+                    ld_config::GameModeSetting::Survival => GameMode::Survival,
+                    ld_config::GameModeSetting::Creative => GameMode::Creative,
+                });
                 g.apply_dev_start(options.start_pos, options.start_look, options.fly);
                 g
             },
@@ -458,6 +463,14 @@ impl App {
         let dt = now - self.last_frame;
         self.last_frame = now;
         self.stats.record_frame(now, dt);
+
+        // Settings that apply live.
+        self.game.difficulty = match self.settings.gameplay.difficulty {
+            ld_config::Difficulty::Peaceful => ld_game::stats::Difficulty::Peaceful,
+            ld_config::Difficulty::Easy => ld_game::stats::Difficulty::Easy,
+            ld_config::Difficulty::Normal => ld_game::stats::Difficulty::Normal,
+            ld_config::Difficulty::Hard => ld_game::stats::Difficulty::Hard,
+        };
 
         // --- fixed-rate simulation ---
         self.accumulator += dt.as_secs_f64().min(0.5);
@@ -571,6 +584,15 @@ impl App {
         };
         let show_debug = self.show_debug;
         let creative = self.game.mode == GameMode::Creative;
+        let stat_icons = &r.stat_icons;
+        let bars = (!creative).then(|| crate::hud::Bars {
+            health: self.game.stats.health,
+            food: self.game.stats.food,
+            armor: self.game.armor_points(),
+            air: (self.game.stats.air < ld_game::stats::MAX_AIR).then_some(self.game.stats.air),
+            hurt_flash: self.game.stats.hurt_flash,
+            eating: self.game.eating as f32 / 32.0,
+        });
         let (inv, items, icons, recipes) = (&mut inv, &self.game.items, &r.icon_textures, &self.game.recipes);
         let (lore, journal) = (&self.game.lore, &self.game.journal);
         let (screen, menu) = (&self.screen, &mut self.menu);
@@ -579,6 +601,9 @@ impl App {
         let out = r.egui_ctx.run_ui(raw, |ui| {
             overlay::draw(ui.ctx(), show_debug, &overlay_data);
             crate::hud::draw_hotbar(ui.ctx(), inv, icons, items);
+            if let Some(b) = &bars {
+                crate::hud::draw_bars(ui.ctx(), stat_icons, b);
+            }
             let mut m = crate::screens::MenuCtx {
                 inventory: inv,
                 items,
@@ -766,7 +791,9 @@ impl ApplicationHandler for App {
                 egui_ctx.load_texture(format!("icon{i}"), img, egui::TextureOptions::NEAREST)
             })
             .collect();
-        self.running = Some(Running { window, renderer, egui_ctx, egui_state, icon_textures });
+        let assets = ld_assets::find_assets_dir().unwrap_or_else(|| std::path::PathBuf::from("assets"));
+        let stat_icons = crate::hud::StatIcons::load(&egui_ctx, &assets);
+        self.running = Some(Running { window, renderer, egui_ctx, egui_state, icon_textures, stat_icons });
         self.last_frame = Instant::now();
         self.started = Instant::now();
     }

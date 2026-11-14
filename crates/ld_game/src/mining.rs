@@ -33,7 +33,8 @@ pub enum Drop {
 /// Resolved drop for every block, indexed by block ID.
 #[derive(Debug, Clone)]
 pub struct DropTable {
-    drops: Vec<Drop>,
+    /// Every possible drop of each block (each rolled independently).
+    drops: Vec<Vec<Drop>>,
 }
 
 fn tool_name(kind: ToolKind) -> &'static str {
@@ -76,10 +77,14 @@ impl DropTable {
         let mut drops = Vec::with_capacity(blocks.len());
         for (id, b) in blocks.iter() {
             let d = match &b.drops {
-                Some(spec) => parse_drop(spec, items).map_err(|e| format!("block '{}': {e}", b.name))?,
+                Some(spec) => spec
+                    .split(',')
+                    .map(|part| parse_drop(part.trim(), items))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|e| format!("block '{}': {e}", b.name))?,
                 None => match items.for_block(id) {
-                    Some(item) => Drop::Item { item, min: 1, max: 1, chance: 1.0 },
-                    None => Drop::Nothing,
+                    Some(item) => vec![Drop::Item { item, min: 1, max: 1, chance: 1.0 }],
+                    None => vec![Drop::Nothing],
                 },
             };
             drops.push(d);
@@ -99,16 +104,19 @@ impl DropTable {
         if !can_harvest(block, tool) {
             return Vec::new();
         }
-        match &self.drops[id.0 as usize] {
-            Drop::Nothing => Vec::new(),
-            Drop::Item { item, min, max, chance } => {
+        let mut out = Vec::new();
+        for d in &self.drops[id.0 as usize] {
+            if let Drop::Item { item, min, max, chance } = d {
                 if roll() >= *chance {
-                    return Vec::new();
+                    continue;
                 }
                 let n = min + ((roll() * (max - min + 1) as f32) as u16).min(max - min);
-                if n == 0 { Vec::new() } else { vec![ItemStack::new(*item, n)] }
+                if n > 0 {
+                    out.push(ItemStack::new(*item, n));
+                }
             }
         }
+        out
     }
 }
 
@@ -200,5 +208,13 @@ mod tests {
         let lapis = drop("lapis_ore", Some("stone_pickaxe"))[0];
         assert!((4..=9).contains(&lapis.count));
         assert_eq!(drop("oak_log", None)[0].item, items.id("oak_log").unwrap(), "logs drop by hand");
+        // Leaves: rare sticks and apples, each rolled separately.
+        let leaves = id("oak_leaves");
+        let lucky = table.drops(leaves, blocks.get(leaves), None, || 0.001);
+        assert_eq!(
+            lucky.iter().map(|s| s.item).collect::<Vec<_>>(),
+            [items.id("stick").unwrap(), items.id("apple").unwrap()]
+        );
+        assert!(table.drops(leaves, blocks.get(leaves), None, || 0.5).is_empty());
     }
 }

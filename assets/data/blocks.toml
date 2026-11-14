@@ -19,7 +19,8 @@
 #   harvest_level  if set, the block only DROPS when mined with `tool` of at least
 #             this tier level (0 wood/gold, 1 stone, 2 iron, 3 diamond)
 #   drops     what breaking it gives (default: itself). "none", "item", "item:2-5"
-#             (random count) or "item@0.02" (2 % chance)
+#             (random count) or "item@0.02" (2 % chance); several drops are
+#             separated by commas, e.g. "stick@0.02, apple@0.005"
 #
 # `air` is built in and must not be listed.
 
@@ -104,7 +105,7 @@ textures = { all = "oak_planks" }
 name = "oak_leaves"
 hardness = 0.2
 tool = "hoe"
-drops = "stick@0.02"
+drops = "stick@0.02, apple@0.005"
 display = "Oak Leaves"
 layer = "cutout"
 textures = { all = "oak_leaves" }

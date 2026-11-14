@@ -49,6 +49,15 @@ pub const FLY_VERTICAL_DRAG: f64 = 0.6;
 /// Velocity components smaller than this snap to zero (prevents endless creep).
 const MIN_VELOCITY: f64 = 0.003;
 
+/// Liquid the player is in (decided by the caller from the world).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Fluid {
+    #[default]
+    None,
+    Water,
+    Lava,
+}
+
 /// Movement intent for one tick, already translated from key bindings.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct MoveInput {
@@ -74,6 +83,13 @@ pub struct PlayerBody {
     pub sprinting: bool,
     /// True while pressing against a wall horizontally.
     pub horizontal_collision: bool,
+    /// Liquid around the body this tick (set by the caller before `tick`).
+    pub fluid: Fluid,
+    /// Blocks fallen since last touching the ground (for fall damage).
+    pub fall_distance: f64,
+    /// Set on the tick the player lands: how far they fell. Read and cleared
+    /// by the game (to apply fall damage).
+    pub landed_after_fall: Option<f64>,
 }
 
 impl PlayerBody {
@@ -86,6 +102,9 @@ impl PlayerBody {
             sneaking: false,
             sprinting: false,
             horizontal_collision: false,
+            fluid: Fluid::None,
+            fall_distance: 0.0,
+            landed_after_fall: None,
         }
     }
 
@@ -120,6 +139,11 @@ impl PlayerBody {
         if self.sneaking {
             fwd *= SNEAK_MULTIPLIER;
             side *= SNEAK_MULTIPLIER;
+        }
+
+        if self.fluid != Fluid::None && !self.flying {
+            self.tick_in_fluid(input, fwd, side, yaw_deg, world);
+            return;
         }
 
         if self.flying {
@@ -161,6 +185,7 @@ impl PlayerBody {
         self.pos += result.moved;
         self.horizontal_collision = result.hit_x || result.hit_z;
         self.on_ground = result.landed(requested);
+        self.track_fall(result.moved.y);
         if result.hit_x {
             self.vel.x = 0.0;
         }
@@ -189,6 +214,66 @@ impl PlayerBody {
                 *c = 0.0;
             }
         }
+    }
+}
+
+impl PlayerBody {
+    /// Counts fall distance while descending; reports it on landing.
+    fn track_fall(&mut self, moved_y: f64) {
+        if self.flying || self.fluid != Fluid::None {
+            self.fall_distance = 0.0;
+            return;
+        }
+        if moved_y < 0.0 {
+            self.fall_distance -= moved_y; // include the final step of the fall
+        }
+        if self.on_ground {
+            if self.fall_distance > 0.0 {
+                self.landed_after_fall = Some(self.fall_distance);
+            }
+            self.fall_distance = 0.0;
+        }
+    }
+
+    /// Swimming (Minecraft's liquid movement): slow acceleration, strong
+    /// drag, weak gravity. Holding jump swims upward; pushing against a wall
+    /// while in water climbs out.
+    fn tick_in_fluid(
+        &mut self,
+        input: MoveInput,
+        fwd: f64,
+        side: f64,
+        yaw_deg: f64,
+        world: &impl VoxelCollider,
+    ) {
+        let lava = self.fluid == Fluid::Lava;
+        if input.jump {
+            self.vel.y += 0.04;
+        }
+        self.vel += input_to_world(fwd, side, yaw_deg, 0.02);
+        let requested = self.vel;
+        let result = move_and_collide(world, &self.aabb(), requested);
+        self.pos += result.moved;
+        self.horizontal_collision = result.hit_x || result.hit_z;
+        self.on_ground = result.landed(requested);
+        if result.hit_x {
+            self.vel.x = 0.0;
+        }
+        if result.hit_z {
+            self.vel.z = 0.0;
+        }
+        if result.hit_y {
+            self.vel.y = 0.0;
+        }
+        let drag = if lava { 0.5 } else { 0.8 };
+        self.vel.x *= drag;
+        self.vel.z *= drag;
+        self.vel.y = self.vel.y * drag - 0.02;
+        if self.horizontal_collision && input.jump {
+            self.vel.y = 0.3; // climb out onto the bank
+        }
+        self.sprinting = false;
+        self.track_fall(result.moved.y);
     }
 }
 
@@ -287,6 +372,42 @@ mod tests {
         }
         assert!((b.pos.x - (3.0 - WIDTH / 2.0)).abs() < 1e-6, "x {}", b.pos.x);
         assert!(!b.sprinting);
+    }
+
+    #[test]
+    fn water_slows_falls_and_resets_fall_distance() {
+        let w = Flat { wall_x: None };
+        let mut b = PlayerBody::new(DVec3::new(0.5, 30.0, 0.5));
+        for _ in 0..20 {
+            b.tick(MoveInput::default(), 0.0, &w);
+        }
+        assert!(b.fall_distance > 5.0, "falling through air");
+        b.fluid = Fluid::Water;
+        b.tick(MoveInput::default(), 0.0, &w);
+        assert_eq!(b.fall_distance, 0.0, "water cancels fall damage");
+        for _ in 0..40 {
+            b.tick(MoveInput::default(), 0.0, &w);
+        }
+        assert!(b.vel.y > -0.15, "sinks slowly in water: {}", b.vel.y);
+        let y = b.pos.y;
+        for _ in 0..20 {
+            b.tick(MoveInput { jump: true, ..Default::default() }, 0.0, &w);
+        }
+        assert!(b.pos.y > y, "holding jump swims up");
+    }
+
+    #[test]
+    fn landing_reports_fall_distance() {
+        let w = Flat { wall_x: None };
+        let mut b = PlayerBody::new(DVec3::new(0.5, 10.0, 0.5));
+        let mut landed = None;
+        for _ in 0..60 {
+            b.tick(MoveInput::default(), 0.0, &w);
+            if let Some(d) = b.landed_after_fall.take() {
+                landed = Some(d);
+            }
+        }
+        assert!((landed.unwrap() - 10.0).abs() < 1e-6);
     }
 
     #[test]

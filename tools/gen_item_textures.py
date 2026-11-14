@@ -136,12 +136,44 @@ def stick():
     return img
 
 
+def armor_piece(shape, color):
+    img = blank()
+    rows = {
+        "helmet": ["..XXXXXXXXXX..", ".XXXXXXXXXXXX.", ".XX........XX.", ".XX........XX."],
+        "chestplate": ["XXX..XXX..XXX.", "XXXXXXXXXXXXX.", ".XXXXXXXXXXX..", "..XXXXXXXXX...", "..XXXXXXXXX...", "..XXXXXXXXX...", "..XXXXXXXXX...", "..XXXXXXXXX..."],
+        "leggings": ["XXXXXXXXXXXX..", "XXXXXXXXXXXX..", "XXXX....XXXX..", "XXXX....XXXX..", "XXXX....XXXX..", "XXXX....XXXX..", "XXX......XXX.."],
+        "boots": ["XXX......XXX..", "XXX......XXX..", "XXXXX....XXXXX", "XXXXX....XXXXX"],
+    }[shape]
+    top = (16 - len(rows)) // 2
+    for y, row in enumerate(rows):
+        for x, c in enumerate(row):
+            if c == "X":
+                k = 1.15 if y == 0 else (0.75 if y == len(rows) - 1 else 1.0)
+                put(img, x + 1, y + top, shade(color, k))
+    return img
+
+
 TIERS = {"wooden": (150, 112, 62), "stone": (128, 128, 128), "iron": (222, 222, 222),
          "golden": (250, 214, 64), "diamond": (90, 232, 222)}
 SHAPES = {"pickaxe": pickaxe, "axe": axe, "shovel": shovel, "hoe": hoe, "sword": sword}
 
+def apple():
+    img = blank()
+    for y in range(3, 15):
+        for x in range(2, 14):
+            if (x - 7.5) ** 2 / 30 + (y - 9) ** 2 / 30 <= 1:
+                k = 1.25 if (x < 7 and y < 9) else 1.0
+                put(img, x, y, (200 * k, 30 * k, 36 * k))
+    for y in range(1, 4):
+        put(img, 8, y, HANDLE)  # stem
+    put(img, 9, 2, (60, 150, 40)); put(img, 10, 2, (60, 150, 40)); put(img, 10, 1, (60, 150, 40))
+    put(img, 5, 6, (255, 200, 200))
+    return img
+
+
 ITEMS = {
     "stick": stick,
+    "apple": apple,
     "coal": lambda: lump((44, 44, 48), 1), "charcoal": lambda: lump((60, 48, 36), 2),
     "flint": lambda: lump((70, 70, 76), 3),
     "raw_iron": lambda: lump((200, 160, 130), 4), "raw_copper": lambda: lump((200, 112, 70), 5),
@@ -151,6 +183,9 @@ ITEMS = {
     "diamond": lambda: gem((90, 232, 222), 7), "emerald": lambda: gem((40, 210, 100), 8),
     "lapis_lazuli": lambda: gem((40, 70, 200), 9),
 }
+for metal, color in {"iron": (222, 222, 222), "golden": (250, 214, 64), "diamond": (90, 232, 222)}.items():
+    for piece in ("helmet", "chestplate", "leggings", "boots"):
+        ITEMS[f"{metal}_{piece}"] = (lambda p=piece, c=color: lambda: armor_piece(p, c))()
 for tier, color in TIERS.items():
     for shape, fn in SHAPES.items():
         ITEMS[f"{tier}_{shape}"] = (lambda f=fn, c=color: lambda: f(c))()

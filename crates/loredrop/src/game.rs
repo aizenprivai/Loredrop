@@ -33,6 +33,7 @@ pub struct GameIds {
     pub lore_tablet: Option<ld_world::BlockId>,
     pub chiseled_sandstone: Option<ld_world::BlockId>,
     pub deepslate_bricks: Option<ld_world::BlockId>,
+    pub cactus: Option<ld_world::BlockId>,
 }
 
 pub struct Game {
@@ -82,6 +83,11 @@ pub struct Game {
     pub lore: std::sync::Arc<ld_assets::Lore>,
     /// Fragments the player has read, in discovery order: (era, index within era).
     pub journal: Vec<(String, usize)>,
+    /// Health, hunger and air (only used in Survival).
+    pub stats: ld_game::stats::PlayerStats,
+    pub difficulty: ld_game::stats::Difficulty,
+    /// Ticks spent eating the held food (32 = done).
+    pub eating: u32,
 }
 
 impl Game {
@@ -101,8 +107,9 @@ impl Game {
             lore_tablet: world.registry.id("lore_tablet"),
             chiseled_sandstone: world.registry.id("chiseled_sandstone"),
             deepslate_bricks: world.registry.id("deepslate_bricks"),
+            cactus: world.registry.id("cactus"),
         };
-        // A starter hotbar of building blocks for Creative mode.
+        // A starter hotbar of building blocks (used when starting in Creative).
         let mut inventory = ld_game::Inventory::default();
         for (i, name) in [
             "grass_block",
@@ -160,6 +167,9 @@ impl Game {
             furnaces: Default::default(),
             lore: std::sync::Arc::new(ld_assets::Lore { fragments: Vec::new() }),
             journal: Vec::new(),
+            stats: Default::default(),
+            difficulty: ld_game::stats::Difficulty::Normal,
+            eating: 0,
         }
     }
 
@@ -227,10 +237,19 @@ impl Game {
             self.yaw += 1.5;
         }
 
-        if self.input_blocked {
-            mv = MoveInput::default(); // a menu is open: stand still
+        if self.input_blocked || self.stats.is_dead() {
+            mv = MoveInput::default(); // a menu is open (or dead): stand still
         }
+        let survival = self.mode == GameMode::Survival;
+        if survival && !self.stats.can_sprint() {
+            mv.sprint = false; // too hungry to sprint
+        }
+        self.player.fluid = self.fluid_at_body();
+        let (was_on_ground, pos_before) = (self.player.on_ground, self.player.pos);
         self.player.tick(mv, self.yaw as f64, &self.world);
+        if survival {
+            self.survival_tick(mv, was_on_ground, pos_before);
+        }
         if !self.input_blocked {
             self.interact(input);
         }
@@ -241,12 +260,154 @@ impl Game {
         // Smoothly lower/raise the camera when sneaking (Minecraft eases this too).
         self.eye += (self.player.eye_height() - self.eye) * 0.5;
 
-        // Safety net: falling out of the world respawns you.
-        if self.player.pos.y < -128.0 {
+        // Safety net: in Creative, falling out of the world brings you back.
+        if self.mode == GameMode::Creative && self.player.pos.y < -128.0 {
             self.player = PlayerBody::new(self.spawn);
             self.prev_pos = self.player.pos;
             self.placed = false;
         }
+    }
+
+    /// Which liquid the player's body is in (lava wins over water).
+    fn fluid_at_body(&self) -> ld_physics::player::Fluid {
+        use ld_physics::player::Fluid;
+        let p = self.player.pos;
+        let mut fluid = Fluid::None;
+        for dy in [0.1, 0.9] {
+            let b = self.world.map.block(ld_core::coords::BlockPos::new(
+                p.x.floor() as i32,
+                (p.y + dy).floor() as i32,
+                p.z.floor() as i32,
+            ));
+            if b.is_some() && b == self.ids.lava {
+                return Fluid::Lava;
+            }
+            if b.is_some() && b == self.ids.water {
+                fluid = Fluid::Water;
+            }
+        }
+        fluid
+    }
+
+    /// The block at the player's eyes.
+    fn block_at_eyes(&self) -> Option<ld_world::BlockId> {
+        let p = self.player.pos + DVec3::new(0.0, self.eye, 0.0);
+        self.world.map.block(ld_core::coords::BlockPos::new(
+            p.x.floor() as i32,
+            p.y.floor() as i32,
+            p.z.floor() as i32,
+        ))
+    }
+
+    /// Hurts the player (Survival only), reducing by armour where it applies.
+    pub fn hurt(&mut self, amount: f32, source: ld_game::stats::DamageSource) {
+        if self.mode != GameMode::Survival {
+            return;
+        }
+        let reduced = if source.armor_applies() { self.armor_reduce(amount) } else { amount };
+        self.stats.damage(reduced, source);
+    }
+
+    /// Worn armour pieces' stats.
+    fn worn_armor(&self) -> impl Iterator<Item = ld_game::ArmorInfo> + '_ {
+        self.inventory.armor.iter().flatten().filter_map(|s| match &self.items.get(s.item).kind {
+            ld_game::ItemKind::Armor(a) => Some(a.clone()),
+            _ => None,
+        })
+    }
+
+    /// Reduces damage by worn armour (Minecraft's formula) and wears the
+    /// armour down: each piece loses max(1, damage / 4) durability.
+    pub fn armor_reduce(&mut self, amount: f32) -> f32 {
+        let (defense, toughness) =
+            self.worn_armor().fold((0.0, 0.0), |(d, t), a| (d + a.defense as f32, t + a.toughness));
+        if defense <= 0.0 {
+            return amount;
+        }
+        let wear = ((amount / 4.0) as u16).max(1);
+        for i in 0..4 {
+            if let Some(stack) = self.inventory.armor[i]
+                && let ld_game::ItemKind::Armor(a) = &self.items.get(stack.item).kind
+            {
+                let damage = stack.damage + wear;
+                self.inventory.armor[i] =
+                    (damage < a.durability).then_some(ld_game::ItemStack { damage, ..stack });
+            }
+        }
+        ld_game::stats::armor_reduction(amount, defense, toughness)
+    }
+
+    /// Total armour points worn (0–20).
+    pub fn armor_points(&self) -> i32 {
+        self.worn_armor().map(|a| a.defense).sum()
+    }
+
+    /// Hunger, environmental damage and breath, once per Survival tick.
+    fn survival_tick(&mut self, mv: MoveInput, was_on_ground: bool, pos_before: DVec3) {
+        use ld_game::stats::{DamageSource, fall_damage};
+        use ld_physics::player::Fluid;
+        let fluid = self.player.fluid;
+        // Exhaustion from movement (Minecraft values).
+        let moved =
+            glam::DVec2::new(self.player.pos.x - pos_before.x, self.player.pos.z - pos_before.z).length();
+        if fluid == Fluid::Water {
+            self.stats.exhaust(0.01 * moved as f32);
+        } else if self.player.sprinting {
+            self.stats.exhaust(0.1 * moved as f32);
+        }
+        if was_on_ground && !self.player.on_ground && self.player.vel.y > 0.0 && fluid == Fluid::None {
+            self.stats.exhaust(if self.player.sprinting { 0.2 } else { 0.05 });
+        }
+        let _ = mv;
+        // Falling.
+        if let Some(d) = self.player.landed_after_fall.take() {
+            let dmg = fall_damage(d);
+            if dmg > 0.0 {
+                self.hurt(dmg, DamageSource::Fall);
+            }
+        }
+        // Lava and fire.
+        if fluid == Fluid::Lava {
+            self.hurt(4.0, DamageSource::Lava);
+            self.stats.fire_ticks = self.stats.fire_ticks.max(300);
+        }
+        // Stuck inside a solid block.
+        if let Some(id) = self.block_at_eyes()
+            && self.world.registry.get(id).is_opaque()
+            && self.world.registry.get(id).solid
+        {
+            self.hurt(1.0, DamageSource::Suffocation);
+        }
+        // Touching a cactus.
+        if self.touching(self.ids.cactus) {
+            self.hurt(1.0, DamageSource::Cactus);
+        }
+        // Below the world.
+        if self.player.pos.y < -128.0 {
+            self.hurt(4.0, DamageSource::Void);
+        }
+        let eyes_in_water = self.block_at_eyes().is_some() && self.block_at_eyes() == self.ids.water;
+        self.stats.tick(self.difficulty, eyes_in_water, fluid == Fluid::Water);
+    }
+
+    /// Whether the player's hitbox (slightly enlarged) touches this block type.
+    fn touching(&self, block: Option<ld_world::BlockId>) -> bool {
+        let Some(block) = block else { return false };
+        let a = self.player.aabb();
+        let (min, max) = (
+            (a.min - DVec3::splat(0.01)).floor().as_ivec3(),
+            (a.max + DVec3::splat(0.01)).floor().as_ivec3(),
+        );
+        for x in min.x..=max.x {
+            for y in min.y..=max.y {
+                for z in min.z..=max.z {
+                    if self.world.map.block(ld_core::coords::BlockPos::new(x, y, z)) == Some(block) {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
     }
 
     /// Smelts in every furnace and swaps the block between lit and unlit.
@@ -299,6 +460,16 @@ impl Game {
         let dy = if settings.controls.invert_mouse { -dy } else { dy };
         self.yaw = (self.yaw + (dx * k) as f32).rem_euclid(360.0);
         self.pitch = (self.pitch + (dy * k) as f32).clamp(-90.0, 90.0);
+    }
+
+    /// Sets the starting game mode. Survival starts with an empty inventory,
+    /// like a fresh Minecraft world; Creative keeps the starter hotbar.
+    pub fn set_start_mode(&mut self, mode: GameMode) {
+        self.mode = mode;
+        if mode == GameMode::Survival {
+            self.inventory = ld_game::Inventory::default();
+            self.player.flying = false;
+        }
     }
 
     /// Developer start options (`--pos`, `--look`, `--fly`).
@@ -493,6 +664,57 @@ mod tests {
         run(&mut g, &mut input, 400);
         assert!(g.player.pos.z >= -32.0, "stopped at the loaded edge, z = {}", g.player.pos.z);
         assert_eq!(g.player.pos.y, 0.0);
+    }
+
+    #[test]
+    fn survival_fall_damage_and_creative_immunity() {
+        let mut g = game();
+        g.set_start_mode(GameMode::Survival);
+        let mut input = InputState::new();
+        run(&mut g, &mut input, 1);
+        g.player.pos = glam::DVec3::new(0.5, 20.0, 0.5);
+        for _ in 0..80 {
+            run(&mut g, &mut input, 1);
+            if g.player.on_ground {
+                break;
+            }
+        }
+        assert_eq!(g.stats.health, 3.0, "a 20-block fall deals 17 damage");
+        let mut c = game();
+        run(&mut c, &mut input, 1);
+        c.player.pos = glam::DVec3::new(0.5, 40.0, 0.5);
+        run(&mut c, &mut input, 120);
+        assert_eq!(c.stats.health, 20.0, "Creative takes no damage");
+    }
+
+    #[test]
+    fn armor_reduces_attack_damage_and_wears_down() {
+        let mut g = game();
+        g.set_start_mode(GameMode::Survival);
+        for (i, piece) in ["iron_helmet", "iron_chestplate", "iron_leggings", "iron_boots"].iter().enumerate()
+        {
+            g.inventory.armor[i] = Some(ld_game::ItemStack::new(g.items.id(piece).unwrap(), 1));
+        }
+        assert_eq!(g.armor_points(), 15);
+        g.hurt(6.0, ld_game::stats::DamageSource::Attack);
+        assert!((g.stats.health - (20.0 - 3.12)).abs() < 1e-4);
+        assert!(g.inventory.armor.iter().all(|a| a.unwrap().damage == 1));
+    }
+
+    #[test]
+    fn eating_an_apple_takes_32_ticks() {
+        let mut g = game();
+        g.set_start_mode(GameMode::Survival);
+        g.stats.food = 10;
+        g.inventory.slots[0] = Some(ld_game::ItemStack::new(g.items.id("apple").unwrap(), 2));
+        g.pitch = -90.0; // look at the sky so right-click doesn't hit a block
+        let mut input = InputState::new();
+        press(&mut input, "MouseRight", true);
+        run(&mut g, &mut input, 31);
+        assert_eq!(g.stats.food, 10, "not yet");
+        run(&mut g, &mut input, 1);
+        assert_eq!(g.stats.food, 14);
+        assert_eq!(g.inventory.slots[0].unwrap().count, 1);
     }
 
     #[test]
