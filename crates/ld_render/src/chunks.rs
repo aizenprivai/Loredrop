@@ -30,7 +30,25 @@ pub struct ChunkStats {
     pub mesh_bytes: u64,
 }
 
+/// A vertex of an entity quad (dropped items, cracks, later creatures).
+#[repr(C)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct EntityVertex {
+    /// Camera-relative position.
+    pub pos: [f32; 3],
+    /// Texture coordinates (0..1 across one texture).
+    pub uv: [f32; 2],
+    /// Texture-array layer.
+    pub layer: u32,
+    /// Colour multiplier (tint × shading) as packed sRGB `0xRRGGBB`.
+    pub color: u32,
+}
+
 pub(crate) struct ChunkRenderer {
+    entity_pipeline: wgpu::RenderPipeline,
+    entity_buffer: wgpu::Buffer,
+    entity_capacity: u64,
+    entity_count: u32,
     opaque_pipeline: wgpu::RenderPipeline,
     cutout_pipeline: wgpu::RenderPipeline,
     translucent_pipeline: wgpu::RenderPipeline,
@@ -136,6 +154,47 @@ impl ChunkRenderer {
                 cache: None,
             })
         };
+        // Entities: plain triangle lists, textured from the same texture array,
+        // drawn without back-face culling so thin items are visible from both sides.
+        let entity_shader = device.create_shader_module(wgpu::include_wgsl!("shaders/entity.wgsl"));
+        let entity_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("entity pipeline"),
+            layout: Some(&layout),
+            vertex: wgpu::VertexState {
+                module: &entity_shader,
+                entry_point: Some("vs_main"),
+                compilation_options: Default::default(),
+                buffers: &[Some(wgpu::VertexBufferLayout {
+                    array_stride: std::mem::size_of::<EntityVertex>() as u64,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x2, 2 => Uint32, 3 => Uint32],
+                })],
+            },
+            primitive: wgpu::PrimitiveState { topology: wgpu::PrimitiveTopology::TriangleList, cull_mode: None, ..Default::default() },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: depth_format,
+                depth_write_enabled: Some(true),
+                depth_compare: Some(wgpu::CompareFunction::GreaterEqual),
+                stencil: Default::default(),
+                bias: Default::default(),
+            }),
+            multisample: Default::default(),
+            fragment: Some(wgpu::FragmentState {
+                module: &entity_shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState { format: color_format, blend: None, write_mask: wgpu::ColorWrites::ALL })],
+            }),
+            multiview_mask: None,
+            cache: None,
+        });
+        let entity_capacity = 4096;
+        let entity_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("entity vertices"),
+            size: entity_capacity * std::mem::size_of::<EntityVertex>() as u64,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
         let opaque_pipeline = pipeline("chunk opaque", "fs_opaque", false);
         let cutout_pipeline = pipeline("chunk cutout", "fs_cutout", false);
         let translucent_pipeline = pipeline("chunk translucent", "fs_translucent", true);
@@ -150,6 +209,10 @@ impl ChunkRenderer {
         let instance_capacity = 4096;
         let instances = Self::make_instances(device, instance_capacity);
         Self {
+            entity_pipeline,
+            entity_buffer,
+            entity_capacity,
+            entity_count: 0,
             opaque_pipeline,
             cutout_pipeline,
             translucent_pipeline,
@@ -265,6 +328,23 @@ impl ChunkRenderer {
         );
     }
 
+    /// Replaces this frame's entity triangles (camera-relative positions).
+    pub fn set_entities(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, vertices: &[EntityVertex]) {
+        if vertices.len() as u64 > self.entity_capacity {
+            self.entity_capacity = (vertices.len() as u64).next_power_of_two();
+            self.entity_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("entity vertices"),
+                size: self.entity_capacity * std::mem::size_of::<EntityVertex>() as u64,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+        }
+        if !vertices.is_empty() {
+            queue.write_buffer(&self.entity_buffer, 0, bytemuck::cast_slice(vertices));
+        }
+        self.entity_count = vertices.len() as u32;
+    }
+
     pub fn upload(&mut self, device: &wgpu::Device, pos: SectionPos, mesh: &SectionMesh) {
         self.remove(pos);
         let quads = (mesh.opaque.len() + mesh.cutout.len() + mesh.translucent.len()) / 4;
@@ -361,6 +441,13 @@ impl ChunkRenderer {
         pass.set_index_buffer(self.quad_indices.slice(..), wgpu::IndexFormat::Uint32);
         let mut quads = 0u64;
         let mut calls = 0u32;
+        // Entities after opaque/cutout terrain would be ideal; drawing them
+        // first is also correct (depth test) and keeps the pass order simple.
+        if self.entity_count > 0 {
+            pass.set_pipeline(&self.entity_pipeline);
+            pass.set_vertex_buffer(0, self.entity_buffer.slice(..));
+            pass.draw(0..self.entity_count, 0..1);
+        }
         // 0 = opaque (front to back), 1 = cutout, 2 = translucent (back to front,
         // so nearer water blends over farther water).
         for pass_kind in 0..3 {

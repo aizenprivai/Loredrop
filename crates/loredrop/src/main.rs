@@ -23,6 +23,7 @@
 //! ```
 
 mod app;
+mod entities;
 mod frame_stats;
 mod game;
 mod hud;

@@ -7,11 +7,12 @@
 //!
 //! * [`crafting`] — crafting and smelting recipes, fuels.
 //!
-//! Later in Phase 5: mining rules (hardness, tool tiers, drops).
+//! * [`mining`] — break times (Minecraft's formula), harvest tiers, drops.
 
 pub mod crafting;
 pub mod inventory;
 pub mod items;
+pub mod mining;
 
 pub use crafting::RecipeBook;
 pub use inventory::{Click, Inventory, ItemStack};

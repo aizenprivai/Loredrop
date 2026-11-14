@@ -42,7 +42,10 @@ struct Loaded {
     textures: ld_assets::TextureSet,
     items: Arc<ld_game::ItemRegistry>,
     recipes: Arc<ld_game::RecipeBook>,
+    drops: Arc<ld_game::mining::DropTable>,
     icons: Vec<icons::Icon>,
+    looks: Vec<crate::entities::ItemLook>,
+    crack_layers: [u32; 10],
 }
 
 fn load_game(settings: &Settings, seed: Option<u64>) -> Result<Loaded, Box<dyn std::error::Error>> {
@@ -53,13 +56,69 @@ fn load_game(settings: &Settings, seed: Option<u64>) -> Result<Loaded, Box<dyn s
     let icons = icons::render_all(&items, &world.registry, &textures, &assets, [GRASS_TINT, FOLIAGE_TINT]);
     let recipes =
         Arc::new(ld_game::RecipeBook::from_toml(&ld_assets::read_data(&assets, "recipes.toml")?, &items)?);
+    let drops = Arc::new(ld_game::mining::DropTable::new(&world.registry, &items)?);
+    let looks = item_looks(&items, &world.registry, &textures);
+    let crack_layers = std::array::from_fn(|i| textures.layer_of(&format!("destroy_stage_{i}")) as u32);
     log::info!(
         "{} items, {} icons, {} recipes",
         items.len(),
         icons.len(),
         recipes.shaped.len() + recipes.shapeless.len() + recipes.smelting.len()
     );
-    Ok(Loaded { world, textures, items, recipes, icons })
+    Ok(Loaded { world, textures, items, recipes, drops, icons, looks, crack_layers })
+}
+
+/// How each item looks when dropped in the world.
+fn item_looks(
+    items: &ld_game::ItemRegistry,
+    blocks: &ld_world::BlockRegistry,
+    tex: &ld_assets::TextureSet,
+) -> Vec<crate::entities::ItemLook> {
+    use crate::entities::ItemLook;
+    let pack =
+        |c: [f32; 3]| ((c[0] * 255.0) as u32) << 16 | ((c[1] * 255.0) as u32) << 8 | (c[2] * 255.0) as u32;
+    let tint = |t: ld_world::Tint| match t {
+        ld_world::Tint::Grass => pack(GRASS_TINT),
+        ld_world::Tint::Foliage => pack(FOLIAGE_TINT),
+        _ => 0xFF_FFFF,
+    };
+    items
+        .iter()
+        .map(|(_, d)| match d.kind {
+            ld_game::ItemKind::Block(id) => {
+                let b = blocks.get(id);
+                if b.shape == ld_world::Shape::Cross {
+                    ItemLook::Flat { layer: tex.layer_of(&b.textures[0]) as u32, tint: tint(b.tints[0]) }
+                } else {
+                    ItemLook::Cube {
+                        layers: std::array::from_fn(|f| tex.layer_of(&b.textures[f]) as u32),
+                        tints: std::array::from_fn(|f| tint(b.tints[f])),
+                    }
+                }
+            }
+            _ => {
+                ItemLook::Flat { layer: tex.layer_of(&format!("item/{}", d.texture)) as u32, tint: 0xFF_FFFF }
+            }
+        })
+        .collect()
+}
+
+/// Texture names for the shared texture array: every block texture, item
+/// sprites (for dropped items) and the 10 block-breaking crack stages.
+fn all_texture_names(blocks: &ld_world::BlockRegistry, assets: &std::path::Path) -> Vec<String> {
+    let mut names = blocks.texture_names();
+    names.extend((0..10).map(|i| format!("destroy_stage_{i}")));
+    if let Ok(dir) = std::fs::read_dir(assets.join("textures").join("item")) {
+        let mut items: Vec<String> = dir
+            .flatten()
+            .filter_map(|e| {
+                e.file_name().to_str().and_then(|n| n.strip_suffix(".png")).map(|n| format!("item/{n}"))
+            })
+            .collect();
+        items.sort();
+        names.extend(items);
+    }
+    names
 }
 
 fn load_world(
@@ -70,7 +129,7 @@ fn load_world(
         .ok_or("could not find the 'assets' folder (set LOREDROP_ASSETS to its location)")?;
     log::info!("assets: {}", assets.display());
     let registry = Arc::new(ld_assets::load_blocks(&assets)?);
-    let textures = ld_assets::load_block_textures(&assets, &registry.texture_names());
+    let textures = ld_assets::load_block_textures(&assets, &all_texture_names(&registry, &assets));
     log::info!(
         "loaded {} block types, {} textures ({}px)",
         registry.len(),
@@ -302,6 +361,10 @@ struct App {
     /// A menu asked to close during drawing; handled at the start of the next frame.
     pending_close: bool,
     icons: Vec<icons::Icon>,
+    looks: Vec<crate::entities::ItemLook>,
+    crack_layers: [u32; 10],
+    /// Reused every frame for entity triangles.
+    entity_vertices: Vec<ld_render::EntityVertex>,
     world_ready_logged: bool,
     screen: crate::screens::Screen,
     menu: crate::screens::MenuState,
@@ -309,17 +372,20 @@ struct App {
 
 impl App {
     fn new(options: Options, settings: Settings, loaded: Loaded) -> Self {
-        let Loaded { world, textures, items, recipes, icons } = loaded;
+        let Loaded { world, textures, items, recipes, drops, icons, looks, crack_layers } = loaded;
         Self {
             bindings: settings.keybinds.clone(),
             show_debug: settings.interface.show_debug_overlay,
             icons,
+            looks,
+            crack_layers,
+            entity_vertices: Vec::new(),
             screen: crate::screens::Screen::None,
             egui_has_keyboard: false,
             pending_close: false,
             menu: crate::screens::MenuState::default(),
             game: {
-                let mut g = Game::new(world, items, recipes, options.autopilot);
+                let mut g = Game::new(world, items, recipes, drops, options.autopilot);
                 g.apply_dev_start(options.start_pos, options.start_look, options.fly);
                 g
             },
@@ -535,6 +601,16 @@ impl App {
             grass_tint: GRASS_TINT,
             foliage_tint: FOLIAGE_TINT,
         };
+        // Dropped items and the cracks on the block being mined.
+        self.entity_vertices.clear();
+        let time = self.started.elapsed().as_secs_f32();
+        self.game.entities.build_vertices(eye, time, &self.looks, &mut self.entity_vertices);
+        if let Some((pos, progress)) = self.game.breaking {
+            let stage = ((progress * 10.0) as usize).min(9);
+            let min = glam::DVec3::new(pos.x as f64, pos.y as f64, pos.z as f64);
+            crate::entities::crack_vertices(&mut self.entity_vertices, min, eye, self.crack_layers[stage]);
+        }
+        r.renderer.set_entities(&self.entity_vertices);
         r.renderer.set_outline(self.game.target.map(|h| {
             let min = glam::DVec3::new(h.pos.x as f64, h.pos.y as f64, h.pos.z as f64);
             (min, min + glam::DVec3::ONE)

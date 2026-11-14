@@ -63,6 +63,14 @@ pub struct Game {
     pub recipes: std::sync::Arc<ld_game::RecipeBook>,
     /// A menu the game wants opened (set when using a block like a crafting table).
     pub open_request: Option<crate::screens::Screen>,
+    pub drops: std::sync::Arc<ld_game::mining::DropTable>,
+    /// Dropped items lying in the world.
+    pub entities: crate::entities::ItemEntities,
+    /// Survival mining: the block being broken and how far along (0..1).
+    pub breaking: Option<(ld_core::coords::BlockPos, f32)>,
+    /// Ticks to wait before starting to mine the next block (Minecraft: 5).
+    pub(crate) break_delay: u32,
+    pub(crate) rng: u64,
 }
 
 impl Game {
@@ -70,6 +78,7 @@ impl Game {
         world: World,
         items: std::sync::Arc<ld_game::ItemRegistry>,
         recipes: std::sync::Arc<ld_game::RecipeBook>,
+        drops: std::sync::Arc<ld_game::mining::DropTable>,
         autopilot: bool,
     ) -> Self {
         let ids = GameIds {
@@ -127,6 +136,11 @@ impl Game {
             input_blocked: false,
             recipes,
             open_request: None,
+            drops,
+            entities: Default::default(),
+            breaking: None,
+            break_delay: 0,
+            rng: 0x2545_F491_4F6C_DD1D,
         }
     }
 
@@ -201,6 +215,8 @@ impl Game {
         if !self.input_blocked {
             self.interact(input);
         }
+        let player_box = self.player.aabb();
+        self.entities.tick(&self.world, &player_box, &mut self.inventory, &self.items);
 
         // Smoothly lower/raise the camera when sneaking (Minecraft eases this too).
         self.eye += (self.player.eye_height() - self.eye) * 0.5;
@@ -341,7 +357,8 @@ mod tests {
                 .unwrap();
         let blocks = BlockRegistry::from_toml(&text).unwrap();
         let items = Arc::new(ld_game::ItemRegistry::new(&blocks, &items_toml).unwrap());
-        Game::new(world, items, Arc::new(ld_game::RecipeBook::default()), false)
+        let drops = Arc::new(ld_game::mining::DropTable::new(&blocks, &items).unwrap());
+        Game::new(world, items, Arc::new(ld_game::RecipeBook::default()), drops, false)
     }
 
     fn run(game: &mut Game, input: &mut InputState, ticks: u32) {

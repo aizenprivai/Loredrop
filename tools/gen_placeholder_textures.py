@@ -522,8 +522,40 @@ TEXTURES.update({
     "furnace_front_on": lambda: furnace_front(True),
 })
 
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: block-breaking cracks (10 stages, transparent background)
+# ---------------------------------------------------------------------------
+
+def destroy_stage(stage):
+    """Cracks that spread from the centre as `stage` goes 0 → 9."""
+    rng = random.Random(90)
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    # Pre-generate crack paths; draw more of them (and longer) at higher stages.
+    paths = []
+    for k in range(10):
+        x, y = 7.5 + rng.uniform(-1, 1), 7.5 + rng.uniform(-1, 1)
+        ang = rng.uniform(0, 6.283)
+        pts = []
+        for _ in range(12):
+            import math
+            ang += rng.uniform(-0.7, 0.7)
+            x += math.cos(ang)
+            y += math.sin(ang)
+            pts.append((int(x) % N, int(y) % N))
+        paths.append(pts)
+    for k in range(min(10, 2 + stage)):
+        for (px, py) in paths[k][: 3 + stage]:
+            img.putpixel((px, py), (20, 20, 20, 230))
+    return img
+
+
+for _s in range(10):
+    TEXTURES[f"destroy_stage_{_s}"] = (lambda st=_s: lambda: destroy_stage(st))()
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     for name, fn in TEXTURES.items():
         fn().save(os.path.join(OUT, name + ".png"))
-    print(f"wrote {len(TEXTURES)} textures (incl. Phase 5) to {os.path.normpath(OUT)}")
+    print(f"wrote {len(TEXTURES)} textures (incl. cracks) to {os.path.normpath(OUT)}")

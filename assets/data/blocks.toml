@@ -12,30 +12,49 @@
 #   textures  texture per face. Keys: all, side, top, bottom, north, south, east, west
 #             (more specific keys win). Names are files in assets/textures/block/
 #             and match Minecraft Java resource-pack names, so packs can replace them.
-#   tint      faces coloured by the biome: "grass" or "foliage".
+#   tint      faces coloured by the biome: "grass", "foliage" or "water".
+#   shape     "cube" (default) or "cross" (plants)
+#   hardness  seconds-ish to mine by hand (Minecraft scale); -1 = unbreakable; 0 = instant
+#   tool      the tool that mines it fast: pickaxe | axe | shovel | hoe
+#   harvest_level  if set, the block only DROPS when mined with `tool` of at least
+#             this tier level (0 wood/gold, 1 stone, 2 iron, 3 diamond)
+#   drops     what breaking it gives (default: itself). "none", "item", "item:2-5"
+#             (random count) or "item@0.02" (2 % chance)
 #
 # `air` is built in and must not be listed.
 
 [[block]]
 name = "stone"
+hardness = 1.5
+tool = "pickaxe"
+harvest_level = 0
+drops = "cobblestone"
 display = "Stone"
 layer = "opaque"
 textures = { all = "stone" }
 
 [[block]]
 name = "cobblestone"
+hardness = 2.0
+tool = "pickaxe"
+harvest_level = 0
 display = "Cobblestone"
 layer = "opaque"
 textures = { all = "cobblestone" }
 
 [[block]]
 name = "dirt"
+hardness = 0.5
+tool = "shovel"
 display = "Dirt"
 layer = "opaque"
 textures = { all = "dirt" }
 
 [[block]]
 name = "grass_block"
+hardness = 0.6
+tool = "shovel"
+drops = "dirt"
 display = "Grass Block"
 layer = "opaque"
 textures = { top = "grass_block_top", bottom = "dirt", side = "grass_block_side" }
@@ -43,36 +62,49 @@ tint = { top = "grass" }
 
 [[block]]
 name = "sand"
+hardness = 0.5
+tool = "shovel"
 display = "Sand"
 layer = "opaque"
 textures = { all = "sand" }
 
 [[block]]
 name = "gravel"
+hardness = 0.6
+tool = "shovel"
 display = "Gravel"
 layer = "opaque"
 textures = { all = "gravel" }
 
 [[block]]
 name = "bedrock"
+hardness = -1
+drops = "none"
 display = "Bedrock"
 layer = "opaque"
 textures = { all = "bedrock" }
 
 [[block]]
 name = "oak_log"
+hardness = 2.0
+tool = "axe"
 display = "Oak Log"
 layer = "opaque"
 textures = { side = "oak_log", top = "oak_log_top", bottom = "oak_log_top" }
 
 [[block]]
 name = "oak_planks"
+hardness = 2.0
+tool = "axe"
 display = "Oak Planks"
 layer = "opaque"
 textures = { all = "oak_planks" }
 
 [[block]]
 name = "oak_leaves"
+hardness = 0.2
+tool = "hoe"
+drops = "stick@0.02"
 display = "Oak Leaves"
 layer = "cutout"
 textures = { all = "oak_leaves" }
@@ -80,6 +112,8 @@ tint = { all = "foliage" }
 
 [[block]]
 name = "glass"
+hardness = 0.3
+drops = "none"
 display = "Glass"
 layer = "cutout"
 cull_same = true
@@ -89,54 +123,80 @@ textures = { all = "glass" }
 
 [[block]]
 name = "deepslate"
+hardness = 3.0
+tool = "pickaxe"
+harvest_level = 0
 display = "Deepslate"
 layer = "opaque"
 textures = { side = "deepslate", top = "deepslate_top", bottom = "deepslate_top" }
 
 [[block]]
 name = "granite"
+hardness = 1.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Granite"
 layer = "opaque"
 textures = { all = "granite" }
 
 [[block]]
 name = "diorite"
+hardness = 1.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Diorite"
 layer = "opaque"
 textures = { all = "diorite" }
 
 [[block]]
 name = "andesite"
+hardness = 1.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Andesite"
 layer = "opaque"
 textures = { all = "andesite" }
 
 [[block]]
 name = "sandstone"
+hardness = 0.8
+tool = "pickaxe"
+harvest_level = 0
 display = "Sandstone"
 layer = "opaque"
 textures = { side = "sandstone", top = "sandstone_top", bottom = "sandstone_bottom" }
 
 [[block]]
 name = "clay"
+hardness = 0.6
+tool = "shovel"
 display = "Clay"
 layer = "opaque"
 textures = { all = "clay" }
 
 [[block]]
 name = "ice"
+hardness = 0.5
+tool = "pickaxe"
+drops = "none"
 display = "Ice"
 layer = "opaque"
 textures = { all = "ice" }
 
 [[block]]
 name = "snow_block"
+hardness = 0.2
+tool = "shovel"
+harvest_level = 0
 display = "Snow Block"
 layer = "opaque"
 textures = { all = "snow" }
 
 [[block]]
 name = "snowy_grass_block"
+hardness = 0.6
+tool = "shovel"
+drops = "dirt"
 display = "Snowy Grass Block"
 layer = "opaque"
 textures = { top = "snow", bottom = "dirt", side = "grass_block_snow" }
@@ -162,84 +222,140 @@ textures = { all = "lava_still" }
 # Ores: stone and deepslate variants. Names match Minecraft resource packs.
 [[block]]
 name = "coal_ore"
+hardness = 3.0
+tool = "pickaxe"
+harvest_level = 0
+drops = "coal"
 display = "Coal Ore"
 layer = "opaque"
 textures = { all = "coal_ore" }
 
 [[block]]
 name = "deepslate_coal_ore"
+hardness = 4.5
+tool = "pickaxe"
+harvest_level = 0
+drops = "coal"
 display = "Deepslate Coal Ore"
 layer = "opaque"
 textures = { all = "deepslate_coal_ore" }
 
 [[block]]
 name = "iron_ore"
+hardness = 3.0
+tool = "pickaxe"
+harvest_level = 1
+drops = "raw_iron"
 display = "Iron Ore"
 layer = "opaque"
 textures = { all = "iron_ore" }
 
 [[block]]
 name = "deepslate_iron_ore"
+hardness = 4.5
+tool = "pickaxe"
+harvest_level = 1
+drops = "raw_iron"
 display = "Deepslate Iron Ore"
 layer = "opaque"
 textures = { all = "deepslate_iron_ore" }
 
 [[block]]
 name = "copper_ore"
+hardness = 3.0
+tool = "pickaxe"
+harvest_level = 1
+drops = "raw_copper:2-5"
 display = "Copper Ore"
 layer = "opaque"
 textures = { all = "copper_ore" }
 
 [[block]]
 name = "deepslate_copper_ore"
+hardness = 4.5
+tool = "pickaxe"
+harvest_level = 1
+drops = "raw_copper:2-5"
 display = "Deepslate Copper Ore"
 layer = "opaque"
 textures = { all = "deepslate_copper_ore" }
 
 [[block]]
 name = "gold_ore"
+hardness = 3.0
+tool = "pickaxe"
+harvest_level = 2
+drops = "raw_gold"
 display = "Gold Ore"
 layer = "opaque"
 textures = { all = "gold_ore" }
 
 [[block]]
 name = "deepslate_gold_ore"
+hardness = 4.5
+tool = "pickaxe"
+harvest_level = 2
+drops = "raw_gold"
 display = "Deepslate Gold Ore"
 layer = "opaque"
 textures = { all = "deepslate_gold_ore" }
 
 [[block]]
 name = "diamond_ore"
+hardness = 3.0
+tool = "pickaxe"
+harvest_level = 2
+drops = "diamond"
 display = "Diamond Ore"
 layer = "opaque"
 textures = { all = "diamond_ore" }
 
 [[block]]
 name = "deepslate_diamond_ore"
+hardness = 4.5
+tool = "pickaxe"
+harvest_level = 2
+drops = "diamond"
 display = "Deepslate Diamond Ore"
 layer = "opaque"
 textures = { all = "deepslate_diamond_ore" }
 
 [[block]]
 name = "lapis_ore"
+hardness = 3.0
+tool = "pickaxe"
+harvest_level = 1
+drops = "lapis_lazuli:4-9"
 display = "Lapis Lazuli Ore"
 layer = "opaque"
 textures = { all = "lapis_ore" }
 
 [[block]]
 name = "deepslate_lapis_ore"
+hardness = 4.5
+tool = "pickaxe"
+harvest_level = 1
+drops = "lapis_lazuli:4-9"
 display = "Deepslate Lapis Lazuli Ore"
 layer = "opaque"
 textures = { all = "deepslate_lapis_ore" }
 
 [[block]]
 name = "emerald_ore"
+hardness = 3.0
+tool = "pickaxe"
+harvest_level = 2
+drops = "emerald"
 display = "Emerald Ore"
 layer = "opaque"
 textures = { all = "emerald_ore" }
 
 [[block]]
 name = "deepslate_emerald_ore"
+hardness = 4.5
+tool = "pickaxe"
+harvest_level = 2
+drops = "emerald"
 display = "Deepslate Emerald Ore"
 layer = "opaque"
 textures = { all = "deepslate_emerald_ore" }
@@ -247,42 +363,57 @@ textures = { all = "deepslate_emerald_ore" }
 # Trees
 [[block]]
 name = "birch_log"
+hardness = 2.0
+tool = "axe"
 display = "Birch Log"
 layer = "opaque"
 textures = { side = "birch_log", top = "birch_log_top", bottom = "birch_log_top" }
 
 [[block]]
 name = "birch_planks"
+hardness = 2.0
+tool = "axe"
 display = "Birch Planks"
 layer = "opaque"
 textures = { all = "birch_planks" }
 
 [[block]]
 name = "birch_leaves"
+hardness = 0.2
+tool = "hoe"
+drops = "stick@0.02"
 display = "Birch Leaves"
 layer = "cutout"
 textures = { all = "birch_leaves" }
 
 [[block]]
 name = "spruce_log"
+hardness = 2.0
+tool = "axe"
 display = "Spruce Log"
 layer = "opaque"
 textures = { side = "spruce_log", top = "spruce_log_top", bottom = "spruce_log_top" }
 
 [[block]]
 name = "spruce_planks"
+hardness = 2.0
+tool = "axe"
 display = "Spruce Planks"
 layer = "opaque"
 textures = { all = "spruce_planks" }
 
 [[block]]
 name = "spruce_leaves"
+hardness = 0.2
+tool = "hoe"
+drops = "stick@0.02"
 display = "Spruce Leaves"
 layer = "cutout"
 textures = { all = "spruce_leaves" }
 
 [[block]]
 name = "cactus"
+hardness = 0.4
 display = "Cactus"
 layer = "cutout"
 textures = { side = "cactus_side", top = "cactus_top", bottom = "cactus_bottom" }
@@ -290,6 +421,8 @@ textures = { side = "cactus_side", top = "cactus_top", bottom = "cactus_bottom" 
 # Plants (cross-shaped, walk-through)
 [[block]]
 name = "short_grass"
+hardness = 0.0
+drops = "none"
 display = "Short Grass"
 layer = "cutout"
 shape = "cross"
@@ -299,6 +432,8 @@ tint = { all = "grass" }
 
 [[block]]
 name = "fern"
+hardness = 0.0
+drops = "none"
 display = "Fern"
 layer = "cutout"
 shape = "cross"
@@ -308,6 +443,8 @@ tint = { all = "grass" }
 
 [[block]]
 name = "dead_bush"
+hardness = 0.0
+drops = "stick:0-2"
 display = "Dead Bush"
 layer = "cutout"
 shape = "cross"
@@ -316,6 +453,7 @@ textures = { all = "dead_bush" }
 
 [[block]]
 name = "dandelion"
+hardness = 0.0
 display = "Dandelion"
 layer = "cutout"
 shape = "cross"
@@ -323,6 +461,7 @@ textures = { all = "dandelion" }
 
 [[block]]
 name = "poppy"
+hardness = 0.0
 display = "Poppy"
 layer = "cutout"
 shape = "cross"
@@ -330,6 +469,7 @@ textures = { all = "poppy" }
 
 [[block]]
 name = "cornflower"
+hardness = 0.0
 display = "Cornflower"
 layer = "cutout"
 shape = "cross"
@@ -339,48 +479,72 @@ textures = { all = "cornflower" }
 
 [[block]]
 name = "stone_bricks"
+hardness = 1.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Stone Bricks"
 layer = "opaque"
 textures = { all = "stone_bricks" }
 
 [[block]]
 name = "cracked_stone_bricks"
+hardness = 1.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Cracked Stone Bricks"
 layer = "opaque"
 textures = { all = "cracked_stone_bricks" }
 
 [[block]]
 name = "mossy_stone_bricks"
+hardness = 1.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Mossy Stone Bricks"
 layer = "opaque"
 textures = { all = "mossy_stone_bricks" }
 
 [[block]]
 name = "chiseled_stone_bricks"
+hardness = 1.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Chiseled Stone Bricks"
 layer = "opaque"
 textures = { all = "chiseled_stone_bricks" }
 
 [[block]]
 name = "deepslate_bricks"
+hardness = 3.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Deepslate Bricks"
 layer = "opaque"
 textures = { all = "deepslate_bricks" }
 
 [[block]]
 name = "cracked_deepslate_bricks"
+hardness = 3.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Cracked Deepslate Bricks"
 layer = "opaque"
 textures = { all = "cracked_deepslate_bricks" }
 
 [[block]]
 name = "cut_sandstone"
+hardness = 0.8
+tool = "pickaxe"
+harvest_level = 0
 display = "Cut Sandstone"
 layer = "opaque"
 textures = { side = "cut_sandstone", top = "sandstone_top", bottom = "sandstone_top" }
 
 [[block]]
 name = "chiseled_sandstone"
+hardness = 0.8
+tool = "pickaxe"
+harvest_level = 0
 display = "Chiseled Sandstone"
 layer = "opaque"
 textures = { side = "chiseled_sandstone", top = "sandstone_top", bottom = "sandstone_top" }
@@ -389,6 +553,8 @@ textures = { side = "chiseled_sandstone", top = "sandstone_top", bottom = "sands
 # story (reading tablets arrives with interaction in Phase 5).
 [[block]]
 name = "lore_tablet"
+hardness = -1
+drops = "none"
 display = "Lore Tablet"
 layer = "opaque"
 textures = { side = "lore_tablet_side", top = "lore_tablet_top", bottom = "lore_tablet_top" }
@@ -397,12 +563,17 @@ textures = { side = "lore_tablet_side", top = "lore_tablet_top", bottom = "lore_
 
 [[block]]
 name = "crafting_table"
+hardness = 2.5
+tool = "axe"
 display = "Crafting Table"
 layer = "opaque"
 textures = { top = "crafting_table_top", bottom = "oak_planks", side = "crafting_table_side", north = "crafting_table_front", south = "crafting_table_front" }
 
 [[block]]
 name = "furnace"
+hardness = 3.5
+tool = "pickaxe"
+harvest_level = 0
 display = "Furnace"
 layer = "opaque"
 textures = { top = "furnace_top", bottom = "furnace_top", side = "furnace_side", north = "furnace_front", south = "furnace_front" }

@@ -20,7 +20,7 @@ mod mesh;
 mod screenshot;
 
 pub use camera::Camera;
-pub use chunks::ChunkStats;
+pub use chunks::{ChunkStats, EntityVertex};
 pub use gpu::{GpuInfo, RenderError};
 pub use mesh::{MeshId, Vertex};
 pub use screenshot::Screenshot;
@@ -312,6 +312,12 @@ impl Renderer {
     /// Removes a section's mesh from the GPU.
     pub fn remove_section(&mut self, pos: ld_core::coords::SectionPos) {
         self.chunks.remove(pos);
+    }
+
+    /// Sets this frame's entity triangles (dropped items, breaking cracks…).
+    /// Positions must be relative to the camera.
+    pub fn set_entities(&mut self, vertices: &[EntityVertex]) {
+        self.chunks.set_entities(&self.gpu.device, &self.gpu.queue, vertices);
     }
 
     /// Sets (or clears) the box outlined this frame — the targeted block.
@@ -612,6 +618,7 @@ mod shader_tests {
             ("world.wgsl", include_str!("shaders/world.wgsl")),
             ("chunk.wgsl", include_str!("shaders/chunk.wgsl")),
             ("outline.wgsl", include_str!("shaders/outline.wgsl")),
+            ("entity.wgsl", include_str!("shaders/entity.wgsl")),
         ] {
             let module = naga::front::wgsl::parse_str(src)
                 .unwrap_or_else(|e| panic!("{name}: {}", e.emit_to_string(src)));

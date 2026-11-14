@@ -128,7 +128,8 @@ impl TextureSet {
 /// Name of the built-in placeholder texture, always layer 0.
 pub const MISSING: &str = "<missing>";
 
-/// Loads every named block texture. Textures of different sizes are scaled
+/// Loads every named texture into one set (block textures, plus item
+/// sprites named `item/<name>`). Textures of different sizes are scaled
 /// (nearest-neighbour, keeping the pixel-art look) to the largest size found.
 /// Tall images (animation strips, e.g. 16×512 water) use their first frame
 /// until texture animation is implemented.
@@ -136,7 +137,12 @@ pub fn load_block_textures(assets: &Path, names: &[String]) -> TextureSet {
     let dir = assets.join("textures").join("block");
     let mut loaded: Vec<(String, Option<image::RgbaImage>)> = Vec::new();
     for name in names {
-        let path = dir.join(format!("{name}.png"));
+        // "item/<name>" refers to an item sprite (used when items are shown in
+        // the world, e.g. dropped on the ground); everything else is a block texture.
+        let path = match name.strip_prefix("item/") {
+            Some(item) => assets.join("textures").join("item").join(format!("{item}.png")),
+            None => dir.join(format!("{name}.png")),
+        };
         let img = match image::open(&path) {
             Ok(i) => {
                 let mut rgba = i.to_rgba8();

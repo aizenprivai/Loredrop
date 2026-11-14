@@ -8,7 +8,8 @@
 use crate::game::{Game, GameMode};
 use glam::DVec3;
 use ld_core::coords::BlockPos;
-use ld_game::{ItemKind, ItemStack};
+use ld_game::mining::break_progress_per_tick;
+use ld_game::{ItemKind, ItemStack, ToolInfo, ToolKind};
 use ld_input::{Action, InputState};
 use ld_physics::{Aabb, raycast};
 use ld_world::{BlockId, Shape};
@@ -63,11 +64,19 @@ impl Game {
         self.attack_cooldown = self.attack_cooldown.saturating_sub(1);
         self.use_cooldown = self.use_cooldown.saturating_sub(1);
         let attack_pressed = input.take_press(Action::Attack);
-        if (attack_pressed || (input.is_held(Action::Attack) && self.attack_cooldown == 0))
-            && self.mode == GameMode::Creative
-            && self.break_target()
-        {
-            self.attack_cooldown = BREAK_REPEAT_TICKS;
+        match self.mode {
+            GameMode::Creative => {
+                self.breaking = None;
+                if (attack_pressed || (input.is_held(Action::Attack) && self.attack_cooldown == 0))
+                    && self.break_target()
+                {
+                    self.attack_cooldown = BREAK_REPEAT_TICKS;
+                }
+            }
+            GameMode::Survival => self.survival_mine(attack_pressed || input.is_held(Action::Attack)),
+        }
+        if input.take_press(Action::DropItem) {
+            self.drop_held(input.is_held(Action::Sprint)); // Ctrl+Q drops the whole stack
         }
         let use_pressed = input.take_press(Action::UseItem);
         // Using a block (crafting table…) takes priority over placing, unless
@@ -95,19 +104,111 @@ impl Game {
         false
     }
 
-    /// Removes the targeted block. Returns true if something was broken.
+    /// Removes the targeted block (Creative: no drops). Returns true if broken.
     pub fn break_target(&mut self) -> bool {
         let Some(hit) = self.target else { return false };
-        self.world.set_block(hit.pos, BlockId::AIR);
-        // Plants standing on the removed block lose their support and pop off.
-        let above = BlockPos::new(hit.pos.x, hit.pos.y + 1, hit.pos.z);
+        self.remove_block(hit.pos, false);
+        true
+    }
+
+    /// Removes a block; plants standing on it lose their support and pop
+    /// off too. With `drop_items`, popped plants drop as items (Survival).
+    fn remove_block(&mut self, pos: BlockPos, drop_items: bool) {
+        self.world.set_block(pos, BlockId::AIR);
+        let above = BlockPos::new(pos.x, pos.y + 1, pos.z);
         if let Some(id) = self.world.map.block(above)
             && self.world.registry.get(id).shape == Shape::Cross
         {
             self.world.set_block(above, BlockId::AIR);
+            if drop_items {
+                self.spawn_drops(above, id, None);
+            }
         }
         self.update_target();
-        true
+    }
+
+    fn next_random(&mut self) -> f32 {
+        self.rng ^= self.rng << 13;
+        self.rng ^= self.rng >> 7;
+        self.rng ^= self.rng << 17;
+        (self.rng >> 40) as f32 / (1u64 << 24) as f32
+    }
+
+    /// Spawns the items a block drops when mined with `tool`.
+    fn spawn_drops(&mut self, pos: BlockPos, id: BlockId, tool: Option<&ToolInfo>) {
+        let drops = self.drops.clone();
+        let def = self.world.registry.get(id).clone();
+        let stacks = drops.drops(id, &def, tool, || self.next_random());
+        for s in stacks {
+            self.entities.drop_from_block(pos.x, pos.y, pos.z, s);
+        }
+    }
+
+    /// The tool in hand, if the held item is one.
+    fn held_tool(&self) -> Option<ToolInfo> {
+        match self.inventory.held().map(|s| &self.items.get(s.item).kind) {
+            Some(ItemKind::Tool(t)) => Some(t.clone()),
+            _ => None,
+        }
+    }
+
+    /// Survival mining: hold attack to make progress at Minecraft's rate;
+    /// the block breaks (and drops) when progress reaches 1.
+    fn survival_mine(&mut self, attacking: bool) {
+        if self.break_delay > 0 {
+            self.break_delay -= 1;
+            self.breaking = None;
+            return;
+        }
+        let (Some(hit), true) = (self.target, attacking) else {
+            self.breaking = None;
+            return;
+        };
+        let Some(id) = self.world.map.block(hit.pos) else { return };
+        let def = self.world.registry.get(id).clone();
+        let tool = self.held_tool();
+        let Some(per_tick) = break_progress_per_tick(&def, tool.as_ref(), self.player.on_ground) else {
+            self.breaking = None; // unbreakable
+            return;
+        };
+        let progress = match self.breaking {
+            Some((pos, p)) if pos == hit.pos => p + per_tick,
+            _ => per_tick,
+        };
+        if progress < 1.0 {
+            self.breaking = Some((hit.pos, progress));
+            return;
+        }
+        // Broken!
+        self.breaking = None;
+        if per_tick < 1.0 {
+            self.break_delay = 5; // Minecraft's pause between blocks (not for instant ones)
+        }
+        self.spawn_drops(hit.pos, id, tool.as_ref());
+        self.remove_block(hit.pos, true);
+        // Tools wear out: 1 durability per block (2 for swords), not for instant blocks.
+        if let Some(t) = tool
+            && def.hardness > 0.0
+            && let Some(stack) = self.inventory.held_mut()
+        {
+            stack.damage += if t.kind == ToolKind::Sword { 2 } else { 1 };
+            if stack.damage >= t.durability {
+                *self.inventory.held_mut() = None; // the tool breaks
+            }
+        }
+    }
+
+    /// Q: throw one held item (or the whole stack) in front of the player.
+    fn drop_held(&mut self, whole_stack: bool) {
+        let Some(mut stack) = self.inventory.held() else { return };
+        let n = if whole_stack { stack.count } else { 1 };
+        stack.count = n;
+        for _ in 0..n {
+            self.inventory.consume_held();
+        }
+        let eye = self.player.pos + DVec3::new(0.0, self.eye, 0.0);
+        let look = self.look_dir();
+        self.entities.throw(eye, look, stack);
     }
 
     /// Places the held block against the targeted face. Returns true if placed.

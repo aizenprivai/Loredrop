@@ -116,6 +116,16 @@ pub struct BlockDef {
     pub solid: bool,
     /// Whether placing a block here simply replaces it (air, water, grass plants).
     pub replaceable: bool,
+    /// Mining hardness on Minecraft's scale; negative = unbreakable, 0 = instant.
+    pub hardness: f32,
+    /// Tool kind that mines it fast (`pickaxe`, `axe`, `shovel`, `hoe`).
+    pub tool: Option<String>,
+    /// If set, the block only drops when mined with `tool` of at least this level.
+    pub harvest_level: Option<u8>,
+    /// Drop specification (see blocks.toml); `None` = drops itself.
+    pub drops: Option<String>,
+    /// Whether this block has a matching item (false for e.g. a lit furnace).
+    pub has_item: bool,
     /// For cutout blocks: hide faces between two blocks of the same type
     /// (true for glass, false for leaves so trees look full).
     pub cull_same: bool,
@@ -149,6 +159,11 @@ struct BlockEntry {
     solid: Option<bool>,
     replaceable: Option<bool>,
     cull_same: Option<bool>,
+    hardness: Option<f32>,
+    tool: Option<String>,
+    harvest_level: Option<u8>,
+    drops: Option<String>,
+    item: Option<bool>,
     #[serde(default)]
     textures: HashMap<String, String>,
     #[serde(default)]
@@ -198,6 +213,11 @@ impl BlockRegistry {
             shape: Shape::Cube,
             solid: false,
             replaceable: true,
+            hardness: 0.0,
+            tool: None,
+            harvest_level: None,
+            drops: Some("none".into()),
+            has_item: false,
             cull_same: false,
             textures: Default::default(),
             tints: [Tint::None; 6],
@@ -212,6 +232,11 @@ impl BlockRegistry {
                 display: e.display.unwrap_or_else(|| e.name.clone()),
                 solid: e.solid.unwrap_or(e.layer != RenderLayer::Invisible && e.shape == Shape::Cube),
                 replaceable: e.replaceable.unwrap_or(false),
+                hardness: e.hardness.unwrap_or(1.0),
+                tool: e.tool,
+                harvest_level: e.harvest_level,
+                drops: e.drops,
+                has_item: e.item.unwrap_or(true),
                 shape: e.shape,
                 cull_same: e.cull_same.unwrap_or(false),
                 name: e.name,
