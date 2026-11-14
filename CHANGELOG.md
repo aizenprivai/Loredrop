@@ -116,3 +116,6 @@
   NaN-robustness tests (after a NaN created 320-high walls — fixed).
 - Generation optimised from 10.3 ms to 1.3 ms per column.
 - 79 automated tests; clippy and rustdoc clean.
+- First real-hardware test by the director (Linux): runs at a steady 60 FPS
+  (VSync), mouse speed confirmed — KB-001 closed. Added a troubleshooting
+  section to the README (touchpad "disable while typing", VSync, glibc).

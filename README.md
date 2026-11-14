@@ -51,3 +51,14 @@ cargo doc --no-deps --open  # browsable docs from code comments
 
 Project documents: `GDD.md`, `ROADMAP.md`, `ARCHITECTURE.md`, `CHANGELOG.md`,
 `TODO.md`, `KNOWN_BUGS.md`, `BENCHMARKS.md`.
+
+## Troubleshooting
+
+- **Camera freezes while walking/jumping (laptop touchpad):** your desktop's
+  "disable touchpad while typing" feature is pausing the touchpad whenever a
+  key is held. Turn it off: GNOME → Settings → Mouse & Touchpad →
+  "Disable Touchpad While Typing"; KDE → Touchpad → "Disable while typing".
+- **FPS stuck at 60 (or your monitor's rate):** that's VSync. Set
+  `vsync = false` in `settings.toml` to see uncapped FPS.
+- **Error mentioning `GLIBC_2.39`:** the prebuilt Linux binary needs a recent
+  distro; build from source with `cargo run --release` instead.

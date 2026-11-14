@@ -10,7 +10,8 @@
 - [x] Debug/performance overlay (F3), crosshair, screenshots (F2), fullscreen (F11)
 - [x] Simple 3D test environment
 - [x] Director approval of Phase 2 report (2026-11-14)
-- [ ] **Director to test on real hardware** (FPS, mouse feel, Windows/macOS startup)
+- [x] Director tested on real hardware (Linux): 60 FPS VSync-capped, mouse OK
+- [ ] Uncapped FPS + GPU model; Windows/macOS startup (later)
 
 ## Deferred from Phase 2 (planned later)
 - [ ] In-game settings menu (Phase 11; file editing works now)

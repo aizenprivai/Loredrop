@@ -86,3 +86,10 @@ Real terrain has ~3× the geometry of Phase 3's test hills. Render distance 8
 uses ~21 MB for world + meshes, far within the 4 GB minimum target.
 In-game software rendering: ~24 FPS, ~186 k triangles, ~650 draw calls (CPU
 emulating a GPU — not meaningful for real hardware; draw calls are a Phase 10 target).
+
+## First real-hardware test (director's PC, 2026-11-14)
+
+Linux, prebuilt release binary, default settings (render distance 8, VSync on):
+**steady 60 FPS (VSync-capped)**. Mouse sensitivity confirmed correct.
+Still to collect: GPU model, uncapped FPS (`vsync = false`), and higher render
+distances.
