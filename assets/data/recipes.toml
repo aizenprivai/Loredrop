@@ -258,6 +258,31 @@ result = "diamond_boots"
 pattern = ["X X", "X X"]
 key = { X = "diamond" }
 
+[[shaped]]
+result = "leather_helmet"
+pattern = ["XXX", "X X"]
+key = { X = "leather" }
+
+[[shaped]]
+result = "leather_chestplate"
+pattern = ["X X", "XXX", "XXX"]
+key = { X = "leather" }
+
+[[shaped]]
+result = "leather_leggings"
+pattern = ["XXX", "X X", "X X"]
+key = { X = "leather" }
+
+[[shaped]]
+result = "leather_boots"
+pattern = ["X X", "X X"]
+key = { X = "leather" }
+
+[[shaped]]
+result = "white_wool"
+pattern = ["SS", "SS"]
+key = { S = "string" }
+
 # --- Smelting -----------------------------------------------------------------
 [[smelting]]
 input = "raw_iron"
@@ -282,6 +307,22 @@ result = "glass"
 [[smelting]]
 input = "#logs"
 result = "charcoal"
+
+[[smelting]]
+input = "beef"
+result = "cooked_beef"
+
+[[smelting]]
+input = "porkchop"
+result = "cooked_porkchop"
+
+[[smelting]]
+input = "chicken"
+result = "cooked_chicken"
+
+[[smelting]]
+input = "mutton"
+result = "cooked_mutton"
 
 [fuels]
 coal = 1600

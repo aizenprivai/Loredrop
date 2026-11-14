@@ -1,0 +1,166 @@
+# Loredrop creatures.
+#
+#   name, display      stable ID / shown name
+#   category           passive | hostile
+#   health             hit points (2 = one heart)
+#   speed              movement speed (Minecraft-style attribute; player walking ≈ 0.1 accel)
+#   width, height      hitbox in blocks
+#   attack_damage      melee damage on Normal difficulty (Easy ×0.5+1, Hard ×1.5)
+#   ranged             true: shoots arrows instead of melee (skeleton-style)
+#   drops              "item", "item:min-max" or "item@chance", rolled on death
+#   spawn              where it appears:
+#                        surface = grassy biomes (list) when a chunk is first generated
+#                        dark    = places without sky access (caves) near the player
+#                      group = [min, max] creatures per spawn, weight = relative frequency
+#
+# Models are made of boxes measured in PIXELS (16 = one block):
+#   box   = [x, y, z, width, height, depth] — x across, y up from the feet, z forward
+#   pivot = [x, y, z] point the part rotates around (hips, shoulders, neck)
+#   rot   = [x, y, z] fixed rotation in degrees (e.g. zombie arms held forward)
+#   role  = head | leg | arm | wing | none — how the part animates
+#   phase = 0 or 1: which half of the walk cycle a leg/arm swings in
+#   tex   = texture for all faces (assets/textures/entity/), front = texture for the +z face
+
+# ---------------------------------------------------------------- passive ----
+[[mob]]
+name = "cow"
+display = "Cow"
+category = "passive"
+health = 10
+speed = 0.2
+width = 0.9
+height = 1.4
+drops = ["beef:1-3", "leather:0-2"]
+spawn = { surface = ["plains", "forest", "birch_forest", "taiga", "mountains"], group = [2, 4], weight = 8 }
+parts = [
+  { name = "body", box = [-6, 12, -9, 12, 10, 18], tex = "cow_body" },
+  { name = "head", box = [-4, 16, 9, 8, 8, 6], pivot = [0, 20, 9], role = "head", tex = "cow_head", front = "cow_face" },
+  { name = "leg_bl", box = [-6, 0, -9, 4, 12, 4], pivot = [-4, 12, -7], role = "leg", phase = 0, tex = "cow_leg" },
+  { name = "leg_br", box = [2, 0, -9, 4, 12, 4], pivot = [4, 12, -7], role = "leg", phase = 1, tex = "cow_leg" },
+  { name = "leg_fl", box = [-6, 0, 5, 4, 12, 4], pivot = [-4, 12, 7], role = "leg", phase = 1, tex = "cow_leg" },
+  { name = "leg_fr", box = [2, 0, 5, 4, 12, 4], pivot = [4, 12, 7], role = "leg", phase = 0, tex = "cow_leg" },
+]
+
+[[mob]]
+name = "pig"
+display = "Pig"
+category = "passive"
+health = 10
+speed = 0.25
+width = 0.9
+height = 0.9
+drops = ["porkchop:1-3"]
+spawn = { surface = ["plains", "forest", "birch_forest"], group = [2, 4], weight = 10 }
+parts = [
+  { name = "body", box = [-5, 6, -8, 10, 8, 16], tex = "pig_body" },
+  { name = "head", box = [-4, 7, 8, 8, 8, 8], pivot = [0, 11, 8], role = "head", tex = "pig_body", front = "pig_face" },
+  { name = "leg_bl", box = [-5, 0, -8, 4, 6, 4], pivot = [-3, 6, -6], role = "leg", phase = 0, tex = "pig_leg" },
+  { name = "leg_br", box = [1, 0, -8, 4, 6, 4], pivot = [3, 6, -6], role = "leg", phase = 1, tex = "pig_leg" },
+  { name = "leg_fl", box = [-5, 0, 4, 4, 6, 4], pivot = [-3, 6, 6], role = "leg", phase = 1, tex = "pig_leg" },
+  { name = "leg_fr", box = [1, 0, 4, 4, 6, 4], pivot = [3, 6, 6], role = "leg", phase = 0, tex = "pig_leg" },
+]
+
+[[mob]]
+name = "sheep"
+display = "Sheep"
+category = "passive"
+health = 8
+speed = 0.23
+width = 0.9
+height = 1.3
+drops = ["white_wool", "mutton:1-2"]
+spawn = { surface = ["plains", "mountains", "snowy_plains", "taiga"], group = [2, 4], weight = 12 }
+parts = [
+  { name = "body", box = [-5, 11, -8, 10, 10, 16], tex = "sheep_wool" },
+  { name = "head", box = [-3, 14, 8, 6, 6, 8], pivot = [0, 17, 8], role = "head", tex = "sheep_wool", front = "sheep_face" },
+  { name = "leg_bl", box = [-5, 0, -8, 4, 11, 4], pivot = [-3, 11, -6], role = "leg", phase = 0, tex = "sheep_leg" },
+  { name = "leg_br", box = [1, 0, -8, 4, 11, 4], pivot = [3, 11, -6], role = "leg", phase = 1, tex = "sheep_leg" },
+  { name = "leg_fl", box = [-5, 0, 4, 4, 11, 4], pivot = [-3, 11, 6], role = "leg", phase = 1, tex = "sheep_leg" },
+  { name = "leg_fr", box = [1, 0, 4, 4, 11, 4], pivot = [3, 11, 6], role = "leg", phase = 0, tex = "sheep_leg" },
+]
+
+[[mob]]
+name = "chicken"
+display = "Chicken"
+category = "passive"
+health = 4
+speed = 0.25
+width = 0.4
+height = 0.7
+drops = ["chicken", "feather:0-2"]
+spawn = { surface = ["plains", "forest", "birch_forest"], group = [2, 4], weight = 10 }
+parts = [
+  { name = "body", box = [-3, 4, -4, 6, 6, 8], tex = "chicken_body" },
+  { name = "head", box = [-2, 8, 3, 4, 6, 3], pivot = [0, 9, 4], role = "head", tex = "chicken_body", front = "chicken_face" },
+  { name = "wing_l", box = [-4, 6, -3, 1, 4, 6], pivot = [-3, 10, 0], role = "wing", tex = "chicken_body" },
+  { name = "wing_r", box = [3, 6, -3, 1, 4, 6], pivot = [3, 10, 0], role = "wing", tex = "chicken_body" },
+  { name = "leg_l", box = [-2, 0, 0, 1, 4, 1], pivot = [-1.5, 4, 0.5], role = "leg", phase = 0, tex = "chicken_leg" },
+  { name = "leg_r", box = [1, 0, 0, 1, 4, 1], pivot = [1.5, 4, 0.5], role = "leg", phase = 1, tex = "chicken_leg" },
+]
+
+# ---------------------------------------------------------------- hostile ----
+[[mob]]
+name = "zombie"
+display = "Zombie"
+category = "hostile"
+health = 20
+speed = 0.23
+width = 0.6
+height = 1.95
+attack_damage = 3
+drops = ["rotten_flesh:0-2"]
+spawn = { dark = true, group = [1, 4], weight = 100 }
+parts = [
+  { name = "head", box = [-4, 24, -4, 8, 8, 8], pivot = [0, 24, 0], role = "head", tex = "zombie_head", front = "zombie_face" },
+  { name = "body", box = [-4, 12, -2, 8, 12, 4], tex = "zombie_body" },
+  { name = "arm_l", box = [-8, 12, -2, 4, 12, 4], pivot = [-6, 22, 0], rot = [-90, 0, 0], role = "arm", phase = 0, tex = "zombie_arm" },
+  { name = "arm_r", box = [4, 12, -2, 4, 12, 4], pivot = [6, 22, 0], rot = [-90, 0, 0], role = "arm", phase = 1, tex = "zombie_arm" },
+  { name = "leg_l", box = [-4, 0, -2, 4, 12, 4], pivot = [-2, 12, 0], role = "leg", phase = 0, tex = "zombie_leg" },
+  { name = "leg_r", box = [0, 0, -2, 4, 12, 4], pivot = [2, 12, 0], role = "leg", phase = 1, tex = "zombie_leg" },
+]
+
+[[mob]]
+name = "skeleton"
+display = "Skeleton"
+category = "hostile"
+health = 20
+speed = 0.25
+width = 0.6
+height = 1.99
+attack_damage = 3
+ranged = true
+drops = ["bone:0-2", "arrow:0-2"]
+spawn = { dark = true, group = [1, 3], weight = 80 }
+parts = [
+  { name = "head", box = [-4, 24, -4, 8, 8, 8], pivot = [0, 24, 0], role = "head", tex = "skeleton_head", front = "skeleton_face" },
+  { name = "body", box = [-4, 12, -2, 8, 12, 4], tex = "skeleton_body" },
+  { name = "arm_l", box = [-6, 12, -1, 2, 12, 2], pivot = [-5, 22, 0], rot = [-90, 0, 0], role = "arm", phase = 0, tex = "skeleton_limb" },
+  { name = "arm_r", box = [4, 12, -1, 2, 12, 2], pivot = [5, 22, 0], rot = [-90, 0, 0], role = "arm", phase = 1, tex = "skeleton_limb" },
+  { name = "leg_l", box = [-3, 0, -1, 2, 12, 2], pivot = [-2, 12, 0], role = "leg", phase = 0, tex = "skeleton_limb" },
+  { name = "leg_r", box = [1, 0, -1, 2, 12, 2], pivot = [2, 12, 0], role = "leg", phase = 1, tex = "skeleton_limb" },
+]
+
+[[mob]]
+name = "spider"
+display = "Spider"
+category = "hostile"
+health = 16
+speed = 0.3
+width = 1.4
+height = 0.9
+attack_damage = 2
+drops = ["string:0-2"]
+spawn = { dark = true, group = [1, 2], weight = 100 }
+parts = [
+  { name = "abdomen", box = [-5, 3, -13, 10, 8, 12], tex = "spider_body" },
+  { name = "thorax", box = [-3, 5, -3, 6, 6, 6], tex = "spider_body" },
+  { name = "head", box = [-4, 4, 3, 8, 8, 8], pivot = [0, 8, 3], role = "head", tex = "spider_body", front = "spider_face" },
+  { name = "leg_l1", box = [-15, 7, 1, 15, 2, 2], pivot = [0, 8, 2], rot = [0, -35, -25], role = "leg", phase = 0, tex = "spider_leg" },
+  { name = "leg_l2", box = [-15, 7, -1, 15, 2, 2], pivot = [0, 8, 0], rot = [0, -12, -25], role = "leg", phase = 1, tex = "spider_leg" },
+  { name = "leg_l3", box = [-15, 7, -3, 15, 2, 2], pivot = [0, 8, -2], rot = [0, 12, -25], role = "leg", phase = 0, tex = "spider_leg" },
+  { name = "leg_l4", box = [-15, 7, -5, 15, 2, 2], pivot = [0, 8, -4], rot = [0, 35, -25], role = "leg", phase = 1, tex = "spider_leg" },
+  { name = "leg_r1", box = [0, 7, 1, 15, 2, 2], pivot = [0, 8, 2], rot = [0, 35, 25], role = "leg", phase = 1, tex = "spider_leg" },
+  { name = "leg_r2", box = [0, 7, -1, 15, 2, 2], pivot = [0, 8, 0], rot = [0, 12, 25], role = "leg", phase = 0, tex = "spider_leg" },
+  { name = "leg_r3", box = [0, 7, -3, 15, 2, 2], pivot = [0, 8, -2], rot = [0, -12, 25], role = "leg", phase = 1, tex = "spider_leg" },
+  { name = "leg_r4", box = [0, 7, -5, 15, 2, 2], pivot = [0, 8, -4], rot = [0, -35, 25], role = "leg", phase = 0, tex = "spider_leg" },
+]

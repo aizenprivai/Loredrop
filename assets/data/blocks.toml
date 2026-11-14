@@ -590,3 +590,11 @@ item = false
 display = "Furnace"
 layer = "opaque"
 textures = { top = "furnace_top", bottom = "furnace_top", side = "furnace_side", north = "furnace_front_on", south = "furnace_front_on" }
+
+# --- Phase 7 ---------------------------------------------------------------------
+[[block]]
+name = "white_wool"
+hardness = 0.8
+display = "White Wool"
+layer = "opaque"
+textures = { all = "white_wool" }

@@ -551,6 +551,8 @@ def destroy_stage(stage):
     return img
 
 
+TEXTURES["white_wool"] = lambda: noise_tex(95, (232, 232, 228), 12)
+
 for _s in range(10):
     TEXTURES[f"destroy_stage_{_s}"] = (lambda st=_s: lambda: destroy_stage(st))()
 

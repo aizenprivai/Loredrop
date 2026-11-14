@@ -44,9 +44,12 @@ struct Loaded {
     recipes: Arc<ld_game::RecipeBook>,
     drops: Arc<ld_game::mining::DropTable>,
     lore: Arc<ld_assets::Lore>,
+    mobs: Arc<ld_game::mobs::MobRegistry>,
     icons: Vec<icons::Icon>,
     looks: Vec<crate::entities::ItemLook>,
     crack_layers: [u32; 10],
+    /// Texture layer per name, for creature skins and other entity textures.
+    layers: std::collections::HashMap<String, u32>,
 }
 
 fn load_game(settings: &Settings, seed: Option<u64>) -> Result<Loaded, Box<dyn std::error::Error>> {
@@ -59,6 +62,12 @@ fn load_game(settings: &Settings, seed: Option<u64>) -> Result<Loaded, Box<dyn s
         Arc::new(ld_game::RecipeBook::from_toml(&ld_assets::read_data(&assets, "recipes.toml")?, &items)?);
     let drops = Arc::new(ld_game::mining::DropTable::new(&world.registry, &items)?);
     let lore = Arc::new(ld_assets::load_lore(&assets)?);
+    let mobs = Arc::new(ld_game::mobs::MobRegistry::from_toml(
+        &ld_assets::read_data(&assets, "mobs.toml")?,
+        &items,
+        &world.biomes,
+    )?);
+    let layers = textures.names.iter().enumerate().map(|(i, n)| (n.clone(), i as u32)).collect();
     let looks = item_looks(&items, &world.registry, &textures);
     let crack_layers = std::array::from_fn(|i| textures.layer_of(&format!("destroy_stage_{i}")) as u32);
     log::info!(
@@ -67,7 +76,7 @@ fn load_game(settings: &Settings, seed: Option<u64>) -> Result<Loaded, Box<dyn s
         icons.len(),
         recipes.shaped.len() + recipes.shapeless.len() + recipes.smelting.len()
     );
-    Ok(Loaded { world, textures, items, recipes, drops, lore, icons, looks, crack_layers })
+    Ok(Loaded { world, textures, items, recipes, drops, lore, mobs, icons, looks, crack_layers, layers })
 }
 
 /// How each item looks when dropped in the world.
@@ -110,6 +119,16 @@ fn item_looks(
 fn all_texture_names(blocks: &ld_world::BlockRegistry, assets: &std::path::Path) -> Vec<String> {
     let mut names = blocks.texture_names();
     names.extend((0..10).map(|i| format!("destroy_stage_{i}")));
+    if let Ok(dir) = std::fs::read_dir(assets.join("textures").join("entity")) {
+        let mut skins: Vec<String> = dir
+            .flatten()
+            .filter_map(|e| {
+                e.file_name().to_str().and_then(|n| n.strip_suffix(".png")).map(|n| format!("entity/{n}"))
+            })
+            .collect();
+        skins.sort();
+        names.extend(skins);
+    }
     if let Ok(dir) = std::fs::read_dir(assets.join("textures").join("item")) {
         let mut items: Vec<String> = dir
             .flatten()
@@ -366,6 +385,7 @@ struct App {
     icons: Vec<icons::Icon>,
     looks: Vec<crate::entities::ItemLook>,
     crack_layers: [u32; 10],
+    layers: std::collections::HashMap<String, u32>,
     /// Reused every frame for entity triangles.
     entity_vertices: Vec<ld_render::EntityVertex>,
     world_ready_logged: bool,
@@ -375,13 +395,15 @@ struct App {
 
 impl App {
     fn new(options: Options, settings: Settings, loaded: Loaded) -> Self {
-        let Loaded { world, textures, items, recipes, drops, lore, icons, looks, crack_layers } = loaded;
+        let Loaded { world, textures, items, recipes, drops, lore, mobs, icons, looks, crack_layers, layers } =
+            loaded;
         Self {
             bindings: settings.keybinds.clone(),
             show_debug: settings.interface.show_debug_overlay,
             icons,
             looks,
             crack_layers,
+            layers,
             entity_vertices: Vec::new(),
             screen: crate::screens::Screen::None,
             egui_has_keyboard: false,
@@ -390,6 +412,8 @@ impl App {
             game: {
                 let mut g = Game::new(world, items, recipes, drops, options.autopilot);
                 g.lore = lore;
+                g.mobs = crate::mobs::Mobs::new(mobs);
+                g.pending_summons = options.summon.clone();
                 g.set_start_mode(match settings.gameplay.game_mode {
                     ld_config::GameModeSetting::Survival => GameMode::Survival,
                     ld_config::GameModeSetting::Creative => GameMode::Creative,
@@ -677,6 +701,10 @@ impl App {
         self.entity_vertices.clear();
         let time = self.started.elapsed().as_secs_f32();
         self.game.entities.build_vertices(eye, time, &self.looks, &mut self.entity_vertices);
+        let layers = &self.layers;
+        let layer_of = |name: &str| layers.get(&format!("entity/{name}")).copied().unwrap_or(0);
+        let arrow_layer = layers.get("item/arrow").copied().unwrap_or(0);
+        self.game.mobs.build_vertices(eye, alpha, &layer_of, arrow_layer, &mut self.entity_vertices);
         if let Some((pos, progress)) = self.game.breaking {
             let stage = ((progress * 10.0) as usize).min(9);
             let min = glam::DVec3::new(pos.x as f64, pos.y as f64, pos.z as f64);

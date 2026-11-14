@@ -121,6 +121,17 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
             d.render.chunks.sections_drawn, d.render.chunks.sections_culled, d.render.chunks.sections_loaded
         ),
         format!(
+            "Creatures: {} ({} hostile)   arrows: {}",
+            d.game.mobs.list.len(),
+            d.game
+                .mobs
+                .list
+                .iter()
+                .filter(|m| d.game.mobs.defs.get(m.kind).category == ld_game::mobs::Category::Hostile)
+                .count(),
+            d.game.mobs.arrows.len()
+        ),
+        format!(
             "Memory: world {:.1} MB, meshes {:.1} MB",
             d.world.world_bytes as f64 / 1e6,
             d.render.chunks.mesh_bytes as f64 / 1e6

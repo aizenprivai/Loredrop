@@ -12,6 +12,7 @@ USAGE: loredrop [OPTIONS]
   --pos <x> <y> <z>          start at this position (developer option)
   --look <yaw> <pitch>       start looking this way (developer option)
   --fly                      start flying (developer option)
+  --summon <a,b,...>         place creatures in front of you at start (developer option)
   --map <blocks> <file.png>  no window: draw a top-down map around spawn
   -h, --help                 show this help
 

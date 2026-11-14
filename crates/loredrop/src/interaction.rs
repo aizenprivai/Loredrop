@@ -65,9 +65,14 @@ impl Game {
         self.use_cooldown = self.use_cooldown.saturating_sub(1);
         let attack_pressed = input.take_press(Action::Attack);
         if attack_pressed {
+            // A creature in front of the crosshair (and nearer than any block) is hit first.
+            let hit_mob = self.attack_creature();
             // Every swing (at a block, a creature or thin air) restarts the
             // attack cooldown, as in Minecraft's 1.9+ combat.
             self.ticks_since_swing = 0;
+            if hit_mob {
+                return;
+            }
         }
         match self.mode {
             GameMode::Creative => {
@@ -123,6 +128,72 @@ impl Game {
             return true;
         }
         false
+    }
+
+    /// Hits the creature under the crosshair, if any, using the 1.9+ combat
+    /// rules (cooldown-scaled damage, critical hits, sword sweep, knockback,
+    /// weapon wear). Returns true if a creature was hit.
+    fn attack_creature(&mut self) -> bool {
+        let eye = self.player.pos + DVec3::new(0.0, self.eye, 0.0);
+        let dir = self.look_dir();
+        let reach = if self.mode == GameMode::Creative { 5.0 } else { 3.0 };
+        let block_dist = self.target.map(|h| h.distance).unwrap_or(f64::MAX);
+        let mut best: Option<(usize, f64)> = None;
+        for (i, m) in self.mobs.list.iter().enumerate() {
+            if m.death_time > 0 {
+                continue;
+            }
+            if let Some(t) = ray_box(eye, dir, &self.mobs.hitbox(m))
+                && t <= reach
+                && t < block_dist
+                && best.is_none_or(|b| t < b.1)
+            {
+                best = Some((i, t));
+            }
+        }
+        let Some((index, _)) = best else { return false };
+        let held = self.inventory.held();
+        let (base, _) = ld_game::combat::weapon_stats(held, &self.items);
+        let weapon = match held.map(|s| &self.items.get(s.item).kind) {
+            Some(ItemKind::Tool(t)) => Some(t.kind),
+            _ => None,
+        };
+        let ctx = ld_game::combat::AttackContext {
+            strength: self.attack_strength(),
+            falling: self.player.vel.y < 0.0,
+            on_ground: self.player.on_ground,
+            in_water: self.player.fluid != ld_physics::player::Fluid::None,
+            sprinting: self.player.sprinting,
+        };
+        let hit = ld_game::combat::compute_hit(base, weapon, ctx);
+        let knockback = if self.player.sprinting && ctx.strength > 0.9 { 0.9 } else { 0.4 };
+        let from = self.player.pos;
+        if self.mobs.hurt(index, hit.damage, from, knockback) {
+            if hit.sweep {
+                let center = self.mobs.list[index].pos;
+                for j in 0..self.mobs.list.len() {
+                    if j != index
+                        && self.mobs.list[j].pos.distance(center) < 1.5
+                        && self.mobs.list[j].pos.distance(from) < 4.0
+                    {
+                        self.mobs.hurt(j, 1.0, from, 0.4);
+                    }
+                }
+            }
+            if self.mode == GameMode::Survival {
+                self.stats.exhaust(0.1);
+                let wear = ld_game::combat::weapon_wear(weapon);
+                if let (Some(ItemKind::Tool(t)), Some(stack)) =
+                    (held.map(|s| self.items.get(s.item).kind.clone()), self.inventory.held_mut())
+                {
+                    stack.damage += wear;
+                    if stack.damage >= t.durability {
+                        *self.inventory.held_mut() = None;
+                    }
+                }
+            }
+        }
+        true
     }
 
     /// Right-click with armour in hand: wear it (swapping with what's worn).
@@ -196,6 +267,10 @@ impl Game {
             }
         }
         self.update_target();
+    }
+
+    pub(crate) fn next_random_pub(&mut self) -> f32 {
+        self.next_random()
     }
 
     fn next_random(&mut self) -> f32 {
@@ -337,4 +412,25 @@ impl Game {
             *self.inventory.held_mut() = Some(ItemStack::new(item, 1));
         }
     }
+}
+
+/// Distance along a ray (unit `dir`) to where it enters `b`, if it does.
+pub fn ray_box(origin: DVec3, dir: DVec3, b: &Aabb) -> Option<f64> {
+    let (mut t0, mut t1) = (0.0f64, f64::MAX);
+    for axis in 0..3 {
+        let (o, d, lo, hi) = (origin[axis], dir[axis], b.min[axis], b.max[axis]);
+        if d.abs() < 1e-12 {
+            if o < lo || o > hi {
+                return None;
+            }
+        } else {
+            let (a, c) = ((lo - o) / d, (hi - o) / d);
+            t0 = t0.max(a.min(c));
+            t1 = t1.min(a.max(c));
+            if t0 > t1 {
+                return None;
+            }
+        }
+    }
+    Some(t0)
 }

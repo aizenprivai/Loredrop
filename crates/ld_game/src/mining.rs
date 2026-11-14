@@ -48,7 +48,7 @@ fn tool_name(kind: ToolKind) -> &'static str {
 }
 
 /// Parses `"none"`, `"item"`, `"item:2-5"` or `"item@0.02"`.
-fn parse_drop(spec: &str, items: &ItemRegistry) -> Result<Drop, String> {
+pub fn parse_drop(spec: &str, items: &ItemRegistry) -> Result<Drop, String> {
     if spec == "none" {
         return Ok(Drop::Nothing);
     }
@@ -99,25 +99,30 @@ impl DropTable {
         id: BlockId,
         block: &BlockDef,
         tool: Option<&ToolInfo>,
-        mut roll: impl FnMut() -> f32,
+        roll: impl FnMut() -> f32,
     ) -> Vec<ItemStack> {
         if !can_harvest(block, tool) {
             return Vec::new();
         }
-        let mut out = Vec::new();
-        for d in &self.drops[id.0 as usize] {
-            if let Drop::Item { item, min, max, chance } = d {
-                if roll() >= *chance {
-                    continue;
-                }
-                let n = min + ((roll() * (max - min + 1) as f32) as u16).min(max - min);
-                if n > 0 {
-                    out.push(ItemStack::new(*item, n));
-                }
+        roll_drops(&self.drops[id.0 as usize], roll)
+    }
+}
+
+/// Rolls a list of drops (each independently) into item stacks.
+pub fn roll_drops(drops: &[Drop], mut roll: impl FnMut() -> f32) -> Vec<ItemStack> {
+    let mut out = Vec::new();
+    for d in drops {
+        if let Drop::Item { item, min, max, chance } = d {
+            if roll() >= *chance {
+                continue;
+            }
+            let n = min + ((roll() * (max - min + 1) as f32) as u16).min(max - min);
+            if n > 0 {
+                out.push(ItemStack::new(*item, n));
             }
         }
-        out
     }
+    out
 }
 
 /// Whether `tool` is the kind of tool `block` wants.

@@ -97,6 +97,8 @@ pub struct World {
     /// Offsets within (render distance + 1), sorted nearest-first.
     offsets: Vec<(i32, i32)>,
     render_distance: i32,
+    /// Columns that finished generating since last drained (for spawning animals).
+    pub newly_loaded: Vec<ChunkPos>,
 }
 
 impl World {
@@ -139,6 +141,7 @@ impl World {
             uploads: VecDeque::new(),
             offsets: Vec::new(),
             render_distance: -1,
+            newly_loaded: Vec::new(),
         }
     }
 
@@ -177,6 +180,7 @@ impl World {
             }
             self.map.insert(col);
             self.columns.entry(pos).or_default();
+            self.newly_loaded.push(pos);
         }
 
         // 2. Unload far columns; drop meshes of columns outside render distance.

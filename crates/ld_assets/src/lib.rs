@@ -139,9 +139,12 @@ pub fn load_block_textures(assets: &Path, names: &[String]) -> TextureSet {
     for name in names {
         // "item/<name>" refers to an item sprite (used when items are shown in
         // the world, e.g. dropped on the ground); everything else is a block texture.
-        let path = match name.strip_prefix("item/") {
-            Some(item) => assets.join("textures").join("item").join(format!("{item}.png")),
-            None => dir.join(format!("{name}.png")),
+        let path = if let Some(item) = name.strip_prefix("item/") {
+            assets.join("textures").join("item").join(format!("{item}.png"))
+        } else if let Some(skin) = name.strip_prefix("entity/") {
+            assets.join("textures").join("entity").join(format!("{skin}.png")) // creature skins
+        } else {
+            dir.join(format!("{name}.png"))
         };
         let img = match image::open(&path) {
             Ok(i) => {

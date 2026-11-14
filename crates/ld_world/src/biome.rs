@@ -149,6 +149,11 @@ impl BiomeRegistry {
         Ok(Self { defs })
     }
 
+    /// A registry with no biomes (placeholder; `get` must not be called).
+    pub fn empty() -> Self {
+        Self { defs: Vec::new() }
+    }
+
     pub fn get(&self, id: BiomeId) -> &BiomeDef {
         self.defs.get(id.0 as usize).unwrap_or(&self.defs[0])
     }

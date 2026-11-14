@@ -396,3 +396,111 @@ defense = 3
 toughness = 2.0
 durability = 429
 
+
+# --- Creature drops (Phase 7) ---------------------------------------------------
+[[item]]
+name = "beef"
+display = "Raw Beef"
+food = 3
+saturation = 0.3
+
+[[item]]
+name = "cooked_beef"
+display = "Steak"
+food = 8
+saturation = 0.8
+
+[[item]]
+name = "porkchop"
+display = "Raw Porkchop"
+food = 3
+saturation = 0.3
+
+[[item]]
+name = "cooked_porkchop"
+display = "Cooked Porkchop"
+food = 8
+saturation = 0.8
+
+[[item]]
+name = "chicken"
+display = "Raw Chicken"
+food = 2
+saturation = 0.3
+
+[[item]]
+name = "cooked_chicken"
+display = "Cooked Chicken"
+food = 6
+saturation = 0.6
+
+[[item]]
+name = "mutton"
+display = "Raw Mutton"
+food = 2
+saturation = 0.3
+
+[[item]]
+name = "cooked_mutton"
+display = "Cooked Mutton"
+food = 6
+saturation = 0.8
+
+[[item]]
+name = "rotten_flesh"
+display = "Rotten Flesh"
+food = 4
+saturation = 0.1
+
+[[item]]
+name = "leather"
+display = "Leather"
+
+[[item]]
+name = "feather"
+display = "Feather"
+
+[[item]]
+name = "bone"
+display = "Bone"
+
+[[item]]
+name = "string"
+display = "String"
+
+[[item]]
+name = "arrow"
+display = "Arrow"
+
+# Leather armour (Minecraft values)
+[[item]]
+name = "leather_helmet"
+display = "Leather Cap"
+armor = "helmet"
+defense = 1
+toughness = 0.0
+durability = 55
+
+[[item]]
+name = "leather_chestplate"
+display = "Leather Tunic"
+armor = "chestplate"
+defense = 3
+toughness = 0.0
+durability = 80
+
+[[item]]
+name = "leather_leggings"
+display = "Leather Pants"
+armor = "leggings"
+defense = 2
+toughness = 0.0
+durability = 75
+
+[[item]]
+name = "leather_boots"
+display = "Leather Boots"
+armor = "boots"
+defense = 1
+toughness = 0.0
+durability = 65

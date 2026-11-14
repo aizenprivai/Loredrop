@@ -10,6 +10,7 @@
 //!
 //! * [`furnace`] — smelting with fuel, Minecraft's timing.
 //! * [`mining`] — break times (Minecraft's formula), harvest tiers, drops.
+//! * [`mobs`] — creature definitions (stats, drops, spawns, box models).
 //! * [`stats`] — health, hunger, air, damage and regeneration.
 
 pub mod combat;
@@ -18,6 +19,7 @@ pub mod furnace;
 pub mod inventory;
 pub mod items;
 pub mod mining;
+pub mod mobs;
 pub mod stats;
 
 pub use crafting::RecipeBook;

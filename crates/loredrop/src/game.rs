@@ -90,6 +90,10 @@ pub struct Game {
     pub eating: u32,
     /// Ticks since the last arm swing (drives the attack cooldown).
     pub ticks_since_swing: u32,
+    /// Creatures and arrows.
+    pub mobs: crate::mobs::Mobs,
+    /// Creatures to place in front of the player once the ground has loaded (`--summon`).
+    pub pending_summons: Vec<String>,
 }
 
 impl Game {
@@ -173,6 +177,15 @@ impl Game {
             difficulty: ld_game::stats::Difficulty::Normal,
             eating: 0,
             ticks_since_swing: 100,
+            mobs: crate::mobs::Mobs::new(std::sync::Arc::new(
+                ld_game::mobs::MobRegistry::from_toml(
+                    "mob = []",
+                    &ld_game::ItemRegistry::empty(),
+                    &ld_world::BiomeRegistry::empty(),
+                )
+                .expect("empty mob list"),
+            )),
+            pending_summons: Vec::new(),
         }
     }
 
@@ -260,6 +273,7 @@ impl Game {
         let player_box = self.player.aabb();
         self.entities.tick(&self.world, &player_box, &mut self.inventory, &self.items);
         self.tick_furnaces();
+        self.tick_mobs();
 
         // Smoothly lower/raise the camera when sneaking (Minecraft eases this too).
         self.eye += (self.player.eye_height() - self.eye) * 0.5;
@@ -412,6 +426,79 @@ impl Game {
             }
         }
         false
+    }
+
+    /// Creatures: spawning, AI, their attacks on the player, deaths and loot.
+    fn tick_mobs(&mut self) {
+        if !self.pending_summons.is_empty() && self.placed {
+            let names = std::mem::take(&mut self.pending_summons);
+            let fwd = self.look_dir();
+            let side = glam::DVec3::new(fwd.z, 0.0, -fwd.x).normalize_or_zero();
+            let n = names.len() as f64;
+            for (i, name) in names.iter().enumerate() {
+                match self.mobs.defs.id(name) {
+                    Some(kind) => {
+                        let base =
+                            self.player.pos + glam::DVec3::new(fwd.x, 0.0, fwd.z).normalize_or_zero() * 5.0;
+                        let p = base + side * ((i as f64 - (n - 1.0) / 2.0) * 2.2);
+                        // Put it on the ground at that spot.
+                        let (x, z) = (p.x.floor() as i32, p.z.floor() as i32);
+                        let y = (self.player.pos.y as i32 - 8..self.player.pos.y as i32 + 8)
+                            .rev()
+                            .find(|&y| {
+                                let solid = |yy| {
+                                    self.world
+                                        .map
+                                        .block(ld_core::coords::BlockPos::new(x, yy, z))
+                                        .is_some_and(|b| self.world.registry.get(b).solid)
+                                };
+                                solid(y - 1) && !solid(y) && !solid(y + 1)
+                            })
+                            .unwrap_or(self.player.pos.y as i32);
+                        self.mobs.spawn(kind, glam::DVec3::new(p.x, y as f64, p.z));
+                    }
+                    None => log::warn!("--summon: unknown creature '{name}'"),
+                }
+            }
+        }
+        for chunk in std::mem::take(&mut self.world.newly_loaded) {
+            self.mobs.spawn_animals_in(&self.world, chunk);
+        }
+        self.mobs.spawn_hostiles(&self.world, self.player.pos, self.difficulty);
+        let target = crate::mobs::Target {
+            feet: self.player.pos,
+            eyes: self.player.pos + DVec3::new(0.0, self.eye, 0.0),
+            aabb: self.player.aabb(),
+            attackable: self.mode == GameMode::Survival && !self.stats.is_dead(),
+        };
+        let (events, deaths) = self.mobs.tick(&self.world, target, self.difficulty);
+        for e in events {
+            let crate::mobs::MobEvent::HurtPlayer { damage, from } = e;
+            let before = self.stats.health;
+            self.hurt(damage, ld_game::stats::DamageSource::Attack);
+            if self.stats.health < before {
+                // Knockback away from the attacker (Minecraft strength 0.4).
+                let away = glam::DVec2::new(self.player.pos.x - from.x, self.player.pos.z - from.z)
+                    .normalize_or_zero();
+                self.player.vel.x = self.player.vel.x / 2.0 + away.x * 0.4;
+                self.player.vel.z = self.player.vel.z / 2.0 + away.y * 0.4;
+                if self.player.on_ground {
+                    self.player.vel.y = 0.4;
+                }
+            }
+        }
+        for (pos, kind) in deaths {
+            let drops = self.mobs.defs.get(kind).drops.clone();
+            for s in ld_game::mining::roll_drops(&drops, || self.next_random_pub()) {
+                self.entities.drop_from_block(
+                    pos.x.floor() as i32,
+                    pos.y.floor() as i32,
+                    pos.z.floor() as i32,
+                    s,
+                );
+            }
+        }
+        self.mobs.despawn(&self.world, self.player.pos);
     }
 
     /// Smelts in every furnace and swaps the block between lit and unlit.
@@ -790,6 +877,80 @@ mod tests {
         assert!(g.attack_strength() < 0.5, "a swing at the air resets the cooldown");
         run(&mut g, &mut input, 6);
         assert_eq!(g.attack_strength(), 1.0, "bare hand recharges in 5 ticks");
+    }
+
+    /// The test game with the real creature definitions loaded.
+    fn game_with_mobs() -> Game {
+        let mut g = game();
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/data/");
+        let mobs = ld_game::mobs::MobRegistry::from_toml(
+            &std::fs::read_to_string(format!("{dir}mobs.toml")).unwrap(),
+            &g.items,
+            &g.world.biomes,
+        )
+        .unwrap();
+        g.mobs = crate::mobs::Mobs::new(Arc::new(mobs));
+        g
+    }
+
+    #[test]
+    fn zombie_chases_and_hurts_a_survival_player() {
+        let mut g = game_with_mobs();
+        g.set_start_mode(GameMode::Survival);
+        let mut input = InputState::new();
+        run(&mut g, &mut input, 1);
+        let zombie = g.mobs.defs.id("zombie").unwrap();
+        g.mobs.spawn(zombie, glam::DVec3::new(0.5, 0.0, -6.5));
+        run(&mut g, &mut input, 100);
+        assert!(g.stats.health < 20.0, "the zombie reached and hit the player (health {})", g.stats.health);
+        // Creative players are ignored.
+        let mut c = game_with_mobs();
+        run(&mut c, &mut input, 1);
+        c.mobs.spawn(zombie, glam::DVec3::new(0.5, 0.0, -2.5));
+        run(&mut c, &mut input, 100);
+        assert_eq!(c.stats.health, 20.0);
+    }
+
+    #[test]
+    fn killing_a_cow_drops_its_loot() {
+        let mut g = game_with_mobs();
+        g.set_start_mode(GameMode::Survival);
+        let mut input = InputState::new();
+        run(&mut g, &mut input, 1);
+        g.yaw = 180.0; // facing −Z
+        g.pitch = 25.0;
+        let cow = g.mobs.defs.id("cow").unwrap();
+        g.mobs.spawn(cow, glam::DVec3::new(0.5, 0.0, -2.0));
+        g.mobs.list[0].brain = crate::mobs::Brain::Idle(10_000); // stand still for the test
+        // Fully charged punches (1 damage each): 10 hits for 10 health.
+        for _ in 0..40 {
+            if g.mobs.list.first().is_none_or(|m| m.death_time > 0) {
+                break;
+            }
+            // Keep the cow in front of the player for the test.
+            if let Some(m) = g.mobs.list.first_mut() {
+                m.pos = glam::DVec3::new(0.5, 0.0, -2.0);
+                m.vel = glam::DVec3::ZERO;
+            }
+            press(&mut input, "MouseLeft", true);
+            run(&mut g, &mut input, 1);
+            press(&mut input, "MouseLeft", false);
+            run(&mut g, &mut input, 11); // wait out the invulnerability + cooldown
+        }
+        run(&mut g, &mut input, 30); // death animation, then loot
+        assert!(g.mobs.list.is_empty(), "the cow died");
+        let loot: Vec<_> = g.entities.list.iter().map(|e| g.items.get(e.stack.item).name.clone()).collect();
+        assert!(loot.iter().any(|n| n == "beef"), "dropped beef: {loot:?}");
+    }
+
+    #[test]
+    fn peaceful_removes_hostiles() {
+        let mut g = game_with_mobs();
+        g.difficulty = ld_game::stats::Difficulty::Peaceful;
+        let zombie = g.mobs.defs.id("zombie").unwrap();
+        g.mobs.spawn(zombie, glam::DVec3::new(0.5, 0.0, -6.5));
+        run(&mut g, &mut InputState::new(), 2);
+        assert!(g.mobs.list.is_empty());
     }
 
     #[test]

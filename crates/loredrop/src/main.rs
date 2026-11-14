@@ -19,6 +19,7 @@
 //! --pos <x> <y> <z>          start at this position (developer option)
 //! --look <yaw> <pitch>       start looking this way (developer option)
 //! --fly                      start flying (developer option)
+//! --summon <a,b,...>         place these creatures in front of you at start (developer option)
 //! --map <blocks> <file.png>  no window: draw a top-down map of the world around spawn
 //! ```
 
@@ -29,6 +30,7 @@ mod game;
 mod hud;
 mod icons;
 mod interaction;
+mod mobs;
 mod overlay;
 mod screens;
 mod settings_file;
@@ -50,6 +52,7 @@ pub struct Options {
     pub start_look: Option<[f32; 2]>,
     pub fly: bool,
     pub map: Option<(u32, PathBuf)>,
+    pub summon: Vec<String>,
 }
 
 fn parse_args() -> Result<Options, String> {
@@ -65,6 +68,7 @@ fn parse_args() -> Result<Options, String> {
         start_look: None,
         fly: false,
         map: None,
+        summon: Vec::new(),
     };
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -97,6 +101,7 @@ fn parse_args() -> Result<Options, String> {
                 o.start_look = Some(v);
             }
             "--fly" => o.fly = true,
+            "--summon" => o.summon = value("--summon")?.split(',').map(|s| s.trim().to_string()).collect(),
             "--map" => {
                 let size = args.next().and_then(|a| a.parse().ok()).ok_or("--map needs <blocks> <file>")?;
                 let file = args.next().ok_or("--map needs <blocks> <file>")?;

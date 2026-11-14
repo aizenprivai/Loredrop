@@ -197,6 +197,11 @@ impl ItemRegistry {
         Ok(())
     }
 
+    /// A registry with no items (placeholder before data is loaded).
+    pub fn empty() -> Self {
+        Self { defs: Vec::new(), by_name: HashMap::new(), by_block: HashMap::new() }
+    }
+
     pub fn get(&self, id: ItemId) -> &ItemDef {
         &self.defs[id.0 as usize]
     }

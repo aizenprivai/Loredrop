@@ -183,7 +183,63 @@ ITEMS = {
     "diamond": lambda: gem((90, 232, 222), 7), "emerald": lambda: gem((40, 210, 100), 8),
     "lapis_lazuli": lambda: gem((40, 70, 200), 9),
 }
-for metal, color in {"iron": (222, 222, 222), "golden": (250, 214, 64), "diamond": (90, 232, 222)}.items():
+def meat(raw, seed):
+    img = lump(raw, seed)
+    for y in range(6, 11):
+        put(img, 5, y, (240, 230, 220))  # bone / fat streak
+    return img
+
+
+def feather():
+    img = blank()
+    for i in range(2, 14):
+        put(img, i, 15 - i, (150, 150, 150))
+        for d in (1, 2):
+            if i > 4:
+                put(img, i - d, 15 - i - d, (240, 240, 240))
+                put(img, i + d, 15 - i + d, (225, 225, 225))
+    return img
+
+
+def bone():
+    img = blank()
+    for i in range(4, 12):
+        put(img, i, 15 - i, (230, 228, 214))
+    for (x, y) in [(3, 12), (2, 12), (3, 13), (12, 3), (13, 3), (12, 2)]:
+        put(img, x, y, (240, 238, 226))
+    return img
+
+
+def string_item():
+    img = blank()
+    import math
+    for t in range(60):
+        x = 3 + t * 10 / 60
+        y = 8 + math.sin(t / 5) * 3
+        put(img, int(x), int(y), (240, 240, 240))
+    return img
+
+
+def arrow():
+    img = blank()
+    for i in range(3, 13):
+        put(img, i, 15 - i, HANDLE)
+    for (x, y) in [(13, 2), (12, 2), (13, 3), (11, 3), (12, 4)]:
+        put(img, x, y, (180, 180, 186))
+    for (x, y) in [(2, 12), (3, 13), (2, 13), (1, 14), (3, 14)]:
+        put(img, x, y, (240, 240, 240))
+    return img
+
+
+ITEMS.update({
+    "beef": lambda: meat((190, 40, 40), 20), "cooked_beef": lambda: meat((120, 66, 40), 21),
+    "porkchop": lambda: meat((236, 140, 140), 22), "cooked_porkchop": lambda: meat((200, 140, 90), 23),
+    "chicken": lambda: meat((240, 200, 190), 24), "cooked_chicken": lambda: meat((210, 150, 80), 25),
+    "mutton": lambda: meat((200, 60, 60), 26), "cooked_mutton": lambda: meat((150, 80, 50), 27),
+    "rotten_flesh": lambda: lump((120, 100, 60), 28), "leather": lambda: lump((150, 90, 50), 29),
+    "feather": feather, "bone": bone, "string": string_item, "arrow": arrow,
+})
+for metal, color in {"leather": (150, 90, 50), "iron": (222, 222, 222), "golden": (250, 214, 64), "diamond": (90, 232, 222)}.items():
     for piece in ("helmet", "chestplate", "leggings", "boots"):
         ITEMS[f"{metal}_{piece}"] = (lambda p=piece, c=color: lambda: armor_piece(p, c))()
 for tier, color in TIERS.items():
