@@ -21,6 +21,9 @@
 #   drops     what breaking it gives (default: itself). "none", "item", "item:2-5"
 #             (random count) or "item@0.02" (2 % chance); several drops are
 #             separated by commas, e.g. "stick@0.02, apple@0.005"
+#   light     light the block gives off, 0–15 (lava 15, torch 14, lit furnace 13)
+#   light_filter  how much light passing through is dimmed, 0–15. Default: 15 for
+#             opaque cubes (blocks light), 0 otherwise. Leaves and water use 1.
 #
 # `air` is built in and must not be listed.
 
@@ -108,6 +111,7 @@ tool = "hoe"
 drops = "stick@0.02, apple@0.005"
 display = "Oak Leaves"
 layer = "cutout"
+light_filter = 1
 textures = { all = "oak_leaves" }
 tint = { all = "foliage" }
 
@@ -206,6 +210,7 @@ textures = { top = "snow", bottom = "dirt", side = "grass_block_snow" }
 name = "water"
 display = "Water"
 layer = "translucent"
+light_filter = 1
 solid = false
 replaceable = true
 cull_same = true
@@ -216,6 +221,7 @@ tint = { all = "water" }
 name = "lava"
 display = "Lava"
 layer = "opaque"
+light = 15
 solid = false
 replaceable = true
 textures = { all = "lava_still" }
@@ -385,6 +391,7 @@ tool = "hoe"
 drops = "stick@0.02"
 display = "Birch Leaves"
 layer = "cutout"
+light_filter = 1
 textures = { all = "birch_leaves" }
 
 [[block]]
@@ -410,6 +417,7 @@ tool = "hoe"
 drops = "stick@0.02"
 display = "Spruce Leaves"
 layer = "cutout"
+light_filter = 1
 textures = { all = "spruce_leaves" }
 
 [[block]]
@@ -589,6 +597,7 @@ drops = "furnace"
 item = false
 display = "Furnace"
 layer = "opaque"
+light = 13
 textures = { top = "furnace_top", bottom = "furnace_top", side = "furnace_side", north = "furnace_front_on", south = "furnace_front_on" }
 
 # --- Phase 7 ---------------------------------------------------------------------
@@ -598,3 +607,15 @@ hardness = 0.8
 display = "White Wool"
 layer = "opaque"
 textures = { all = "white_wool" }
+
+# --- Phase 8 ---------------------------------------------------------------------
+# Torch: stands on the ground (drawn as crossed panes, like plants) and gives
+# off light level 14, like Minecraft's. Wall torches come later.
+[[block]]
+name = "torch"
+display = "Torch"
+hardness = 0.0
+layer = "cutout"
+shape = "cross"
+light = 14
+textures = { all = "torch" }

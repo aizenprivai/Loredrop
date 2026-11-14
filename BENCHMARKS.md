@@ -101,6 +101,19 @@ Creature cost is negligible. Re-run with `cargo test --release -p loredrop
 creature_tick_cost -- --ignored --nocapture`. The test world is flat, so
 pathfinding around real terrain will cost more, but there's plenty of headroom.
 
+## Phase 8 — lighting (director's laptop, 2026-11-14)
+
+| Benchmark | Before lighting | With lighting |
+|---|---|---|
+| Light for one real-terrain section (`--example light_bench`) | — | 2.0 ms first version → **0.87 ms** after optimisation |
+| `--bench-world 8`, seed 12345 (3 threads) | 1.19 s | **1.87–1.90 s** (one light box per column run) |
+
+Optimisations: decode each section once instead of per-block lookups;
+sunlight entry computed per section rather than per block; cheaper seeding
+of the flood fill; one light box shared by all dirty sections of a column
+(≈2.4× fewer cells). Light changes after a block edit cost about one light
+box per affected column (≈1–2 ms each, on worker threads).
+
 ## First real-hardware test (director's PC, 2026-11-14)
 
 Linux, prebuilt release binary, default settings (render distance 8, VSync on):

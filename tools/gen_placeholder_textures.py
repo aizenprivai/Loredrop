@@ -553,6 +553,29 @@ def destroy_stage(stage):
 
 TEXTURES["white_wool"] = lambda: noise_tex(95, (232, 232, 228), 12)
 
+
+def torch():
+    """A thin wooden stick with a glowing amber head, centred in the tile
+    (drawn as crossed panes, like plants)."""
+    img = Image.new("RGBA", (N, N), (0, 0, 0, 0))
+    for y in range(6, N):  # stick, 2 px wide
+        shade = 0 if y % 3 else -12
+        img.putpixel((7, y), (clamp(122 + shade), clamp(86 + shade), clamp(48 + shade), 255))
+        img.putpixel((8, y), (clamp(98 + shade), clamp(68 + shade), clamp(38 + shade), 255))
+    # Head: white-hot core with amber and orange around it.
+    for (x, y, c) in [
+        (7, 5, (255, 250, 220)), (8, 5, (255, 236, 170)),
+        (7, 4, (255, 214, 110)), (8, 4, (255, 190, 80)),
+        (7, 3, (250, 160, 50)), (8, 3, (255, 200, 90)),
+        (6, 5, (240, 150, 40)), (9, 5, (240, 150, 40)),
+        (7, 2, (230, 120, 30)),
+    ]:
+        img.putpixel((x, y), c + (255,))
+    return img
+
+
+TEXTURES["torch"] = torch
+
 for _s in range(10):
     TEXTURES[f"destroy_stage_{_s}"] = (lambda st=_s: lambda: destroy_stage(st))()
 

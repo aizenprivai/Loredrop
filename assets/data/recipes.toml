@@ -12,6 +12,7 @@
 planks = ["oak_planks", "birch_planks", "spruce_planks"]
 logs = ["oak_log", "birch_log", "spruce_log"]
 stone_tool_materials = ["cobblestone"]
+coals = ["coal", "charcoal"]
 
 # --- Basics -----------------------------------------------------------------
 [[shapeless]]
@@ -34,6 +35,12 @@ result = "stick"
 count = 4
 pattern = ["P", "P"]
 key = { P = "#planks" }
+
+[[shaped]]
+result = "torch"
+count = 4
+pattern = ["C", "|"]
+key = { C = "#coals", "|" = "stick" }
 
 [[shaped]]
 result = "crafting_table"

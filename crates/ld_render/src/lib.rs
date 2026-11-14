@@ -49,7 +49,8 @@ pub fn backend_order(pref: Backend) -> Vec<wgpu::Backends> {
 /// Per-frame scene parameters supplied by the game.
 pub struct FrameParams {
     pub camera: Camera,
-    /// Sky / clear colour in sRGB 0..1.
+    /// Fog colour (and the clear colour when no sky is drawn), sRGB 0..1.
+    /// Usually the horizon colour, darkened underground.
     pub sky_color: [f32; 3],
     /// `Some((start, end))` fog distances in blocks, or `None` for no fog.
     pub fog: Option<(f32, f32)>,
@@ -61,6 +62,8 @@ pub struct FrameParams {
     pub sky: Option<SkyParams>,
     /// Brightness of sunlit surfaces (1 = day, ≈0.2 = moonlit night).
     pub daylight: f32,
+    /// The player's brightness setting, 0 (moody) to 1 (bright).
+    pub brightness: f32,
 }
 
 /// What the sky looks like this frame (from `ld_game::time::SkyState`).
@@ -482,7 +485,7 @@ impl Renderer {
                 frame.sky.map_or(0.0, |s| s.moon_phase as f32),
                 frame.daylight,
                 if frame.sky.is_some() { 1.0 } else { 0.0 },
-                0.0,
+                frame.brightness.clamp(0.0, 1.0),
             ],
         };
         self.draw_sky = frame.sky.is_some();

@@ -1,6 +1,6 @@
 # Loredrop — Technical Architecture
 
-> **Status:** APPROVED v1.0 (Phase 1) · updated v1.6 during Phase 7
+> **Status:** APPROVED v1.0 (Phase 1) · updated v1.7 during Phase 8
 > **Last updated:** 2026-11-14
 
 This document describes *how* Loredrop is built. *What* we build is in `GDD.md`.
@@ -134,8 +134,8 @@ saves memory too.
 - **Section storage:** palette + bit-packed indices, bit width chosen per section
   (0 bits for a uniform section, 4 bits for ≤16 types, … up to 16 bits).
   Typical memory: 0 bytes (uniform) to ~2 KB per section, vs 8 KB uncompressed.
-- **Light:** separate 4-bit sky light and block light per block (2 KB per section
-  each), allocated only for sections that need them.
+- **Light:** *(changed in Phase 8 — see "Changes made during Phase 8")* not
+  stored; computed when meshes are built.
 - **Column:** 24 sections + heightmaps + biome data (biomes stored per 4×4×4 cell
   like modern Minecraft).
 - **World map:** `AHashMap<ChunkPos, ChunkColumn>` per dimension; chunks move
@@ -365,6 +365,27 @@ measured on the director's hardware. CPU-side systems are measured here.
 - Box models render through the Phase 5 entity pipeline, with creature skins
   added to the shared texture array. Carried blocks reuse the dropped-item
   cube look (`ItemLook::Cube`), passed to the renderer as a lookup closure.
+
+### Changes made during Phase 8 (v1.7, in progress)
+
+- **Time & sky:** `ld_game::time` (pure) produces a `SkyState`; the renderer
+  draws a full-screen sky pass first (`sky.wgsl`) and receives `daylight`.
+  The camera uniform grew (inverse view-projection, sky colours, sun, misc);
+  shaders that don't need the new fields declare only a prefix.
+- **Lighting replaces §4's stored light (director decision, 2026-11-14).**
+  Light is never stored or saved. Each mesh job covers all dirty sections of
+  one column, computes one `LightRegion` (flood fill) reaching 15 blocks
+  around them, and meshes each section with a `LightView` of it. Vertices
+  carry 4-bit sky and block light; the shader applies the light curve and
+  daylight. Rationale: no incremental light updates to get wrong, nothing to
+  save, results identical except for light paths leaving the 15-block box.
+- **Edits that change light** (filter or emission differ) mark the 3×3×3
+  sections around, plus — if sky light can change — the sections below down
+  to 15 blocks under the next opaque block. One job per column keeps it cheap.
+- **Gameplay light queries:** the light of each meshed, non-empty section is
+  cached in `World` (`SectionLight`, uniform sections cost nothing) and read
+  by `World::light_at`; without data it falls back to a sky-visibility scan.
+- **Entities** get light through the top byte of `EntityVertex::color`.
 
 ## 13. Decisions approved in Phase 1
 

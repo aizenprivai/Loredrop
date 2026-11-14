@@ -40,7 +40,9 @@ pub struct EntityVertex {
     pub uv: [f32; 2],
     /// Texture-array layer.
     pub layer: u32,
-    /// Colour multiplier (tint × shading) as packed sRGB `0xRRGGBB`.
+    /// Colour multiplier (tint × shading) as packed sRGB `0xRRGGBB`; the top
+    /// byte is the light where the entity is (`sky << 4 | block`, see
+    /// `ld_world::light::pack`), so entities darken in caves and at night.
     pub color: u32,
 }
 

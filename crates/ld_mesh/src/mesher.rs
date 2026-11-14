@@ -1,9 +1,13 @@
-//! Face culling + greedy meshing + ambient occlusion.
+//! Face culling + greedy meshing + ambient occlusion + smooth lighting.
 
 use crate::neighborhood::Neighborhood;
 use crate::table::MeshTable;
 use crate::{PackedVertex, WHITE};
-use ld_world::{BlockId, RenderLayer, Shape};
+use ld_world::light::{LightView, pack};
+use ld_world::{BlockId, RenderLayer, SectionLight, Shape};
+
+/// Packed light used when no light data is given (tests): full sky light.
+const FULL_SKY: u8 = 0xF0;
 
 /// Output for one section. Every 4 vertices form one quad; the renderer uses
 /// a shared index buffer (0,1,2, 0,2,3, …) so no indices are stored here.
@@ -13,6 +17,9 @@ pub struct SectionMesh {
     pub cutout: Vec<PackedVertex>,
     /// Translucent faces (water, stained glass), drawn last with blending.
     pub translucent: Vec<PackedVertex>,
+    /// The section's light levels, if they were computed (only sections with
+    /// visible faces compute light). The game keeps these for light queries.
+    pub light: Option<SectionLight>,
 }
 
 impl SectionMesh {
@@ -46,11 +53,17 @@ struct FaceKey {
     color: u32,
     /// Four 2-bit AO values, corner order (0,0) (1,0) (1,1) (0,1).
     ao: u8,
+    /// Four packed light bytes (`sky << 4 | block`), same corner order.
+    light: u32,
     layer: u8, // 0 opaque, 1 cutout, 2 translucent
 }
 
 /// Meshes the inner 16³ of `n`.
-pub fn mesh_section(n: &Neighborhood, table: &MeshTable) -> SectionMesh {
+///
+/// `light` is the light around the section in section coordinates (normally
+/// a view of [`ld_world::LightRegion::around_sections`]). `None` lights
+/// everything as open sky (used by tests and benchmarks).
+pub fn mesh_section(n: &Neighborhood, table: &MeshTable, light: Option<LightView>) -> SectionMesh {
     let mut out = SectionMesh::default();
     let mut mask: [Option<FaceKey>; 256] = [None; 256];
     let colors = blended_colors(n, table);
@@ -65,7 +78,8 @@ pub fn mesh_section(n: &Neighborhood, table: &MeshTable) -> SectionMesh {
                     p[na] = d;
                     p[ua] = u;
                     p[va] = v;
-                    mask[(v * 16 + u) as usize] = visible_face(n, table, &colors, p, face, na, ua, va, step);
+                    mask[(v * 16 + u) as usize] =
+                        visible_face(n, table, &colors, light, p, face, na, ua, va, step);
                 }
             }
             // 2. Greedily merge equal neighbours into rectangles.
@@ -110,7 +124,12 @@ pub fn mesh_section(n: &Neighborhood, table: &MeshTable) -> SectionMesh {
             }
         }
     }
-    mesh_plants(n, table, &colors, &mut out);
+    mesh_plants(n, table, &colors, light, &mut out);
+    // Keep the light only for sections with something to draw (saves memory;
+    // light queries elsewhere fall back to a sky check).
+    if !out.is_empty() {
+        out.light = light.map(|l| l.section_light());
+    }
     out
 }
 
@@ -146,7 +165,13 @@ fn color_for(colors: &[[u32; 3]], x: i32, z: i32, tint: u8) -> u32 {
 
 /// Two crossed diagonal panes per plant, each emitted in both windings so it
 /// is visible from both sides (back-face culling stays on for everything else).
-fn mesh_plants(n: &Neighborhood, table: &MeshTable, colors: &[[u32; 3]], out: &mut SectionMesh) {
+fn mesh_plants(
+    n: &Neighborhood,
+    table: &MeshTable,
+    colors: &[[u32; 3]],
+    light: Option<LightView>,
+    out: &mut SectionMesh,
+) {
     for y in 0..16 {
         for z in 0..16 {
             for x in 0..16 {
@@ -162,6 +187,8 @@ fn mesh_plants(n: &Neighborhood, table: &MeshTable, colors: &[[u32; 3]], out: &m
                 let tex = info.textures[0];
                 let tint = info.tints[0];
                 let color = color_for(colors, x, z, tint);
+                // A plant is lit by the light in its own cell.
+                let l = light.and_then(|r| r.get(x, y, z)).map_or(FULL_SKY, |(s, b)| pack(s, b));
                 let panes: [(u32, [[u32; 3]; 4]); 2] = [
                     (6, [[xu, yu, zu], [xu + 1, yu, zu + 1], [xu + 1, yu + 1, zu + 1], [xu, yu + 1, zu]]),
                     (7, [[xu, yu, zu + 1], [xu + 1, yu, zu], [xu + 1, yu + 1, zu], [xu, yu + 1, zu + 1]]),
@@ -172,7 +199,7 @@ fn mesh_plants(n: &Neighborhood, table: &MeshTable, colors: &[[u32; 3]], out: &m
                     _ => &mut out.cutout,
                 };
                 for (face, c) in panes {
-                    let v = |p: [u32; 3]| PackedVertex::new(p, face, 3, tex, tint as u32, color);
+                    let v = |p: [u32; 3]| PackedVertex::new(p, face, 3, tex, tint as u32, color, l);
                     target.extend_from_slice(&[v(c[0]), v(c[1]), v(c[2]), v(c[3])]);
                     target.extend_from_slice(&[v(c[1]), v(c[0]), v(c[3]), v(c[2])]); // back side
                 }
@@ -188,6 +215,7 @@ fn visible_face(
     n: &Neighborhood,
     table: &MeshTable,
     colors: &[[u32; 3]],
+    light: Option<LightView>,
     p: [i32; 3],
     face: usize,
     na: usize,
@@ -222,6 +250,37 @@ fn visible_face(
         if s1 == 1 && s2 == 1 { 0 } else { 3 - (s1 + s2 + c) }
     };
     let ao = corner_ao(-1, -1) | (corner_ao(1, -1) << 2) | (corner_ao(1, 1) << 4) | (corner_ao(-1, 1) << 6);
+    // Smooth lighting: average the light of the open cells around each corner
+    // (the cell in front, the two beside it, and the diagonal unless both
+    // sides are blocked — the same cells AO looks at).
+    let region = light;
+    let corner_light = |su: i32, sv: i32| -> u8 {
+        let Some(r) = region else { return FULL_SKY };
+        let cell = |du: i32, dv: i32| {
+            let mut c = q;
+            c[ua] += du;
+            c[va] += dv;
+            c
+        };
+        let (s1, s2) = (solid(su, 0) == 1, solid(0, sv) == 1);
+        let use_diag = !(s1 && s2) && solid(su, sv) == 0;
+        let candidates =
+            [(cell(0, 0), true), (cell(su, 0), !s1), (cell(0, sv), !s2), (cell(su, sv), use_diag)];
+        let (mut sky, mut block, mut k) = (0u32, 0u32, 0u32);
+        for (c, used) in candidates {
+            if used {
+                let (s, b) = r.get(c[0], c[1], c[2]).unwrap_or((0, 0));
+                sky += s as u32;
+                block += b as u32;
+                k += 1;
+            }
+        }
+        pack(((sky + k / 2) / k) as u8, ((block + k / 2) / k) as u8)
+    };
+    let light = corner_light(-1, -1) as u32
+        | (corner_light(1, -1) as u32) << 8
+        | (corner_light(1, 1) as u32) << 16
+        | (corner_light(-1, 1) as u32) << 24;
     let layer = match info.layer {
         RenderLayer::Cutout => 1,
         RenderLayer::Translucent => 2,
@@ -233,6 +292,7 @@ fn visible_face(
         tint,
         color: color_for(colors, p[0], p[2], tint),
         ao,
+        light,
         layer,
     })
 }
@@ -258,11 +318,15 @@ fn emit_quad(
         p
     };
     let ao = |i: u32| ((key.ao >> (i * 2)) & 3) as u32;
+    let light = |i: u32| (key.light >> (i * 8)) as u8;
+    let vert = |p: [u32; 3], i: u32| {
+        PackedVertex::new(p, face as u32, ao(i), key.texture, key.tint as u32, key.color, light(i))
+    };
     let verts = [
-        PackedVertex::new(corner(u, v), face as u32, ao(0), key.texture, key.tint as u32, key.color),
-        PackedVertex::new(corner(u + w, v), face as u32, ao(1), key.texture, key.tint as u32, key.color),
-        PackedVertex::new(corner(u + w, v + h), face as u32, ao(2), key.texture, key.tint as u32, key.color),
-        PackedVertex::new(corner(u, v + h), face as u32, ao(3), key.texture, key.tint as u32, key.color),
+        vert(corner(u, v), 0),
+        vert(corner(u + w, v), 1),
+        vert(corner(u + w, v + h), 2),
+        vert(corner(u, v + h), 3),
     ];
     let target = match key.layer {
         1 => &mut out.cutout,
@@ -282,7 +346,7 @@ fn emit_quad(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ld_world::BlockRegistry;
+    use ld_world::{BlockRegistry, LightRegion};
 
     const BLOCKS: &str = r#"
         [[block]]
@@ -329,11 +393,37 @@ mod tests {
     }
 
     #[test]
+    fn faces_take_light_from_the_cells_in_front_of_them() {
+        let (reg, t) = setup();
+        let stone = reg.id("stone").unwrap();
+        // A single stone block; light: sky 0 everywhere, block light 12 on its east side only.
+        let n = Neighborhood::from_fn(|x, y, z| if (x, y, z) == (5, 5, 5) { stone } else { BlockId::AIR });
+        let side = 46usize;
+        let mut emits = vec![0u8; side * side * side];
+        let filters = vec![0u8; side * side * side];
+        let idx = |x: i32, y: i32, z: i32| {
+            (((y + 15) as usize * side) + (z + 15) as usize) * side + (x + 15) as usize
+        };
+        emits[idx(7, 5, 5)] = 13; // a light source 2 blocks east
+        let sky_in = vec![0u8; side * side];
+        let region = LightRegion::compute([-15, -15, -15], [side; 3], &filters, &emits, &sky_in);
+        let m = mesh_section(&n, &t, Some(region.view(0)));
+        let east: Vec<u8> = m.opaque.iter().filter(|v| v.unpack().1 == 0).map(|v| v.light()).collect();
+        let west: Vec<u8> = m.opaque.iter().filter(|v| v.unpack().1 == 1).map(|v| v.light()).collect();
+        assert!(east.iter().all(|&l| l >> 4 == 0), "no sky light");
+        // The east face looks at the cell next to the source (12) and its
+        // neighbours (11): smooth lighting averages them.
+        assert!(east.iter().all(|&l| (11..=12).contains(&(l & 15))), "{east:?}");
+        assert!(west.iter().all(|&l| (l & 15) < (east[0] & 15)), "the far side is darker: {west:?}");
+        assert!(m.light.is_some(), "light kept for gameplay");
+    }
+
+    #[test]
     fn single_block_has_six_faces_full_brightness() {
         let (r, t) = setup();
         let stone = r.id("stone").unwrap();
         let n = Neighborhood::from_fn(|x, y, z| if (x, y, z) == (5, 5, 5) { stone } else { BlockId::AIR });
-        let m = mesh_section(&n, &t);
+        let m = mesh_section(&n, &t, None);
         assert_eq!(quads(&m), 6);
         assert!(m.opaque.iter().all(|v| v.unpack().2 == 3), "nothing nearby → no AO");
     }
@@ -348,7 +438,7 @@ mod tests {
             -1 => r.id("stone").unwrap(),
             _ => BlockId::AIR,
         });
-        let m = mesh_section(&n, &t);
+        let m = mesh_section(&n, &t, None);
         // Top: 1 merged quad. Bottom: hidden by stone. Sides: the border
         // neighbours are grass too (from_fn fills the border), so hidden.
         assert_eq!(quads(&m), 1);
@@ -367,7 +457,7 @@ mod tests {
             Neighborhood::from_fn(
                 |x, y, z| if (y, z) == (5, 5) && (x == 15 || x == 16) { s } else { BlockId::AIR },
             );
-        assert_eq!(quads(&mesh_section(&n, &t)), 5, "east face hidden by neighbour");
+        assert_eq!(quads(&mesh_section(&n, &t, None)), 5, "east face hidden by neighbour");
     }
 
     #[test]
@@ -381,7 +471,7 @@ mod tests {
                 Neighborhood::from_fn(
                     |x, y, z| if y == 5 && z == 5 && (x == 5 || x == 6) { b } else { BlockId::AIR },
                 );
-            let m = mesh_section(&n, &t);
+            let m = mesh_section(&n, &t, None);
             assert_eq!(m.opaque.len(), 0);
             assert_eq!(m.cutout.len() / 4, expected, "{name}");
         }
@@ -395,7 +485,7 @@ mod tests {
         // wall must get darker corners.
         let n =
             Neighborhood::from_fn(|x, y, z| if y == 0 || (x, y, z) == (5, 1, 5) { s } else { BlockId::AIR });
-        let m = mesh_section(&n, &t);
+        let m = mesh_section(&n, &t, None);
         let darkest = m.opaque.iter().filter(|v| v.unpack().1 == 2).map(|v| v.unpack().2).min().unwrap();
         assert!(darkest < 3, "floor next to wall has AO");
     }
@@ -414,7 +504,7 @@ mod tests {
             c
         };
         let cols = [[Some(&col); 3]; 3];
-        let m = mesh_section(&Neighborhood::from_columns(cols, 0), &t);
+        let m = mesh_section(&Neighborhood::from_columns(cols, 0), &t, None);
         assert_eq!(quads(&m), 1, "only the top of the bedrock layer");
     }
 
@@ -427,7 +517,7 @@ mod tests {
             (6, 5, 5) => s,
             _ => BlockId::AIR,
         });
-        let m = mesh_section(&n, &t);
+        let m = mesh_section(&n, &t, None);
         assert_eq!(m.cutout.len() / 4, 4, "2 panes × 2 sides");
         assert_eq!(m.opaque.len() / 4, 6, "stone keeps its west face next to the plant");
         let faces: std::collections::HashSet<u32> = m.cutout.iter().map(|v| v.unpack().1).collect();
@@ -440,7 +530,7 @@ mod tests {
         let (r, t) = setup();
         let w = r.id("water").unwrap();
         let n = Neighborhood::from_fn(|_, y, _| if y < 8 { w } else { BlockId::AIR });
-        let m = mesh_section(&n, &t);
+        let m = mesh_section(&n, &t, None);
         assert!(m.opaque.is_empty() && m.cutout.is_empty());
         assert_eq!(m.translucent.len() / 4, 1, "only the merged surface");
     }
@@ -451,7 +541,7 @@ mod tests {
         let s = r.id("stone").unwrap();
         let n =
             Neighborhood::from_fn(|x, y, z| if (x + y + z).rem_euclid(2) == 0 { s } else { BlockId::AIR });
-        let m = mesh_section(&n, &t);
+        let m = mesh_section(&n, &t, None);
         // 2048 blocks inside × 6 faces, nothing merges.
         assert_eq!(quads(&m), 2048 * 6);
     }

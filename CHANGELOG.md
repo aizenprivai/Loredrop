@@ -267,3 +267,25 @@
   engine (part 2) makes caves and torches work properly. Fog follows the sky.
 - Settings: `gameplay.daylight_cycle`, `gameplay.day_length_minutes`.
 - `--time <ticks|day|noon|sunset|night|midnight>`; F3 shows day, clock, moon phase.
+
+### 2026-11-14 — Phase 8 (part 2): lighting
+- Director decision: light is **computed when meshes are built, not stored**
+  (see ARCHITECTURE).
+- **Light engine** (`ld_world::light`): sky light (15 under open sky, falls
+  straight down, fades 1 per step otherwise) and block light, Minecraft's
+  rules; flood fill over a box reaching 15 blocks around the sections being
+  meshed. Blocks gained `light` (emission) and `light_filter` (leaves and
+  water 1). Lava 15, lit furnace 13. Unit-tested (shafts, roofs, leaves, lava).
+- **Smooth lighting** in meshes: per-corner average of the open cells in
+  front (same cells as AO), packed into the reserved vertex bits.
+- **Shaders**: Minecraft-like light curve, sunlight dimmed at night, warm
+  block light; new `graphics.brightness` setting (0 moody – 100 bright).
+- Creatures, dropped items and cracks are lit by the light where they are.
+- Fog fades to darkness underground (follows the sky light at the camera).
+- **Torch** block (cross-shaped, light 14) with Minecraft's recipe (coal or
+  charcoal over a stick → 4); original texture.
+- `World::light_at` for gameplay (cache of each meshed section's light).
+- Speed: mesh jobs now handle a whole column and share one light box;
+  light per section 2.0 → ~0.9 ms; render-distance-8 load 1.2 s → 1.9 s.
+- Developer examples: `cargo run -p ld_worldgen --example find_cave` /
+  `--example light_bench`.

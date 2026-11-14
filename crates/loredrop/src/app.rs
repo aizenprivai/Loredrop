@@ -387,6 +387,9 @@ struct App {
     /// Reused every frame for entity triangles.
     entity_vertices: Vec<ld_render::EntityVertex>,
     world_ready_logged: bool,
+    /// How much of the sky colour the fog uses (1 outdoors, → 0 deep in a
+    /// cave), eased over time so walking into a cave doesn't pop.
+    fog_sky: f32,
     screen: crate::screens::Screen,
     menu: crate::screens::MenuState,
 }
@@ -424,6 +427,7 @@ impl App {
             },
             textures: Some(textures),
             world_ready_logged: false,
+            fog_sky: 1.0,
             options,
             settings,
             input: InputState::new(),
@@ -681,6 +685,16 @@ impl App {
             eye.z.floor() as i32,
         )) == self.game.world.registry.id("water");
         let sky = self.game.time.sky();
+        // Underground, distant walls fade into darkness instead of the sky
+        // colour (like Minecraft): follow the sky light at the camera.
+        let eye_sky = self.game.world.light_at(ld_core::coords::BlockPos::new(
+            eye.x.floor() as i32,
+            eye.y.floor() as i32,
+            eye.z.floor() as i32,
+        ));
+        let target = (eye_sky.0 as f32 / 15.0).powi(2);
+        self.fog_sky += (target - self.fog_sky) * 0.05;
+        let fog_color = sky.horizon.map(|c| c * self.fog_sky);
         let params = FrameParams {
             camera: Camera {
                 position: eye,
@@ -688,7 +702,7 @@ impl App {
                 pitch_deg: self.game.pitch,
                 fov_deg: self.settings.graphics.fov,
             },
-            sky_color: if underwater { UNDERWATER } else { sky.horizon },
+            sky_color: if underwater { UNDERWATER } else { fog_color },
             fog: if underwater { Some((2.0, 28.0)) } else { None }.or(self.settings.graphics.fog.then(
                 || {
                     // Fade out over the last stretch before the loaded edge.
@@ -708,11 +722,21 @@ impl App {
                 moon_phase: sky.moon_phase,
             }),
             daylight: sky.daylight,
+            brightness: self.settings.graphics.brightness as f32 / 100.0,
         };
         // Dropped items and the cracks on the block being mined.
         self.entity_vertices.clear();
         let time = self.started.elapsed().as_secs_f32();
-        self.game.entities.build_vertices(eye, time, &self.looks, &mut self.entity_vertices);
+        let world = &self.game.world;
+        let light_of = |p: glam::DVec3| {
+            let (s, b) = world.light_at(ld_core::coords::BlockPos::new(
+                p.x.floor() as i32,
+                p.y.floor() as i32,
+                p.z.floor() as i32,
+            ));
+            ld_world::light::pack(s, b)
+        };
+        self.game.entities.build_vertices(eye, time, &self.looks, &light_of, &mut self.entity_vertices);
         let layers = &self.layers;
         let layer_of = |name: &str| layers.get(&format!("entity/{name}")).copied().unwrap_or(0);
         let arrow_layer = layers.get("item/arrow").copied().unwrap_or(0);
@@ -727,12 +751,16 @@ impl App {
             &layer_of,
             &block_look,
             arrow_layer,
+            &light_of,
             &mut self.entity_vertices,
         );
         if let Some((pos, progress)) = self.game.breaking {
             let stage = ((progress * 10.0) as usize).min(9);
             let min = glam::DVec3::new(pos.x as f64, pos.y as f64, pos.z as f64);
+            let start = self.entity_vertices.len();
             crate::entities::crack_vertices(&mut self.entity_vertices, min, eye, self.crack_layers[stage]);
+            // Cracks take the light around the viewer (they're always close by).
+            crate::entities::set_light(&mut self.entity_vertices[start..], light_of(eye));
         }
         r.renderer.set_entities(&self.entity_vertices);
         r.renderer.set_outline(self.game.target.map(|h| {

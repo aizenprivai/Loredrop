@@ -14,7 +14,7 @@
 | KB-010 | Low | Open | Rivers sometimes form closed loops and tiny ponds appear inland. Tuning planned. |
 | KB-011 | Low | Open | Mountain peaks are smoother than Minecraft's jagged peaks. |
 | KB-012 | Low | Open (Phase 8) | Water is a full block and doesn't flow. (Swimming was added in Phase 6.) |
-| KB-013 | Low | Open | Caves are as bright as the surface — no lighting system yet (Phase 8). |
+| KB-013 | — | Fixed (Phase 8) | ~~Caves are as bright as the surface~~ — lighting implemented. |
 | KB-014 | Low | Open | Ore veins are clipped at chunk borders. |
 | KB-015 | Info | Open | Translucent faces inside one section aren't depth-sorted (only sections are). |
 | KB-016 | — | Fixed (Phase 5) | ~~Lore tablets can't be read~~ — right-click to read; journal on J. |
@@ -30,4 +30,6 @@
 | KB-026 | Low | Open (Phase 9) | Creatures are not saved: any creature in an area that unloads (or when the game closes) is removed. The list of Hollow-placed blocks is not saved either, so after a restart breaking them angers nobody. |
 | KB-027 | Info | By design | Hollows leave one-block holes in the ground where they pick blocks up (like their Minecraft counterpart). They never take blocks from under the player or another creature, or blocks a Hollow placed. |
 | KB-028 | Low | Open | The Hollow's long legs swing as far as a zombie's, so its stride looks exaggerated. |
+| KB-030 | Info | By design | Light is computed in boxes reaching 15 blocks around the sections being rebuilt; light that would leave the box and come back in is missed. Only possible more than ~15 blocks from its source, so effects are tiny. |
+| KB-031 | Low | Open | Torches can only stand on the ground (no wall torches yet) and look like a thin cross, not a 3D stick. |
 | KB-029 | Info | By design (director, 2026-11-14) | Attacking one Hollow angers only that Hollow; breaking a Hollow-placed block angers all Hollows within 16 blocks. |

@@ -159,6 +159,32 @@ impl Section {
         Section::Paletted(p)
     }
 
+    /// Writes `map(block)` for all 4 096 blocks into `out` (in [`index`]
+    /// order). Much faster than 4 096 [`get`](Self::get) calls: `map` runs
+    /// once per palette entry and the packed data is read in order.
+    pub fn decode_with<T: Copy>(&self, map: impl Fn(BlockId) -> T, out: &mut [T; VOLUME]) {
+        match self {
+            Section::Uniform(b) => out.fill(map(*b)),
+            Section::Paletted(p) => {
+                let mapped: Vec<T> = p.palette.iter().map(|&b| map(b)).collect();
+                let per = Paletted::per_word(p.bits);
+                let mask = (1u64 << p.bits) - 1;
+                let mut i = 0;
+                for &word in &p.data {
+                    let mut w = word;
+                    for _ in 0..per {
+                        if i == VOLUME {
+                            return;
+                        }
+                        out[i] = mapped[(w & mask) as usize];
+                        w >>= p.bits;
+                        i += 1;
+                    }
+                }
+            }
+        }
+    }
+
     /// True if the whole section is air (nothing to draw or collide with).
     pub fn is_empty(&self) -> bool {
         matches!(self, Section::Uniform(b) if *b == BlockId::AIR)

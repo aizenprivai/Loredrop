@@ -44,6 +44,7 @@ fn rot_xyz(deg: [f32; 3]) -> Mat3 {
 impl Mobs {
     /// Appends triangles for all creatures and arrows. `alpha` interpolates
     /// between the last two ticks; `camera` makes positions camera-relative.
+    #[allow(clippy::too_many_arguments)]
     pub fn build_vertices(
         &self,
         camera: DVec3,
@@ -51,13 +52,19 @@ impl Mobs {
         layer_of: LayerOf,
         block_look: BlockLook,
         arrow_layer: u32,
+        light_of: &dyn Fn(DVec3) -> u8,
         out: &mut Vec<EntityVertex>,
     ) {
         for m in &self.list {
+            let start = out.len();
             self.build_mob(m, camera, alpha, layer_of, block_look, out);
+            let eyes = m.pos + DVec3::new(0.0, self.defs.get(m.kind).height * 0.5, 0.0);
+            crate::entities::set_light(&mut out[start..], light_of(eyes));
         }
         for a in &self.arrows {
+            let start = out.len();
             build_arrow(a, camera, alpha, arrow_layer, out);
+            crate::entities::set_light(&mut out[start..], light_of(a.pos));
         }
     }
 

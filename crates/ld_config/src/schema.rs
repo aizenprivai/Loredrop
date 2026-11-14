@@ -232,6 +232,18 @@ pub fn schema() -> Vec<SettingDef> {
         },
         SettingDef {
             section: "graphics",
+            name: "brightness",
+            label: "Brightness",
+            description: "How bright dim places look, in percent. 0 = moody (dark caves and \
+                nights, Minecraft's 'Moody'), 100 = bright. Full sunlight looks the same at \
+                every setting.",
+            performance: "none",
+            kind: Kind::Int { min: 0, max: 100 },
+            apply: Apply::Immediately,
+            access: int_field!(graphics.brightness as u32),
+        },
+        SettingDef {
+            section: "graphics",
             name: "render_distance",
             label: "Render distance",
             description: "How many chunks (16-block columns) are loaded and drawn in every direction \

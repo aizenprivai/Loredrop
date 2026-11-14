@@ -18,7 +18,7 @@ struct Camera {
     glow: vec4<f32>,
     // xyz = direction toward the sun, w = star visibility.
     sun: vec4<f32>,
-    // x = moon phase (0..7), y = daylight, z = 1 if the sky is drawn.
+    // x = moon phase (0..7), y = daylight, z = 1 if the sky is drawn, w = brightness setting 0..1.
     misc: vec4<f32>,
 };
 @group(0) @binding(0) var<uniform> cam: Camera;

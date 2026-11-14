@@ -157,9 +157,18 @@ impl ItemEntities {
     }
 
     /// Triangles for every item (spinning and bobbing), relative to `camera`.
-    pub fn build_vertices(&self, camera: DVec3, time: f32, looks: &[ItemLook], out: &mut Vec<EntityVertex>) {
+    /// `light_of` gives the packed light at a world position.
+    pub fn build_vertices(
+        &self,
+        camera: DVec3,
+        time: f32,
+        looks: &[ItemLook],
+        light_of: &dyn Fn(DVec3) -> u8,
+        out: &mut Vec<EntityVertex>,
+    ) {
         for e in &self.list {
             let Some(look) = looks.get(e.stack.item.0 as usize) else { continue };
+            let start = out.len();
             let angle = time * 1.2 + e.phase;
             let bob = ((time * 2.5 + e.phase).sin() * 0.06 + 0.1) as f64;
             let center = (e.pos + DVec3::new(0.0, SIZE / 2.0 + bob, 0.0) - camera).as_vec3();
@@ -178,7 +187,16 @@ impl ItemEntities {
                     ItemLook::Flat { layer, tint } => sprite(out, center + offset, 0.25, angle, layer, tint),
                 }
             }
+            set_light(&mut out[start..], light_of(e.pos + DVec3::new(0.0, 0.1, 0.0)));
         }
+    }
+}
+
+/// Stores the packed light (`sky << 4 | block`) in the top byte of each
+/// vertex colour, where the entity shader reads it.
+pub fn set_light(vertices: &mut [EntityVertex], light: u8) {
+    for v in vertices {
+        v.color = (v.color & 0x00FF_FFFF) | ((light as u32) << 24);
     }
 }
 

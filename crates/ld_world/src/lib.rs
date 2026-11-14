@@ -9,6 +9,7 @@
 //! * [`column`](mod@column) — a 16×384×16 chunk column made of 24 sections.
 //! * [`map`] — every loaded column of one dimension.
 //! * [`biome`] — biome definitions loaded from `assets/data/biomes.toml`.
+//! * [`light`] — sky and block light levels, computed by flood fill.
 //!
 //! ## Sharing between threads
 //! Columns are stored as `Arc<ChunkColumn>`. A worker thread that needs to
@@ -20,11 +21,13 @@
 pub mod biome;
 pub mod block;
 pub mod column;
+pub mod light;
 pub mod map;
 pub mod section;
 
 pub use biome::{BiomeDef, BiomeId, BiomeRegistry};
 pub use block::{BlockDef, BlockId, BlockRegistry, Face, RenderLayer, Shape, Tint};
 pub use column::ChunkColumn;
+pub use light::{LightRegion, LightTable, SectionLight};
 pub use map::ChunkMap;
 pub use section::Section;

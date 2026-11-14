@@ -52,6 +52,8 @@ pub struct GraphicsSettings {
     pub fog: bool,
     pub render_distance: u32,
     pub mipmap_levels: u32,
+    /// 0 = moody (dark caves and nights) … 100 = bright.
+    pub brightness: u32,
 }
 
 /// Settings in the **Performance** tab.
@@ -93,6 +95,7 @@ impl Default for Settings {
         Self {
             graphics: GraphicsSettings {
                 backend: Backend::Auto,
+                brightness: 50,
                 vsync: true,
                 fps_limit: 0,
                 fov: 70.0,

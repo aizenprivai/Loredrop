@@ -7,7 +7,7 @@ struct Camera {
     fog: vec4<f32>,
     // Unused since Phase 4 (biome colours are per vertex); kept for layout stability.
     tints: array<vec4<f32>, 2>,
-    // Phase 8 sky data (see sky.wgsl); only misc.y (daylight) is used here.
+    // Phase 8 sky data (see sky.wgsl). Used here: misc.y = daylight, misc.w = brightness setting.
     inv_view_proj: mat4x4<f32>,
     sky_zenith: vec4<f32>,
     sky_horizon: vec4<f32>,
@@ -27,7 +27,28 @@ struct VertexOut {
     @location(2) light: f32,
     @location(3) @interpolate(flat) layer: u32,
     @location(4) color: vec3<f32>,
+    // Smooth-lit colour of the light hitting this vertex (sky and block light).
+    @location(5) lit: vec3<f32>,
 };
+
+// Light level 0..15 → brightness 0..1. Minecraft-like curve (dim levels
+// fall off quickly), lifted toward a straight line by the brightness
+// setting (misc.w: 0 = moody, 1 = bright), with a small floor so the
+// darkest caves aren't pure black.
+fn light_curve(level: f32) -> f32 {
+    let f = level / 15.0;
+    let moody = f / (4.0 - 3.0 * f);
+    let bright = 1.0 - (1.0 - f) * (1.0 - f);
+    return mix(moody, bright, cam.misc.w * 0.6) * 0.96 + 0.04;
+}
+
+// Colour of light reaching a surface: sunlight (dimmed at night by
+// daylight = misc.y) or warm block light (torches, lava), whichever is brighter.
+fn light_color(sky_level: f32, block_level: f32) -> vec3<f32> {
+    let sky = light_curve(sky_level) * cam.misc.y;
+    let blk = light_curve(block_level) * select(0.0, 1.0, block_level > 0.0);
+    return max(vec3<f32>(sky), blk * vec3<f32>(1.0, 0.88, 0.72));
+}
 
 // Minecraft-style fixed face shading: top brightest, bottom darkest.
 fn face_shade(face: u32) -> f32 {
@@ -78,6 +99,7 @@ fn vs_main(@location(0) packed: vec3<u32>, @location(1) origin: vec4<f32>) -> Ve
     let ao_levels = array<f32, 4>(0.4, 0.6, 0.8, 1.0);
     out.light = face_shade(face) * ao_levels[ao];
     out.layer = b & 0xFFFFu;
+    out.lit = light_color(f32((b >> 22u) & 15u), f32((b >> 18u) & 15u));
     // Biome colour (white for untinted faces), blended per column on the CPU.
     let rgb = vec3<f32>(f32((c >> 16u) & 255u), f32((c >> 8u) & 255u), f32(c & 255u)) / 255.0;
     out.color = to_linear(rgb);
@@ -85,8 +107,7 @@ fn vs_main(@location(0) packed: vec3<u32>, @location(1) origin: vec4<f32>) -> Ve
 }
 
 fn shade(in: VertexOut, texel: vec4<f32>) -> vec4<f32> {
-    // Daylight dims everything at night (until per-block light arrives).
-    var c = texel.rgb * in.color * in.light * cam.misc.y;
+    var c = texel.rgb * in.color * in.light * in.lit;
     if (cam.fog.z > 0.5) {
         let d = length(in.rel_pos.xz);
         c = mix(c, cam.fog_color.rgb, smoothstep(cam.fog.x, cam.fog.y, d));

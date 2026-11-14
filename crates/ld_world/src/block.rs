@@ -132,6 +132,11 @@ pub struct BlockDef {
     /// Texture name per face, indexed by [`Face`] as `usize`.
     pub textures: [String; 6],
     pub tints: [Tint; 6],
+    /// Light this block gives off, 0..15 (lava 15, torch 14, lit furnace 13).
+    pub light: u8,
+    /// How much light it absorbs when light passes through, 0..15. Opaque
+    /// cubes block light completely (15); leaves and water dim it (1).
+    pub light_filter: u8,
 }
 
 impl BlockDef {
@@ -164,6 +169,8 @@ struct BlockEntry {
     harvest_level: Option<u8>,
     drops: Option<String>,
     item: Option<bool>,
+    light: Option<u8>,
+    light_filter: Option<u8>,
     #[serde(default)]
     textures: HashMap<String, String>,
     #[serde(default)]
@@ -221,6 +228,8 @@ impl BlockRegistry {
             cull_same: false,
             textures: Default::default(),
             tints: [Tint::None; 6],
+            light: 0,
+            light_filter: 0,
         })?;
         for e in file.block {
             if e.layer != RenderLayer::Invisible && e.textures.is_empty() {
@@ -228,7 +237,13 @@ impl BlockRegistry {
             }
             let textures = per_face(&e.textures, String::new(), "texture", &e.name)?;
             let tints = per_face(&e.tint, Tint::None, "tint", &e.name)?;
+            let opaque = e.layer == RenderLayer::Opaque && e.shape == Shape::Cube;
+            if e.light.is_some_and(|l| l > 15) || e.light_filter.is_some_and(|l| l > 15) {
+                return Err(format!("block '{}': light values go from 0 to 15", e.name));
+            }
             reg.push(BlockDef {
+                light: e.light.unwrap_or(0),
+                light_filter: e.light_filter.unwrap_or(if opaque { 15 } else { 0 }),
                 display: e.display.unwrap_or_else(|| e.name.clone()),
                 solid: e.solid.unwrap_or(e.layer != RenderLayer::Invisible && e.shape == Shape::Cube),
                 replaceable: e.replaceable.unwrap_or(false),

@@ -38,8 +38,8 @@ fn bench(c: &mut Criterion) {
     });
     let checker =
         Neighborhood::from_fn(|x, y, z| if (x + y + z).rem_euclid(2) == 0 { stone } else { BlockId::AIR });
-    c.bench_function("mesh_surface_section", |b| b.iter(|| mesh_section(&terrain, &table)));
-    c.bench_function("mesh_checkerboard_worst_case", |b| b.iter(|| mesh_section(&checker, &table)));
+    c.bench_function("mesh_surface_section", |b| b.iter(|| mesh_section(&terrain, &table, None)));
+    c.bench_function("mesh_checkerboard_worst_case", |b| b.iter(|| mesh_section(&checker, &table, None)));
 }
 
 criterion_group!(benches, bench);

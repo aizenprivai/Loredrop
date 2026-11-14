@@ -20,6 +20,12 @@
 //! * Every section has a **version**. Editing a block bumps it; a mesh that
 //!   finishes with an older version is thrown away, so stale meshes never
 //!   overwrite newer ones.
+//! * **Light** is computed inside each mesh job (see `ld_world::light`). The
+//!   finished light of every meshed section is kept in a cache so gameplay
+//!   can ask "how bright is it here?" ([`World::light_at`]). An edit that
+//!   changes light rebuilds every section light could reach: the 3×3×3
+//!   sections around it, plus — if it changes how much sunlight passes —
+//!   the sections below it down to where the shadow ends.
 
 use ahash::{AHashMap, AHashSet};
 use crossbeam_channel::{Receiver, Sender, unbounded};
@@ -28,6 +34,7 @@ use ld_core::world_size::SECTIONS_PER_COLUMN;
 use ld_mesh::{MeshTable, Neighborhood, SectionMesh, mesh_section};
 use ld_physics::{Aabb, VoxelCollider};
 use ld_world::column::section_y;
+use ld_world::light::{LightRegion, LightTable, OPAQUE, SectionLight, sky_entering, unpack};
 use ld_world::{BiomeRegistry, BlockId, BlockRegistry, ChunkColumn, ChunkMap};
 use ld_worldgen::TerrainGenerator;
 use std::collections::VecDeque;
@@ -82,6 +89,10 @@ pub struct World {
     pub map: ChunkMap,
     generator: Arc<dyn TerrainGenerator>,
     mesh_table: Arc<MeshTable>,
+    /// Light properties of each block type.
+    pub light_table: Arc<LightTable>,
+    /// Light of every meshed section (from its last mesh job).
+    light: AHashMap<SectionPos, SectionLight>,
     pool: rayon::ThreadPool,
     threads: usize,
     gen_tx: Sender<ChunkColumn>,
@@ -121,13 +132,16 @@ impl World {
         log::info!("world: {threads} background worker thread(s)");
         let (gen_tx, gen_rx) = unbounded();
         let (mesh_tx, mesh_rx) = unbounded();
+        let light_table = Arc::new(LightTable::new(&registry));
         Self {
+            light_table,
             registry,
             biomes,
             seed,
             map: ChunkMap::new(),
             generator,
             mesh_table,
+            light: AHashMap::new(),
             pool,
             threads,
             gen_tx,
@@ -204,6 +218,9 @@ impl World {
         for pos in to_unload {
             self.map.remove(pos);
             self.columns.remove(&pos);
+            for i in 0..SECTIONS_PER_COLUMN as usize {
+                self.light.remove(&SectionPos { x: pos.x, y: section_y(i), z: pos.z });
+            }
         }
 
         // 3. Queue generation, nearest first.
@@ -239,7 +256,10 @@ impl World {
                 state.meshed_once = true;
                 state.dirty = (1 << SECTIONS_PER_COLUMN) - 1;
             }
-            while state.dirty != 0 && self.meshing.len() < max_mesh {
+            // All dirty sections of the column go into one job, so they can
+            // share one light computation.
+            let mut batch: Vec<(usize, SectionPos, u32)> = Vec::new();
+            while state.dirty != 0 {
                 let i = state.dirty.trailing_zeros() as usize;
                 state.dirty &= !(1 << i);
                 let spos = SectionPos { x: pos.x, y: section_y(i), z: pos.z };
@@ -249,6 +269,7 @@ impl World {
                         renderer.remove(spos);
                         state.on_gpu &= !(1 << i);
                     }
+                    self.light.remove(&spos);
                     continue;
                 }
                 let version = *self.versions.get(&spos).unwrap_or(&0);
@@ -256,14 +277,34 @@ impl World {
                     continue; // identical job already running
                 }
                 self.meshing.insert(spos, version);
-                let (table, tx, cols) = (self.mesh_table.clone(), self.mesh_tx.clone(), neigh.clone());
-                self.pool.spawn(move || {
-                    let refs: [[Option<&ChunkColumn>; 3]; 3] =
-                        std::array::from_fn(|z| std::array::from_fn(|x| cols[z][x].as_deref()));
-                    let mesh = mesh_section(&Neighborhood::from_columns(refs, i), &table);
-                    let _ = tx.send((spos, version, mesh));
-                });
+                batch.push((i, spos, version));
             }
+            if batch.is_empty() {
+                continue;
+            }
+            let (table, tx, cols) = (self.mesh_table.clone(), self.mesh_tx.clone(), neigh.clone());
+            let light_table = self.light_table.clone();
+            self.pool.spawn(move || {
+                let refs: [[Option<&ChunkColumn>; 3]; 3] =
+                    std::array::from_fn(|z| std::array::from_fn(|x| cols[z][x].as_deref()));
+                // Runs of nearby sections share one light box; a big gap
+                // (e.g. a sky island far above) starts a new one.
+                let mut start = 0;
+                while start < batch.len() {
+                    let mut end = start;
+                    while end + 1 < batch.len() && batch[end + 1].0 - batch[end].0 <= 2 {
+                        end += 1;
+                    }
+                    let (lo, hi) = (batch[start].0, batch[end].0);
+                    let region = LightRegion::around_sections(refs, lo, hi, &light_table);
+                    for &(i, spos, version) in &batch[start..=end] {
+                        let view = region.view(16 * (i - lo) as i32);
+                        let mesh = mesh_section(&Neighborhood::from_columns(refs, i), &table, Some(view));
+                        let _ = tx.send((spos, version, mesh));
+                    }
+                    start = end + 1;
+                }
+            });
         }
 
         // 5. Collect finished meshes and upload a limited number.
@@ -275,7 +316,7 @@ impl World {
         }
         let mut uploaded = 0;
         while uploaded < uploads_per_frame {
-            let Some((spos, version, mesh)) = self.uploads.pop_front() else { break };
+            let Some((spos, version, mut mesh)) = self.uploads.pop_front() else { break };
             let cpos = ChunkPos::new(spos.x, spos.z);
             let current = *self.versions.get(&spos).unwrap_or(&0);
             let Some(state) = self.columns.get_mut(&cpos) else { continue }; // unloaded
@@ -283,6 +324,10 @@ impl World {
                 continue; // stale or no longer wanted
             }
             let bit = 1 << (spos.y - section_y(0)) as u32;
+            match mesh.light.take() {
+                Some(l) => self.light.insert(spos, l),
+                None => self.light.remove(&spos),
+            };
             if mesh.is_empty() {
                 renderer.remove(spos);
                 state.on_gpu &= !bit;
@@ -306,9 +351,45 @@ impl World {
         Some(out)
     }
 
-    /// Changes a block and schedules the affected meshes for rebuilding.
+    /// Changes a block and schedules the affected meshes for rebuilding
+    /// (including every section whose light the change can alter).
     pub fn set_block(&mut self, pos: BlockPos, id: BlockId) {
-        for s in self.map.set_block(pos, id) {
+        let old = self.map.block(pos);
+        let changed = self.map.set_block(pos, id);
+        if changed.is_empty() {
+            return;
+        }
+        let mut sections: AHashSet<SectionPos> = changed.into_iter().collect();
+        if let Some(old) = old
+            && self.light_table.changes_light(old, id)
+        {
+            let s = pos.section();
+            // Light travels at most 15 blocks: the 3×3×3 sections around.
+            let mut lowest = s.y - 1;
+            if self.light_table.filter(old) != self.light_table.filter(id) {
+                // Sunlight passing (or no longer passing) here falls down the
+                // column until the next opaque block; light spreads up to 15
+                // blocks sideways/down from there.
+                let mut y = pos.y - 1;
+                while y > ld_core::world_size::MIN_Y
+                    && self
+                        .map
+                        .block(BlockPos::new(pos.x, y, pos.z))
+                        .is_some_and(|b| self.light_table.filter(b) < OPAQUE)
+                {
+                    y -= 1;
+                }
+                lowest = lowest.min(BlockPos::new(pos.x, y - 15, pos.z).section().y);
+            }
+            for dz in -1..=1 {
+                for dx in -1..=1 {
+                    for sy in lowest..=s.y + 1 {
+                        sections.insert(SectionPos { x: s.x + dx, y: sy, z: s.z + dz });
+                    }
+                }
+            }
+        }
+        for s in sections {
             *self.versions.entry(s).or_insert(0) += 1;
             if let Some(state) = self.columns.get_mut(&ChunkPos::new(s.x, s.z)) {
                 let i = s.y - section_y(0);
@@ -334,6 +415,24 @@ impl World {
         }
     }
 
+    /// (sky, block) light at a block, each 0..15. Uses the light of the last
+    /// mesh of that section; where there is none (all-air sections, places
+    /// not meshed yet), it falls back to "sunlight if the sky is visible".
+    /// Unloaded places are dark.
+    pub fn light_at(&self, pos: BlockPos) -> (u8, u8) {
+        if let Some(l) = self.light.get(&pos.section()) {
+            let (x, y, z) = pos.local();
+            return unpack(l.get(x as usize, y as usize, z as usize));
+        }
+        match self.map.get(pos.chunk()) {
+            Some(col) => {
+                let (x, _, z) = pos.local();
+                (sky_entering(col, x as usize, z as usize, pos.y, &self.light_table), 0)
+            }
+            None => (0, 0),
+        }
+    }
+
     /// True when the column at `pos` is loaded (physics may run there).
     pub fn is_loaded(&self, pos: ChunkPos) -> bool {
         self.map.contains(pos)
@@ -352,7 +451,8 @@ impl World {
             generating: self.generating.len(),
             meshing: self.meshing.len(),
             upload_queue: self.uploads.len(),
-            world_bytes: self.map.heap_bytes(),
+            world_bytes: self.map.heap_bytes()
+                + self.light.values().map(SectionLight::heap_bytes).sum::<usize>(),
             threads: self.threads,
             columns_ready: ready,
             columns_wanted: wanted,
@@ -478,5 +578,41 @@ pub(crate) mod tests {
         let remeshed = gpu.uploads - before;
         assert!(remeshed >= 2, "own section and the neighbour across the border were rebuilt ({remeshed})");
         assert_eq!(w.map.block(BlockPos::new(0, h, 5)), Some(BlockId::AIR));
+    }
+
+    #[test]
+    fn a_torch_underground_lights_its_pocket_and_a_roof_casts_shade() {
+        let mut w = world();
+        let mut gpu = FakeGpu::default();
+        let c = ChunkPos::new(0, 0);
+        settle(&mut w, c, 2, &mut gpu);
+        let h = w.generator().surface_height(8, 8);
+        // Open sky on the ground.
+        assert_eq!(w.light_at(BlockPos::new(8, h + 1, 8)).0, 15);
+        // Carve a 3×2×3 pocket 10 blocks underground with a torch in it.
+        let y = h - 10;
+        for dx in -1..=1 {
+            for dz in -1..=1 {
+                for dy in 0..2 {
+                    w.set_block(BlockPos::new(8 + dx, y + dy, 8 + dz), BlockId::AIR);
+                }
+            }
+        }
+        let torch = w.registry.id("torch").unwrap();
+        w.set_block(BlockPos::new(8, y, 8), torch);
+        settle(&mut w, c, 2, &mut gpu);
+        assert_eq!(w.light_at(BlockPos::new(8, y, 8)), (0, 14), "the torch's own cell");
+        assert_eq!(w.light_at(BlockPos::new(9, y + 1, 9)), (0, 11), "a corner of the pocket (3 steps)");
+        // A roof over a spot on the surface: shade below it.
+        let (rx, rz) = (20, 20);
+        let rh = w.generator().surface_height(rx, rz);
+        for dx in -3..=3 {
+            for dz in -3..=3 {
+                w.set_block(BlockPos::new(rx + dx, rh + 4, rz + dz), w.registry.id("stone").unwrap());
+            }
+        }
+        settle(&mut w, c, 2, &mut gpu);
+        let under = w.light_at(BlockPos::new(rx, rh + 1, rz)).0;
+        assert!((11..15).contains(&under), "shaded but lit from the sides: {under}");
     }
 }

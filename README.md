@@ -14,7 +14,9 @@ Animals (cow, pig, sheep, chicken) roam in herds and drop meat, leather and
 wool; zombies, skeletons and spiders lurk in dark places. In caves you may meet
 the Hollow: a silent stone figure that moves blocks around, harmless until you
 hit it or break what it built. It sometimes drops a lore fragment you can read
-(right click). No day/night cycle, lighting or saving yet.
+(right click). Days and nights pass (20 minutes, like Minecraft) with a sun,
+moon phases and stars; caves are dark — craft torches (coal over a stick).
+No saving yet.
 
 ## Build & run
 
