@@ -19,3 +19,6 @@ pollster = { workspace = true }
 ld_core = { workspace = true }
 ld_mesh = { workspace = true }
 ahash = { workspace = true }
+
+[dev-dependencies]
+naga = { version = "30", features = ["wgsl-in"] }

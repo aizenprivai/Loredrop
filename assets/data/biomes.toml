@@ -1,0 +1,169 @@
+# Loredrop biome definitions (core set, GDD §3.3).
+#
+# Climate ranges (each roughly -1..1) — see ld_world/src/biome.rs for details:
+#   temperature      cold ↔ hot          humidity   dry ↔ wet
+#   continentalness  ocean ↔ inland      erosion    mountainous ↔ flat
+#   weirdness        values near 0 = river valleys
+# A spot gets the biome whose ranges it's closest to; on ties, the one listed
+# FIRST wins — so special biomes (river, beach, mountains) come first.
+#
+# Colours tint grey textures (grass tops, plants, leaves, water).
+# surface/filler/underwater are block names from blocks.toml.
+# trees: weights of tree kinds (oak, birch, spruce, cactus); tree_density = trees per chunk.
+# plants: block name → placement attempts per chunk.
+
+[[biome]]
+name = "deep_ocean"
+display = "Deep Ocean"
+continentalness = [-2.0, -0.455]
+grass_color = "#8EB971"
+foliage_color = "#71A74D"
+water_color = "#3D57D6"
+surface = "gravel"
+filler = "gravel"
+underwater = "gravel"
+
+[[biome]]
+name = "ocean"
+display = "Ocean"
+continentalness = [-0.455, -0.19]
+grass_color = "#8EB971"
+foliage_color = "#71A74D"
+water_color = "#3F76E4"
+surface = "sand"
+filler = "sand"
+underwater = "sand"
+
+[[biome]]
+name = "river"
+display = "River"
+continentalness = [-0.11, 2.0]
+erosion = [-0.2, 2.0]
+weirdness = [-0.04, 0.04]
+grass_color = "#8DB960"
+foliage_color = "#71A74D"
+water_color = "#3F76E4"
+surface = "sand"
+filler = "dirt"
+underwater = "sand"
+
+[[biome]]
+name = "mountains"
+display = "Mountains"
+continentalness = [0.03, 2.0]
+erosion = [-2.0, -0.45]
+grass_color = "#8AB689"
+foliage_color = "#6DA36B"
+water_color = "#3F76E4"
+surface = "grass_block"
+filler = "dirt"
+underwater = "gravel"
+tree_density = 0.8
+trees = { spruce = 3, oak = 1 }
+plants = { short_grass = 6, fern = 2 }
+
+[[biome]]
+name = "beach"
+display = "Beach"
+temperature = [-0.45, 2.0]
+continentalness = [-0.19, -0.11]
+grass_color = "#91BD59"
+foliage_color = "#77AB2F"
+water_color = "#3F76E4"
+surface = "sand"
+filler = "sand"
+filler_depth = 4
+deep_filler = "sandstone"
+deep_filler_depth = 2
+underwater = "sand"
+
+[[biome]]
+name = "snowy_plains"
+display = "Snowy Plains"
+temperature = [-2.0, -0.45]
+grass_color = "#80B497"
+foliage_color = "#60A17B"
+water_color = "#3D57D6"
+surface = "snowy_grass_block"
+filler = "dirt"
+underwater = "gravel"
+snowy = true
+tree_density = 0.15
+trees = { spruce = 1 }
+
+[[biome]]
+name = "taiga"
+display = "Taiga"
+temperature = [-0.45, -0.15]
+grass_color = "#86B783"
+foliage_color = "#68A464"
+water_color = "#287082"
+surface = "grass_block"
+filler = "dirt"
+underwater = "gravel"
+tree_density = 7.0
+trees = { spruce = 1 }
+plants = { short_grass = 4, fern = 6 }
+
+[[biome]]
+name = "desert"
+display = "Desert"
+temperature = [0.55, 2.0]
+humidity = [-2.0, 0.1]
+grass_color = "#BFB755"
+foliage_color = "#AEA42A"
+water_color = "#32A598"
+surface = "sand"
+filler = "sand"
+filler_depth = 4
+deep_filler = "sandstone"
+deep_filler_depth = 5
+underwater = "sand"
+tree_density = 1.2
+trees = { cactus = 1 }
+plants = { dead_bush = 3 }
+
+[[biome]]
+name = "plains"
+display = "Plains"
+temperature = [-0.15, 0.55]
+humidity = [-2.0, 0.1]
+grass_color = "#91BD59"
+foliage_color = "#77AB2F"
+water_color = "#3F76E4"
+surface = "grass_block"
+filler = "dirt"
+underwater = "sand"
+tree_density = 0.05
+trees = { oak = 1 }
+plants = { short_grass = 30, dandelion = 2, poppy = 2, cornflower = 1 }
+
+[[biome]]
+name = "birch_forest"
+display = "Birch Forest"
+temperature = [-0.15, 0.2]
+humidity = [0.3, 2.0]
+grass_color = "#88BB67"
+foliage_color = "#6BA941"
+water_color = "#3F76E4"
+surface = "grass_block"
+filler = "dirt"
+underwater = "sand"
+tree_density = 8.0
+trees = { birch = 1 }
+plants = { short_grass = 6, dandelion = 1, poppy = 1 }
+
+[[biome]]
+name = "forest"
+display = "Forest"
+temperature = [-0.15, 2.0]
+humidity = [0.1, 2.0]
+grass_color = "#79C05A"
+foliage_color = "#59AE30"
+water_color = "#3F76E4"
+surface = "grass_block"
+filler = "dirt"
+underwater = "sand"
+tree_density = 9.0
+trees = { oak = 4, birch = 1 }
+plants = { short_grass = 6, poppy = 1 }

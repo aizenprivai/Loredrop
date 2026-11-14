@@ -11,7 +11,7 @@
 //! Resource packs (Phase 5) will slot in here: a pack is just another folder
 //! searched before `assets/`.
 
-use ld_world::BlockRegistry;
+use ld_world::{BiomeRegistry, BlockRegistry};
 use std::path::{Path, PathBuf};
 
 /// Finds the assets folder. Search order:
@@ -39,6 +39,19 @@ pub fn load_blocks(assets: &Path) -> Result<BlockRegistry, String> {
     let path = assets.join("data").join("blocks.toml");
     let text = std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
     BlockRegistry::from_toml(&text).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+/// Loads `data/biomes.toml`.
+pub fn load_biomes(assets: &Path) -> Result<BiomeRegistry, String> {
+    let path = assets.join("data").join("biomes.toml");
+    let text = std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    BiomeRegistry::from_toml(&text).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+/// Reads a text data file from `data/` (e.g. `ores.toml`).
+pub fn read_data(assets: &Path, name: &str) -> Result<String, String> {
+    let path = assets.join("data").join(name);
+    std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))
 }
 
 /// Square RGBA textures, all the same size, ready for a texture array.
@@ -130,6 +143,17 @@ mod tests {
     #[test]
     fn real_blocks_file_loads_and_every_texture_exists() {
         let reg = load_blocks(&assets()).expect("blocks.toml must parse");
+        let biomes = load_biomes(&assets()).expect("biomes.toml must parse");
+        // Every block a biome names must exist.
+        for (_, b) in biomes.iter() {
+            for name in [&b.surface, &b.filler, &b.underwater]
+                .into_iter()
+                .chain(b.deep_filler.as_ref())
+                .chain(b.plants.keys())
+            {
+                assert!(reg.id(name).is_some(), "biome '{}' uses unknown block '{name}'", b.name);
+            }
+        }
         assert!(reg.id("grass_block").is_some());
         for name in reg.texture_names() {
             let p = assets().join("textures/block").join(format!("{name}.png"));

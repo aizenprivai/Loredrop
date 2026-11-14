@@ -10,3 +10,12 @@ publish.workspace = true
 [dependencies]
 ld_core = { workspace = true }
 ld_world = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "generate"
+harness = false

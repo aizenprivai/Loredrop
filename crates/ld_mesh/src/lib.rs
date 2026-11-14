@@ -16,7 +16,13 @@
 //! 4. **Ambient occlusion (AO)**: each corner of a face is darkened according to
 //!    how many solid blocks touch it, giving the soft contact shadows that make
 //!    voxel scenes readable.
-//! 5. **Packing**: every vertex is squeezed into 8 bytes ([`PackedVertex`]).
+//! 5. **Biome colours**: grass, leaves and water are tinted per column with
+//!    the colour of the surrounding biomes (averaged over 3×3 columns, so
+//!    biome borders blend smoothly instead of switching abruptly).
+//! 6. **Packing**: every vertex is squeezed into 12 bytes ([`PackedVertex`]).
+//!
+//! Plants (`Shape::Cross`) are not greedy-meshed: each becomes two crossed
+//! diagonal panes, drawn from both sides.
 //!
 //! Texture coordinates are not stored at all: the shader derives them from the
 //! vertex position, which is what lets one merged quad repeat its texture
@@ -30,24 +36,31 @@ pub use mesher::{SectionMesh, mesh_section};
 pub use neighborhood::Neighborhood;
 pub use table::{BlockMeshInfo, MeshTable};
 
-/// One vertex in 8 bytes.
+/// One vertex in 12 bytes.
 ///
-/// `a` bits: `x:5 | y:5 | z:5 | face:3 | ao:2`  (positions are 0..=16 inside the section)
+/// `a` bits: `x:5 | y:5 | z:5 | face:3 | ao:2`  (positions are 0..=16 inside the section;
+///           faces 0–5 are cube faces, 6–7 the two diagonal panes of plants)
 /// `b` bits: `texture layer:16 | tint:2 | (light:8, reserved for Phase 8)`
+/// `c` bits: `red:8 | green:8 | blue:8` biome colour multiplier (white = untinted)
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct PackedVertex {
     pub a: u32,
     pub b: u32,
+    pub c: u32,
 }
+
+/// Untinted (white) colour.
+pub const WHITE: u32 = 0x00FF_FFFF;
 
 impl PackedVertex {
     #[inline]
-    pub fn new(pos: [u32; 3], face: u32, ao: u32, texture: u16, tint: u32) -> Self {
-        debug_assert!(pos.iter().all(|&c| c <= 16) && face < 6 && ao < 4 && tint < 4);
+    pub fn new(pos: [u32; 3], face: u32, ao: u32, texture: u16, tint: u32, color: u32) -> Self {
+        debug_assert!(pos.iter().all(|&c| c <= 16) && face < 8 && ao < 4 && tint < 4);
         Self {
             a: pos[0] | (pos[1] << 5) | (pos[2] << 10) | (face << 15) | (ao << 18),
             b: texture as u32 | (tint << 16),
+            c: color,
         }
     }
 
@@ -70,8 +83,9 @@ mod tests {
 
     #[test]
     fn pack_round_trip() {
-        let v = PackedVertex::new([16, 0, 9], 5, 2, 1234, 1);
-        assert_eq!(v.unpack(), ([16, 0, 9], 5, 2, 1234, 1));
-        assert_eq!(std::mem::size_of::<PackedVertex>(), 8);
+        let v = PackedVertex::new([16, 0, 9], 7, 2, 1234, 1, 0x00AA_BBCC);
+        assert_eq!(v.unpack(), ([16, 0, 9], 7, 2, 1234, 1));
+        assert_eq!(v.c, 0x00AA_BBCC);
+        assert_eq!(std::mem::size_of::<PackedVertex>(), 12);
     }
 }

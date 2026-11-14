@@ -32,7 +32,7 @@
 - [x] Section-level frustum culling, render-distance setting
 - [x] Meshing/storage benchmarks (criterion) + headless world benchmark
 - [x] Replace the test scene with real chunks
-- [ ] Director approval of Phase 3 report
+- [x] Director approval of Phase 3 report
 
 ## Deferred from Phase 3
 - [ ] Shared GPU buffer arena for section meshes (ARCHITECTURE §5.4) — currently one buffer per section; revisit in Phase 10 with multi-draw-indirect
@@ -44,17 +44,29 @@
 - [ ] Block light / sky light values in vertices (bits reserved) — Phase 8
 - [ ] Save block *names* in world files and remap IDs on load — Phase 9
 
-## Phase 4 — Procedural world generation (pending approval)
-- [ ] Seeded world creation; choose/benchmark a noise implementation
-- [ ] Continents/erosion/peaks height shaping; 3D density for overhangs
-- [ ] Core biome set (GDD §3.3) with data-driven biome files and biome tints
-- [ ] Caves (cheese/spaghetti/noodle-style), aquifers
-- [ ] Ore distribution; trees/vegetation per biome (cross-chunk features)
-- [ ] Oceans and rivers (water block + translucent pass)
-- [ ] First structures (simple ruins placeholder for the lore system)
+## Phase 4 — Procedural world generation
+- [x] Seeded world creation; own Perlin/octave/double noise (benchmarked)
+- [x] Continents/erosion/peaks height shaping; 3D density for overhangs
+- [x] Core biome set (GDD §3.3) with data-driven biome files and biome tints
+- [x] Caves (cheese/spaghetti/noodle-style); sealed sea floors; lava lakes
+- [x] Ore distribution; trees/vegetation per biome (cross-chunk trees)
+- [x] Oceans and rivers (water block + translucent pass)
+- [ ] **Structures: ruins with lore** — waiting for director's lore decisions
+- [ ] Director approval of Phase 4 report
+
+## Deferred from Phase 4
+- [ ] Aquifers (local underground water levels) — caves are always dry above Y −54
+- [ ] Non-cube blocks (slabs, stairs, snow layer, lower water surface)
+- [ ] Water/lava flow — Phase 8
+- [ ] More jagged mountain peaks
+- [ ] Fewer river loops / tiny inland ponds (tuning)
+- [ ] Biome-colour blend radius setting (fixed 3×3 now)
+- [ ] Underground biomes; "dramatic biomes"; underground layers (GDD originals)
+- [ ] Own equivalent of Minecraft's redstone (deliberately omitted; GDD §16)
 
 ## Infrastructure
-- [ ] Put project under version control (needs a GitHub repository from the director)
+- [x] Local git repository with history
+- [ ] Push to GitHub — director must create an empty repository and connect it
 
 ## Open design items
 See GDD.md §16.

@@ -1,5 +1,6 @@
 //! A chunk column: 24 stacked sections covering Y −64..320.
 
+use crate::biome::BiomeId;
 use crate::block::BlockId;
 use crate::section::{self, Section};
 use ld_core::coords::ChunkPos;
@@ -10,12 +11,29 @@ use ld_core::world_size::{MAX_Y, MIN_Y, SECTIONS_PER_COLUMN};
 pub struct ChunkColumn {
     pub pos: ChunkPos,
     sections: Vec<Section>,
+    /// Surface biome of each block column, index `z * 16 + x`.
+    /// (2D for now; underground biomes may make this 3D later.)
+    biomes: Box<[BiomeId; 256]>,
 }
 
 impl ChunkColumn {
     /// An all-air column.
     pub fn new(pos: ChunkPos) -> Self {
-        Self { pos, sections: vec![Section::default(); SECTIONS_PER_COLUMN as usize] }
+        Self {
+            pos,
+            sections: vec![Section::default(); SECTIONS_PER_COLUMN as usize],
+            biomes: Box::new([BiomeId(0); 256]),
+        }
+    }
+
+    /// Biome of block column (x, z), each 0..16.
+    #[inline]
+    pub fn biome(&self, x: usize, z: usize) -> BiomeId {
+        self.biomes[z * 16 + x]
+    }
+
+    pub fn set_biome(&mut self, x: usize, z: usize, b: BiomeId) {
+        self.biomes[z * 16 + x] = b;
     }
 
     /// Converts a world Y to (section index 0..24, local y 0..16), or `None`
@@ -74,6 +92,7 @@ impl ChunkColumn {
         std::mem::size_of::<Self>()
             + self.sections.len() * std::mem::size_of::<Section>()
             + self.sections.iter().map(Section::heap_bytes).sum::<usize>()
+            + 256
     }
 }
 

@@ -84,3 +84,253 @@ display = "Glass"
 layer = "cutout"
 cull_same = true
 textures = { all = "glass" }
+
+# --- Phase 4: world generation ---------------------------------------------
+
+[[block]]
+name = "deepslate"
+display = "Deepslate"
+layer = "opaque"
+textures = { side = "deepslate", top = "deepslate_top", bottom = "deepslate_top" }
+
+[[block]]
+name = "granite"
+display = "Granite"
+layer = "opaque"
+textures = { all = "granite" }
+
+[[block]]
+name = "diorite"
+display = "Diorite"
+layer = "opaque"
+textures = { all = "diorite" }
+
+[[block]]
+name = "andesite"
+display = "Andesite"
+layer = "opaque"
+textures = { all = "andesite" }
+
+[[block]]
+name = "sandstone"
+display = "Sandstone"
+layer = "opaque"
+textures = { side = "sandstone", top = "sandstone_top", bottom = "sandstone_bottom" }
+
+[[block]]
+name = "clay"
+display = "Clay"
+layer = "opaque"
+textures = { all = "clay" }
+
+[[block]]
+name = "ice"
+display = "Ice"
+layer = "opaque"
+textures = { all = "ice" }
+
+[[block]]
+name = "snow_block"
+display = "Snow Block"
+layer = "opaque"
+textures = { all = "snow" }
+
+[[block]]
+name = "snowy_grass_block"
+display = "Snowy Grass Block"
+layer = "opaque"
+textures = { top = "snow", bottom = "dirt", side = "grass_block_snow" }
+
+[[block]]
+name = "water"
+display = "Water"
+layer = "translucent"
+solid = false
+replaceable = true
+cull_same = true
+textures = { all = "water_still" }
+tint = { all = "water" }
+
+[[block]]
+name = "lava"
+display = "Lava"
+layer = "opaque"
+solid = false
+replaceable = true
+textures = { all = "lava_still" }
+
+# Ores: stone and deepslate variants. Names match Minecraft resource packs.
+[[block]]
+name = "coal_ore"
+display = "Coal Ore"
+layer = "opaque"
+textures = { all = "coal_ore" }
+
+[[block]]
+name = "deepslate_coal_ore"
+display = "Deepslate Coal Ore"
+layer = "opaque"
+textures = { all = "deepslate_coal_ore" }
+
+[[block]]
+name = "iron_ore"
+display = "Iron Ore"
+layer = "opaque"
+textures = { all = "iron_ore" }
+
+[[block]]
+name = "deepslate_iron_ore"
+display = "Deepslate Iron Ore"
+layer = "opaque"
+textures = { all = "deepslate_iron_ore" }
+
+[[block]]
+name = "copper_ore"
+display = "Copper Ore"
+layer = "opaque"
+textures = { all = "copper_ore" }
+
+[[block]]
+name = "deepslate_copper_ore"
+display = "Deepslate Copper Ore"
+layer = "opaque"
+textures = { all = "deepslate_copper_ore" }
+
+[[block]]
+name = "gold_ore"
+display = "Gold Ore"
+layer = "opaque"
+textures = { all = "gold_ore" }
+
+[[block]]
+name = "deepslate_gold_ore"
+display = "Deepslate Gold Ore"
+layer = "opaque"
+textures = { all = "deepslate_gold_ore" }
+
+[[block]]
+name = "diamond_ore"
+display = "Diamond Ore"
+layer = "opaque"
+textures = { all = "diamond_ore" }
+
+[[block]]
+name = "deepslate_diamond_ore"
+display = "Deepslate Diamond Ore"
+layer = "opaque"
+textures = { all = "deepslate_diamond_ore" }
+
+[[block]]
+name = "lapis_ore"
+display = "Lapis Lazuli Ore"
+layer = "opaque"
+textures = { all = "lapis_ore" }
+
+[[block]]
+name = "deepslate_lapis_ore"
+display = "Deepslate Lapis Lazuli Ore"
+layer = "opaque"
+textures = { all = "deepslate_lapis_ore" }
+
+[[block]]
+name = "emerald_ore"
+display = "Emerald Ore"
+layer = "opaque"
+textures = { all = "emerald_ore" }
+
+[[block]]
+name = "deepslate_emerald_ore"
+display = "Deepslate Emerald Ore"
+layer = "opaque"
+textures = { all = "deepslate_emerald_ore" }
+
+# Trees
+[[block]]
+name = "birch_log"
+display = "Birch Log"
+layer = "opaque"
+textures = { side = "birch_log", top = "birch_log_top", bottom = "birch_log_top" }
+
+[[block]]
+name = "birch_planks"
+display = "Birch Planks"
+layer = "opaque"
+textures = { all = "birch_planks" }
+
+[[block]]
+name = "birch_leaves"
+display = "Birch Leaves"
+layer = "cutout"
+textures = { all = "birch_leaves" }
+
+[[block]]
+name = "spruce_log"
+display = "Spruce Log"
+layer = "opaque"
+textures = { side = "spruce_log", top = "spruce_log_top", bottom = "spruce_log_top" }
+
+[[block]]
+name = "spruce_planks"
+display = "Spruce Planks"
+layer = "opaque"
+textures = { all = "spruce_planks" }
+
+[[block]]
+name = "spruce_leaves"
+display = "Spruce Leaves"
+layer = "cutout"
+textures = { all = "spruce_leaves" }
+
+[[block]]
+name = "cactus"
+display = "Cactus"
+layer = "cutout"
+textures = { side = "cactus_side", top = "cactus_top", bottom = "cactus_bottom" }
+
+# Plants (cross-shaped, walk-through)
+[[block]]
+name = "short_grass"
+display = "Short Grass"
+layer = "cutout"
+shape = "cross"
+replaceable = true
+textures = { all = "short_grass" }
+tint = { all = "grass" }
+
+[[block]]
+name = "fern"
+display = "Fern"
+layer = "cutout"
+shape = "cross"
+replaceable = true
+textures = { all = "fern" }
+tint = { all = "grass" }
+
+[[block]]
+name = "dead_bush"
+display = "Dead Bush"
+layer = "cutout"
+shape = "cross"
+replaceable = true
+textures = { all = "dead_bush" }
+
+[[block]]
+name = "dandelion"
+display = "Dandelion"
+layer = "cutout"
+shape = "cross"
+textures = { all = "dandelion" }
+
+[[block]]
+name = "poppy"
+display = "Poppy"
+layer = "cutout"
+shape = "cross"
+textures = { all = "poppy" }
+
+[[block]]
+name = "cornflower"
+display = "Cornflower"
+layer = "cutout"
+shape = "cross"
+textures = { all = "cornflower" }

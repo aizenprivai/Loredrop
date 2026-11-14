@@ -7,8 +7,8 @@ Each phase ends with a report and requires director approval before the next beg
 | 0 | Game design & interview | ✅ Complete (GDD approved) |
 | 1 | Technical research & architecture | ✅ Complete (architecture approved) |
 | 2 | Core engine foundation | ✅ Complete (approved; real-hardware test pending) |
-| 3 | Voxel engine & chunk system | 🟡 Implemented & tested — awaiting approval |
-| 4 | Procedural world generation | ⏳ |
+| 3 | Voxel engine & chunk system | ✅ Complete (approved) |
+| 4 | Procedural world generation | 🟡 In progress — terrain/biomes/caves/ores/vegetation done; structures pending lore decisions |
 | 5 | Core gameplay (Creative mode playable) | ⏳ |
 | 6 | Survival systems | ⏳ |
 | 7 | Entities & AI | ⏳ |

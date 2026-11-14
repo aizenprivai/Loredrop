@@ -62,7 +62,7 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
         GameMode::Creative => "Creative",
     };
     let left = vec![
-        format!("Loredrop {} (Phase 3 · test terrain)", env!("CARGO_PKG_VERSION")),
+        format!("Loredrop {} (Phase 4 · world generation)", env!("CARGO_PKG_VERSION")),
         format!("{} fps  (avg {:.2} ms, worst {:.2} ms)", d.stats.fps, d.stats.avg_ms, d.stats.worst_ms),
         format!("{} ticks/s (target 20)   tick {}", d.stats.tps, d.game.tick),
         String::new(),
@@ -78,6 +78,8 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
         format!("Mode: {mode}   Ground: {}   Flying: {}", yes(p.on_ground), yes(p.flying)),
         format!("Sprinting: {}   Sneaking: {}", yes(p.sprinting), yes(p.sneaking)),
         format!("Standing on: {}", standing_on(d.game)),
+        format!("Biome: {}", biome_here(d.game)),
+        format!("Seed: {}", d.game.world.seed as i64),
         String::new(),
         format!(
             "Chunks: {}/{} ready (render distance {})   loaded {}",
@@ -111,6 +113,17 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
     ];
     text_block(&painter, screen.left_top() + egui::vec2(4.0, 4.0), Align2::LEFT_TOP, &left);
     text_block(&painter, screen.right_top() + egui::vec2(-4.0, 4.0), Align2::RIGHT_TOP, &right);
+}
+
+/// Display name of the biome at the player's position.
+fn biome_here(game: &Game) -> String {
+    let p = game.player.pos;
+    let b = ld_core::coords::BlockPos::new(p.x.floor() as i32, 0, p.z.floor() as i32);
+    let (lx, _, lz) = b.local();
+    match game.world.map.get(b.chunk()) {
+        Some(col) => game.world.biomes.get(col.biome(lx as usize, lz as usize)).display.clone(),
+        None => "(not loaded)".into(),
+    }
 }
 
 /// Display name of the block under the player's feet.

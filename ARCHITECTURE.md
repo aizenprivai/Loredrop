@@ -1,6 +1,6 @@
 # Loredrop — Technical Architecture
 
-> **Status:** APPROVED v1.0 (Phase 1) · updated v1.2 after Phase 3
+> **Status:** APPROVED v1.0 (Phase 1) · updated v1.3 during Phase 4
 > **Last updated:** 2026-11-14
 
 This document describes *how* Loredrop is built. *What* we build is in `GDD.md`.
@@ -289,6 +289,19 @@ measured on the director's hardware. CPU-side systems are measured here.
   rather than stored, keeping vertices at 8 bytes and making greedy quads tile.
 - **Meshing condition:** a column is meshed only once all 8 neighbours are
   generated; unloaded neighbours act as solid walls for physics.
+
+### Changes made during Phase 4 (v1.3)
+
+- **World generation** pipeline: climate → terrain shape → lattice density
+  (4×8×4, interpolated) → fill → biomes → surface → ores → vegetation, on a
+  flat per-column block array packed into palette sections at the end.
+- **Cross-chunk features without neighbour data:** `column_profile(x, z)`
+  reproduces chunk maths exactly, so chunks place trees owned by neighbours.
+  Rule: feature decisions may only use what `column_profile` can compute.
+- **Data files:** `biomes.toml` and `ores.toml` join `blocks.toml`.
+- **Vertex format is 12 bytes** (+ per-vertex biome RGB). Biomes stored per column.
+- **Third render pass:** translucent (blended, no depth write, back-to-front).
+- **Shaders validated on the CPU in tests** (naga).
 
 ## 13. Decisions approved in Phase 1
 

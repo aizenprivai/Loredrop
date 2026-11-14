@@ -28,7 +28,7 @@ use ld_core::world_size::SECTIONS_PER_COLUMN;
 use ld_mesh::{MeshTable, Neighborhood, SectionMesh, mesh_section};
 use ld_physics::{Aabb, VoxelCollider};
 use ld_world::column::section_y;
-use ld_world::{BlockId, BlockRegistry, ChunkColumn, ChunkMap};
+use ld_world::{BiomeRegistry, BlockId, BlockRegistry, ChunkColumn, ChunkMap};
 use ld_worldgen::TerrainGenerator;
 use std::collections::VecDeque;
 use std::sync::Arc;
@@ -76,6 +76,9 @@ pub struct WorldStats {
 
 pub struct World {
     pub registry: Arc<BlockRegistry>,
+    pub biomes: Arc<BiomeRegistry>,
+    /// The world seed (shown in the debug overlay).
+    pub seed: u64,
     pub map: ChunkMap,
     generator: Arc<dyn TerrainGenerator>,
     mesh_table: Arc<MeshTable>,
@@ -99,6 +102,8 @@ pub struct World {
 impl World {
     pub fn new(
         registry: Arc<BlockRegistry>,
+        biomes: Arc<BiomeRegistry>,
+        seed: u64,
         generator: Arc<dyn TerrainGenerator>,
         mesh_table: Arc<MeshTable>,
         worker_threads: u32,
@@ -116,6 +121,8 @@ impl World {
         let (mesh_tx, mesh_rx) = unbounded();
         Self {
             registry,
+            biomes,
+            seed,
             map: ChunkMap::new(),
             generator,
             mesh_table,
@@ -370,7 +377,7 @@ impl VoxelCollider for World {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use ld_worldgen::TestTerrain;
     use std::collections::HashMap;
@@ -391,14 +398,21 @@ mod tests {
         }
     }
 
+    pub(crate) fn test_biomes() -> Arc<BiomeRegistry> {
+        let text =
+            std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/data/biomes.toml"))
+                .unwrap();
+        Arc::new(BiomeRegistry::from_toml(&text).unwrap())
+    }
+
     fn world() -> World {
         let text =
             std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/data/blocks.toml"))
                 .unwrap();
         let reg = Arc::new(BlockRegistry::from_toml(&text).unwrap());
         let generator = Arc::new(TestTerrain::new(1, &reg).unwrap());
-        let table = Arc::new(MeshTable::new(&reg, |_| 1));
-        World::new(reg, generator, table, 2)
+        let table = Arc::new(MeshTable::new(&reg, None, |_| 1));
+        World::new(reg, test_biomes(), 1, generator, table, 2)
     }
 
     /// Runs the pipeline until everything within render distance is on the "GPU".

@@ -8,6 +8,11 @@ USAGE: loredrop [OPTIONS]
   --autopilot                walk and jump automatically (game-loop test)
   --exit-after <seconds>     quit automatically after a time
   --bench-world <distance>   no window: time world generation + meshing
+  --seed <number or text>    world seed (default: random)
+  --pos <x> <y> <z>          start at this position (developer option)
+  --look <yaw> <pitch>       start looking this way (developer option)
+  --fly                      start flying (developer option)
+  --map <blocks> <file.png>  no window: draw a top-down map around spawn
   -h, --help                 show this help
 
 CONTROLS (defaults; change them in settings.toml under [keybinds])

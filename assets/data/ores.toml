@@ -1,0 +1,148 @@
+# Ore and rock-blob distribution, modelled on modern Minecraft's (1.18+) depths.
+#
+#   block      block placed in stone
+#   deepslate  variant placed when the host rock is deepslate (optional)
+#   size       approximate blocks per vein
+#   per_chunk  vein attempts per chunk (fractions allowed: 0.5 = every other chunk)
+#   height     [min, max] Y range
+#   shape      "uniform"  — equally likely anywhere in the range
+#              "triangle" — most common at the middle of the range, fading to the ends
+#   biomes     optional list: only generate in these biomes
+#
+# Note: Minecraft's "redstone" is intentionally absent — it's a Minecraft-specific
+# invention; Loredrop's equivalent (if any) is an open design item (GDD §16).
+
+# Rock variety blobs
+[[ore]]
+block = "granite"
+size = 64
+per_chunk = 2
+height = [0, 60]
+shape = "uniform"
+
+[[ore]]
+block = "diorite"
+size = 64
+per_chunk = 2
+height = [0, 60]
+shape = "uniform"
+
+[[ore]]
+block = "andesite"
+size = 64
+per_chunk = 2
+height = [0, 60]
+shape = "uniform"
+
+[[ore]]
+block = "gravel"
+size = 33
+per_chunk = 14
+height = [-64, 200]
+shape = "uniform"
+
+# Ores
+[[ore]]
+block = "coal_ore"
+deepslate = "deepslate_coal_ore"
+size = 17
+per_chunk = 30
+height = [136, 320]
+shape = "uniform"
+
+[[ore]]
+block = "coal_ore"
+deepslate = "deepslate_coal_ore"
+size = 17
+per_chunk = 20
+height = [0, 192]
+shape = "triangle"
+
+[[ore]]
+block = "iron_ore"
+deepslate = "deepslate_iron_ore"
+size = 9
+per_chunk = 90
+height = [80, 384]
+shape = "triangle"
+
+[[ore]]
+block = "iron_ore"
+deepslate = "deepslate_iron_ore"
+size = 9
+per_chunk = 10
+height = [-24, 56]
+shape = "triangle"
+
+[[ore]]
+block = "iron_ore"
+deepslate = "deepslate_iron_ore"
+size = 4
+per_chunk = 10
+height = [-64, 72]
+shape = "uniform"
+
+[[ore]]
+block = "copper_ore"
+deepslate = "deepslate_copper_ore"
+size = 10
+per_chunk = 16
+height = [-16, 112]
+shape = "triangle"
+
+[[ore]]
+block = "gold_ore"
+deepslate = "deepslate_gold_ore"
+size = 9
+per_chunk = 4
+height = [-64, 32]
+shape = "triangle"
+
+[[ore]]
+block = "gold_ore"
+deepslate = "deepslate_gold_ore"
+size = 9
+per_chunk = 0.5
+height = [-64, -48]
+shape = "uniform"
+
+[[ore]]
+block = "lapis_ore"
+deepslate = "deepslate_lapis_ore"
+size = 7
+per_chunk = 2
+height = [-32, 32]
+shape = "triangle"
+
+[[ore]]
+block = "lapis_ore"
+deepslate = "deepslate_lapis_ore"
+size = 7
+per_chunk = 4
+height = [-64, 64]
+shape = "uniform"
+
+[[ore]]
+block = "diamond_ore"
+deepslate = "deepslate_diamond_ore"
+size = 4
+per_chunk = 7
+height = [-144, 16]
+shape = "triangle"
+
+[[ore]]
+block = "diamond_ore"
+deepslate = "deepslate_diamond_ore"
+size = 12
+per_chunk = 0.11
+height = [-144, 16]
+shape = "triangle"
+
+[[ore]]
+block = "emerald_ore"
+deepslate = "deepslate_emerald_ore"
+size = 3
+per_chunk = 100
+height = [-16, 480]
+shape = "triangle"
+biomes = ["mountains"]

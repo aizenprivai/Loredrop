@@ -9,5 +9,11 @@
 | KB-005 | Info | Open | Untested platforms: Windows, macOS, real GPUs (only Linux + software Vulkan/OpenGL tested). |
 | KB-006 | Low | Open (Phase 10) | Each visible section costs 1–2 draw calls (~200 at render distance 8). Fine for now; multi-draw-indirect planned to reduce CPU cost at large render distances. |
 | KB-007 | Low | Open (Phase 5) | With Minecraft resource packs, grass-block sides will lack their tinted overlay (`grass_block_side_overlay`) until overlay support is added. Our own textures are unaffected. |
-| KB-008 | Info | By design (Phase 3) | Terrain is a temporary test generator (hills + trees, no caves/water/biomes); trees never cross chunk borders. Real generation is Phase 4. |
+| KB-008 | Info | Fixed (Phase 4) | ~~Temporary test terrain~~ — replaced by the Overworld generator. |
 | KB-009 | Low | Open | Leaves in the far distance can look thinner because mipmapped alpha is averaged before the cut-out test (same behaviour as Minecraft). |
+| KB-010 | Low | Open | Rivers sometimes form closed loops and tiny ponds appear inland. Tuning planned. |
+| KB-011 | Low | Open | Mountain peaks are smoother than Minecraft's jagged peaks. |
+| KB-012 | Low | Open | Water is a full block, doesn't flow, and there is no swimming (player sinks). Phases 6/8. |
+| KB-013 | Low | Open | Caves are as bright as the surface — no lighting system yet (Phase 8). |
+| KB-014 | Low | Open | Ore veins are clipped at chunk borders. |
+| KB-015 | Info | Open | Translucent faces inside one section aren't depth-sorted (only sections are). |

@@ -84,3 +84,35 @@
 - Removed the Phase 2 hand-built test scene; game tests now use a test-course
   generator in a real `World`.
 - 57 automated tests; clippy and rustdoc clean.
+- Phase 3 approved by director. Local git repository created (GitHub repository
+  pending: this session cannot create repositories — see TODO).
+
+### 2026-11-14 — Phase 4 (in progress): procedural world generation
+- **Overworld generator** (`ld_worldgen::overworld`), Minecraft-1.18-style
+  techniques with our own noises and numbers:
+  - Five climate noises (temperature, humidity, continentalness, erosion,
+    weirdness), auto-calibrated to a fixed spread so biome thresholds stay meaningful.
+  - Terrain shape from hand-tuned curves: deep oceans → shelf → beaches →
+    inland plains → hills → mountain ranges, with river valleys where
+    weirdness crosses zero.
+  - 3D density with roughness-scaled detail noise (cliffs, overhangs),
+    computed on a 4×8×4 lattice and trilinearly interpolated.
+  - Caves: cheese caverns, spaghetti tunnels (with surface entrances) and
+    noodle passages; sea/river floors sealed; ≈8 % of underground volume.
+  - Sea level 63, water and ice (cold biomes), lava lakes below Y −54,
+    deepslate below Y 0 (mixed 0–8), ragged bedrock floor.
+  - Surface rules per biome; bare rock and snow caps on mountains.
+  - Ores and rock blobs from `assets/data/ores.toml` with uniform/triangle
+    depth distributions modelled on modern Minecraft; deepslate variants.
+  - Trees (oak, birch, spruce, cactus) that correctly cross chunk borders;
+    plants per biome. Spawn search for dry land.
+- **Biomes** (`assets/data/biomes.toml`): 11 core biomes, data-driven.
+- **Blocks**: 47 new; `shape = "cross"`, `replaceable`, `water` tint; 45 new textures.
+- **Meshing/rendering**: blended per-vertex biome colours (12-byte vertices),
+  double-sided plant meshes, translucent water pass.
+- **Game**: `--seed`, spawn from generator, F3 shows biome and seed.
+- **Developer tools**: `--map`, `--pos`, `--look`, `--fly`, worldgen benches.
+- **Quality**: CPU shader-validation test (after a shader typo crashed startup);
+  NaN-robustness tests (after a NaN created 320-high walls — fixed).
+- Generation optimised from 10.3 ms to 1.3 ms per column.
+- 79 automated tests; clippy and rustdoc clean.

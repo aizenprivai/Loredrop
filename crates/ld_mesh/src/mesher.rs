@@ -1,9 +1,9 @@
 //! Face culling + greedy meshing + ambient occlusion.
 
-use crate::PackedVertex;
 use crate::neighborhood::Neighborhood;
 use crate::table::MeshTable;
-use ld_world::{BlockId, RenderLayer};
+use crate::{PackedVertex, WHITE};
+use ld_world::{BlockId, RenderLayer, Shape};
 
 /// Output for one section. Every 4 vertices form one quad; the renderer uses
 /// a shared index buffer (0,1,2, 0,2,3, …) so no indices are stored here.
@@ -11,8 +11,7 @@ use ld_world::{BlockId, RenderLayer};
 pub struct SectionMesh {
     pub opaque: Vec<PackedVertex>,
     pub cutout: Vec<PackedVertex>,
-    /// Translucent faces (water, stained glass). Not drawn until the
-    /// translucent pass exists (Phase 4/8).
+    /// Translucent faces (water, stained glass), drawn last with blending.
     pub translucent: Vec<PackedVertex>,
 }
 
@@ -43,6 +42,8 @@ const FACE_AXES: [(usize, usize, usize, bool); 6] = [
 struct FaceKey {
     texture: u16,
     tint: u8,
+    /// Packed RGB biome colour.
+    color: u32,
     /// Four 2-bit AO values, corner order (0,0) (1,0) (1,1) (0,1).
     ao: u8,
     layer: u8, // 0 opaque, 1 cutout, 2 translucent
@@ -52,6 +53,7 @@ struct FaceKey {
 pub fn mesh_section(n: &Neighborhood, table: &MeshTable) -> SectionMesh {
     let mut out = SectionMesh::default();
     let mut mask: [Option<FaceKey>; 256] = [None; 256];
+    let colors = blended_colors(n, table);
 
     for (face, &(na, ua, va, positive)) in FACE_AXES.iter().enumerate() {
         let step = if positive { 1 } else { -1 };
@@ -63,7 +65,7 @@ pub fn mesh_section(n: &Neighborhood, table: &MeshTable) -> SectionMesh {
                     p[na] = d;
                     p[ua] = u;
                     p[va] = v;
-                    mask[(v * 16 + u) as usize] = visible_face(n, table, p, face, na, ua, va, step);
+                    mask[(v * 16 + u) as usize] = visible_face(n, table, &colors, p, face, na, ua, va, step);
                 }
             }
             // 2. Greedily merge equal neighbours into rectangles.
@@ -108,7 +110,75 @@ pub fn mesh_section(n: &Neighborhood, table: &MeshTable) -> SectionMesh {
             }
         }
     }
+    mesh_plants(n, table, &colors, &mut out);
     out
+}
+
+/// Blended biome colours per column: `[x + z*16][kind - 1]` for grass,
+/// foliage and water, averaging the 3×3 surrounding columns.
+fn blended_colors(n: &Neighborhood, table: &MeshTable) -> Vec<[u32; 3]> {
+    let mut out = vec![[WHITE; 3]; 256];
+    for z in 0..16 {
+        for x in 0..16 {
+            for kind in 1..=3u8 {
+                let mut acc = [0f32; 3];
+                for dz in -1..=1 {
+                    for dx in -1..=1 {
+                        let c = table.biome_color(n.biome(x + dx, z + dz), kind);
+                        for i in 0..3 {
+                            acc[i] += c[i];
+                        }
+                    }
+                }
+                let to8 = |v: f32| ((v / 9.0).clamp(0.0, 1.0) * 255.0 + 0.5) as u32;
+                out[(z * 16 + x) as usize][kind as usize - 1] =
+                    (to8(acc[0]) << 16) | (to8(acc[1]) << 8) | to8(acc[2]);
+            }
+        }
+    }
+    out
+}
+
+#[inline]
+fn color_for(colors: &[[u32; 3]], x: i32, z: i32, tint: u8) -> u32 {
+    if tint == 0 { WHITE } else { colors[(z * 16 + x) as usize][tint as usize - 1] }
+}
+
+/// Two crossed diagonal panes per plant, each emitted in both windings so it
+/// is visible from both sides (back-face culling stays on for everything else).
+fn mesh_plants(n: &Neighborhood, table: &MeshTable, colors: &[[u32; 3]], out: &mut SectionMesh) {
+    for y in 0..16 {
+        for z in 0..16 {
+            for x in 0..16 {
+                let id = n.get(x, y, z);
+                if id == BlockId::AIR {
+                    continue;
+                }
+                let info = table.get(id);
+                if info.shape != Shape::Cross {
+                    continue;
+                }
+                let (xu, yu, zu) = (x as u32, y as u32, z as u32);
+                let tex = info.textures[0];
+                let tint = info.tints[0];
+                let color = color_for(colors, x, z, tint);
+                let panes: [(u32, [[u32; 3]; 4]); 2] = [
+                    (6, [[xu, yu, zu], [xu + 1, yu, zu + 1], [xu + 1, yu + 1, zu + 1], [xu, yu + 1, zu]]),
+                    (7, [[xu, yu, zu + 1], [xu + 1, yu, zu], [xu + 1, yu + 1, zu], [xu, yu + 1, zu + 1]]),
+                ];
+                let target = match info.layer {
+                    RenderLayer::Translucent => &mut out.translucent,
+                    RenderLayer::Opaque => &mut out.opaque,
+                    _ => &mut out.cutout,
+                };
+                for (face, c) in panes {
+                    let v = |p: [u32; 3]| PackedVertex::new(p, face, 3, tex, tint as u32, color);
+                    target.extend_from_slice(&[v(c[0]), v(c[1]), v(c[2]), v(c[3])]);
+                    target.extend_from_slice(&[v(c[1]), v(c[0]), v(c[3]), v(c[2])]); // back side
+                }
+            }
+        }
+    }
 }
 
 /// Returns the face key if the given face of the block at `p` is visible.
@@ -117,6 +187,7 @@ pub fn mesh_section(n: &Neighborhood, table: &MeshTable) -> SectionMesh {
 fn visible_face(
     n: &Neighborhood,
     table: &MeshTable,
+    colors: &[[u32; 3]],
     p: [i32; 3],
     face: usize,
     na: usize,
@@ -129,7 +200,7 @@ fn visible_face(
         return None;
     }
     let info = table.get(id);
-    if info.layer == RenderLayer::Invisible {
+    if info.layer == RenderLayer::Invisible || info.shape != Shape::Cube {
         return None;
     }
     let mut q = p;
@@ -156,7 +227,14 @@ fn visible_face(
         RenderLayer::Translucent => 2,
         _ => 0,
     };
-    Some(FaceKey { texture: info.textures[face], tint: info.tints[face], ao, layer })
+    let tint = info.tints[face];
+    Some(FaceKey {
+        texture: info.textures[face],
+        tint,
+        color: color_for(colors, p[0], p[2], tint),
+        ao,
+        layer,
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -181,10 +259,10 @@ fn emit_quad(
     };
     let ao = |i: u32| ((key.ao >> (i * 2)) & 3) as u32;
     let verts = [
-        PackedVertex::new(corner(u, v), face as u32, ao(0), key.texture, key.tint as u32),
-        PackedVertex::new(corner(u + w, v), face as u32, ao(1), key.texture, key.tint as u32),
-        PackedVertex::new(corner(u + w, v + h), face as u32, ao(2), key.texture, key.tint as u32),
-        PackedVertex::new(corner(u, v + h), face as u32, ao(3), key.texture, key.tint as u32),
+        PackedVertex::new(corner(u, v), face as u32, ao(0), key.texture, key.tint as u32, key.color),
+        PackedVertex::new(corner(u + w, v), face as u32, ao(1), key.texture, key.tint as u32, key.color),
+        PackedVertex::new(corner(u + w, v + h), face as u32, ao(2), key.texture, key.tint as u32, key.color),
+        PackedVertex::new(corner(u, v + h), face as u32, ao(3), key.texture, key.tint as u32, key.color),
     ];
     let target = match key.layer {
         1 => &mut out.cutout,
@@ -225,12 +303,24 @@ mod tests {
         layer = "cutout"
         cull_same = true
         textures = { all = "glass" }
+        [[block]]
+        name = "short_grass"
+        layer = "cutout"
+        shape = "cross"
+        textures = { all = "short_grass" }
+        tint = { all = "grass" }
+        [[block]]
+        name = "water"
+        layer = "translucent"
+        cull_same = true
+        textures = { all = "water_still" }
+        tint = { all = "water" }
     "#;
 
     fn setup() -> (BlockRegistry, MeshTable) {
         let r = BlockRegistry::from_toml(BLOCKS).unwrap();
         let names = r.texture_names();
-        let t = MeshTable::new(&r, |n| names.iter().position(|x| x == n).unwrap_or(0) as u16);
+        let t = MeshTable::new(&r, None, |n| names.iter().position(|x| x == n).unwrap_or(0) as u16);
         (r, t)
     }
 
@@ -326,6 +416,33 @@ mod tests {
         let cols = [[Some(&col); 3]; 3];
         let m = mesh_section(&Neighborhood::from_columns(cols, 0), &t);
         assert_eq!(quads(&m), 1, "only the top of the bedrock layer");
+    }
+
+    #[test]
+    fn plants_are_two_double_sided_panes_and_dont_hide_neighbours() {
+        let (r, t) = setup();
+        let (g, s) = (r.id("short_grass").unwrap(), r.id("stone").unwrap());
+        let n = Neighborhood::from_fn(|x, y, z| match (x, y, z) {
+            (5, 5, 5) => g,
+            (6, 5, 5) => s,
+            _ => BlockId::AIR,
+        });
+        let m = mesh_section(&n, &t);
+        assert_eq!(m.cutout.len() / 4, 4, "2 panes × 2 sides");
+        assert_eq!(m.opaque.len() / 4, 6, "stone keeps its west face next to the plant");
+        let faces: std::collections::HashSet<u32> = m.cutout.iter().map(|v| v.unpack().1).collect();
+        assert_eq!(faces, [6, 7].into());
+        assert!(m.cutout.iter().all(|v| v.c != crate::WHITE), "grass plant is biome-tinted");
+    }
+
+    #[test]
+    fn water_goes_to_translucent_and_culls_itself() {
+        let (r, t) = setup();
+        let w = r.id("water").unwrap();
+        let n = Neighborhood::from_fn(|_, y, _| if y < 8 { w } else { BlockId::AIR });
+        let m = mesh_section(&n, &t);
+        assert!(m.opaque.is_empty() && m.cutout.is_empty());
+        assert_eq!(m.translucent.len() / 4, 1, "only the merged surface");
     }
 
     #[test]

@@ -502,3 +502,25 @@ fn create_depth(device: &wgpu::Device, width: u32, height: u32) -> wgpu::Texture
         })
         .create_view(&Default::default())
 }
+
+#[cfg(test)]
+mod shader_tests {
+    /// Parses and validates every WGSL shader on the CPU, so shader mistakes
+    /// fail `cargo test` instead of crashing the game at startup.
+    #[test]
+    fn shaders_parse_and_validate() {
+        for (name, src) in [
+            ("world.wgsl", include_str!("shaders/world.wgsl")),
+            ("chunk.wgsl", include_str!("shaders/chunk.wgsl")),
+        ] {
+            let module = naga::front::wgsl::parse_str(src)
+                .unwrap_or_else(|e| panic!("{name}: {}", e.emit_to_string(src)));
+            naga::valid::Validator::new(
+                naga::valid::ValidationFlags::all(),
+                naga::valid::Capabilities::empty(),
+            )
+            .validate(&module)
+            .unwrap_or_else(|e| panic!("{name}: {e:?}"));
+        }
+    }
+}

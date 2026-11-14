@@ -8,6 +8,7 @@
 //! * [`section`] — a 16×16×16 cube of blocks, stored compactly with a palette.
 //! * [`column`](mod@column) — a 16×384×16 chunk column made of 24 sections.
 //! * [`map`] — every loaded column of one dimension.
+//! * [`biome`] — biome definitions loaded from `assets/data/biomes.toml`.
 //!
 //! ## Sharing between threads
 //! Columns are stored as `Arc<ChunkColumn>`. A worker thread that needs to
@@ -16,12 +17,14 @@
 //! column only if a worker is still reading the old version ("copy-on-write"),
 //! so readers never see a half-changed column.
 
+pub mod biome;
 pub mod block;
 pub mod column;
 pub mod map;
 pub mod section;
 
-pub use block::{BlockDef, BlockId, BlockRegistry, Face, RenderLayer, Tint};
+pub use biome::{BiomeDef, BiomeId, BiomeRegistry};
+pub use block::{BlockDef, BlockId, BlockRegistry, Face, RenderLayer, Shape, Tint};
 pub use column::ChunkColumn;
 pub use map::ChunkMap;
 pub use section::Section;

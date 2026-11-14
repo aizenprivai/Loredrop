@@ -9,7 +9,8 @@
 //! display  = "Grass Block"         # shown to players
 //! layer    = "opaque"              # opaque | cutout | translucent | invisible
 //! textures = { top = "grass_block_top", bottom = "dirt", side = "grass_block_side" }
-//! tint     = { top = "grass" }     # faces coloured by the biome (grass/foliage)
+//! tint     = { top = "grass" }     # faces coloured by the biome (grass/foliage/water)
+//! shape    = "cube"                # cube | cross (plants: two crossed diagonal panes)
 //! ```
 //!
 //! Texture keys, from least to most specific: `all`, `side` (the four
@@ -89,6 +90,19 @@ pub enum Tint {
     None,
     Grass,
     Foliage,
+    Water,
+}
+
+/// The geometric shape of a block.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum Shape {
+    /// A full 1×1×1 cube.
+    #[default]
+    Cube,
+    /// Two diagonal panes forming an X when seen from above (grass, flowers).
+    /// Uses the `all`/`side` texture.
+    Cross,
 }
 
 /// Everything known about one block type.
@@ -97,8 +111,11 @@ pub struct BlockDef {
     pub name: String,
     pub display: String,
     pub layer: RenderLayer,
+    pub shape: Shape,
     /// Whether entities collide with it.
     pub solid: bool,
+    /// Whether placing a block here simply replaces it (air, water, grass plants).
+    pub replaceable: bool,
     /// For cutout blocks: hide faces between two blocks of the same type
     /// (true for glass, false for leaves so trees look full).
     pub cull_same: bool,
@@ -110,7 +127,7 @@ pub struct BlockDef {
 impl BlockDef {
     /// True if this block completely hides the faces of its neighbours.
     pub fn is_opaque(&self) -> bool {
-        self.layer == RenderLayer::Opaque
+        self.layer == RenderLayer::Opaque && self.shape == Shape::Cube
     }
 }
 
@@ -127,7 +144,10 @@ struct BlockEntry {
     name: String,
     display: Option<String>,
     layer: RenderLayer,
+    #[serde(default)]
+    shape: Shape,
     solid: Option<bool>,
+    replaceable: Option<bool>,
     cull_same: Option<bool>,
     #[serde(default)]
     textures: HashMap<String, String>,
@@ -175,7 +195,9 @@ impl BlockRegistry {
             name: "air".into(),
             display: "Air".into(),
             layer: RenderLayer::Invisible,
+            shape: Shape::Cube,
             solid: false,
+            replaceable: true,
             cull_same: false,
             textures: Default::default(),
             tints: [Tint::None; 6],
@@ -188,7 +210,9 @@ impl BlockRegistry {
             let tints = per_face(&e.tint, Tint::None, "tint", &e.name)?;
             reg.push(BlockDef {
                 display: e.display.unwrap_or_else(|| e.name.clone()),
-                solid: e.solid.unwrap_or(e.layer != RenderLayer::Invisible),
+                solid: e.solid.unwrap_or(e.layer != RenderLayer::Invisible && e.shape == Shape::Cube),
+                replaceable: e.replaceable.unwrap_or(false),
+                shape: e.shape,
                 cull_same: e.cull_same.unwrap_or(false),
                 name: e.name,
                 layer: e.layer,

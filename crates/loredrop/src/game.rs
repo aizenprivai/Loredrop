@@ -46,9 +46,9 @@ pub struct Game {
 
 impl Game {
     pub fn new(world: World, autopilot: bool) -> Self {
-        // Spawn on top of the terrain at the world origin.
-        let h = world.generator().surface_height(0, 0);
-        let spawn = DVec3::new(0.5, (h + 1) as f64, 0.5);
+        // Spawn on dry land near the world origin (the generator decides).
+        let (sx, sy, sz) = world.generator().find_spawn();
+        let spawn = DVec3::new(sx as f64 + 0.5, sy as f64, sz as f64 + 0.5);
         let player = PlayerBody::new(spawn);
         let eye = player.eye_height();
         Self {
@@ -185,6 +185,21 @@ impl Game {
         self.pitch = (self.pitch + (dy * k) as f32).clamp(-90.0, 90.0);
     }
 
+    /// Developer start options (`--pos`, `--look`, `--fly`).
+    pub fn apply_dev_start(&mut self, pos: Option<[f64; 3]>, look: Option<[f32; 2]>, fly: bool) {
+        if let Some([x, y, z]) = pos {
+            self.spawn = DVec3::new(x, y, z);
+            self.player.pos = self.spawn;
+            self.prev_pos = self.spawn;
+            self.placed = true; // trust the given position
+        }
+        if let Some([yaw, pitch]) = look {
+            self.yaw = yaw;
+            self.pitch = pitch.clamp(-90.0, 90.0);
+        }
+        self.player.flying = fly;
+    }
+
     /// The chunk column the player is in.
     pub fn player_chunk(&self) -> ld_core::coords::ChunkPos {
         ld_core::coords::BlockPos::new(self.player.pos.x.floor() as i32, 0, self.player.pos.z.floor() as i32)
@@ -241,6 +256,9 @@ mod tests {
         fn surface_height(&self, _: i32, _: i32) -> i32 {
             -1
         }
+        fn find_spawn(&self) -> (i32, i32, i32) {
+            (0, 0, 0)
+        }
     }
 
     fn game() -> Game {
@@ -249,8 +267,8 @@ mod tests {
                 .unwrap();
         let reg = Arc::new(BlockRegistry::from_toml(&text).unwrap());
         let course = Arc::new(Course { stone: reg.id("stone").unwrap() });
-        let table = Arc::new(ld_mesh::MeshTable::new(&reg, |_| 0));
-        let mut world = World::new(reg, course, table, 1);
+        let table = Arc::new(ld_mesh::MeshTable::new(&reg, None, |_| 0));
+        let mut world = World::new(reg, crate::world::tests::test_biomes(), 1, course, table, 1);
         world.load_now(ChunkPos::new(0, 0), 2);
         Game::new(world, false)
     }

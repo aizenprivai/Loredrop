@@ -31,11 +31,12 @@ const SKY: [f32; 3] = [0.47, 0.65, 1.0];
 /// Placeholder plains-like tints until biomes exist (Phase 4).
 const GRASS_TINT: [f32; 3] = [0.57, 0.74, 0.35];
 const FOLIAGE_TINT: [f32; 3] = [0.47, 0.67, 0.18];
-/// Fixed seed until world creation exists (Phase 4).
-const SEED: u64 = 12345;
 
 /// Loads game data and creates the (empty) world.
-fn load_world(settings: &Settings) -> Result<(World, ld_assets::TextureSet), Box<dyn std::error::Error>> {
+fn load_world(
+    settings: &Settings,
+    seed: Option<u64>,
+) -> Result<(World, ld_assets::TextureSet), Box<dyn std::error::Error>> {
     let assets = ld_assets::find_assets_dir()
         .ok_or("could not find the 'assets' folder (set LOREDROP_ASSETS to its location)")?;
     log::info!("assets: {}", assets.display());
@@ -47,15 +48,24 @@ fn load_world(settings: &Settings) -> Result<(World, ld_assets::TextureSet), Box
         textures.layers.len(),
         textures.size
     );
-    let mesh_table = Arc::new(ld_mesh::MeshTable::new(&registry, |n| textures.layer_of(n)));
-    let generator = Arc::new(ld_worldgen::TestTerrain::new(SEED, &registry)?);
-    let world = World::new(registry, generator, mesh_table, settings.performance.worker_threads);
+    let biomes = Arc::new(ld_assets::load_biomes(&assets)?);
+    let ores = ld_assets::read_data(&assets, "ores.toml")?;
+    let seed = seed.unwrap_or_else(|| {
+        // No seed given: derive one from the clock, like starting a new world.
+        let t = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+        (t.as_nanos() as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+    });
+    log::info!("world seed: {}", seed as i64);
+    let mesh_table = Arc::new(ld_mesh::MeshTable::new(&registry, Some(&biomes), |n| textures.layer_of(n)));
+    let generator = Arc::new(ld_worldgen::Overworld::new(seed, &registry, biomes.clone(), &ores)?);
+    let world =
+        World::new(registry, biomes, seed, generator, mesh_table, settings.performance.worker_threads);
     Ok((world, textures))
 }
 
 /// `--bench-world`: generates and meshes a render distance with no window or
 /// GPU, and prints timings. Used for BENCHMARKS.md.
-pub fn bench_world(rd: u32, settings: &Settings) {
+pub fn bench_world(rd: u32, settings: &Settings, seed: Option<u64>) {
     struct Counter {
         sections: usize,
         quads: usize,
@@ -69,14 +79,15 @@ pub fn bench_world(rd: u32, settings: &Settings) {
         }
         fn remove(&mut self, _: ld_core::coords::SectionPos) {}
     }
-    let (mut world, _) = match load_world(settings) {
+    let (mut world, _) = match load_world(settings, Some(seed.unwrap_or(12345))) {
         Ok(w) => w,
         Err(e) => {
             eprintln!("{e}");
             std::process::exit(1);
         }
     };
-    let center = ld_core::coords::ChunkPos::new(0, 0);
+    let (sx, _, sz) = world.generator().find_spawn();
+    let center = ld_core::coords::BlockPos::new(sx, 0, sz).chunk();
     let mut sink = Counter { sections: 0, quads: 0, bytes: 0 };
     let start = Instant::now();
     while !world.is_settled(center) {
@@ -99,9 +110,92 @@ pub fn bench_world(rd: u32, settings: &Settings) {
     );
 }
 
+/// `--map`: renders a top-down map (one pixel per 4 blocks) of the world
+/// around spawn — biome colours shaded by height, water by depth. A quick way
+/// to judge continents, biomes and rivers without flying around.
+pub fn draw_map(blocks: u32, path: &std::path::Path, settings: &Settings, seed: Option<u64>) {
+    let seed = seed.unwrap_or(12345);
+    let fail = |e: String| -> ! {
+        eprintln!("{e}");
+        std::process::exit(1);
+    };
+    let assets = ld_assets::find_assets_dir().unwrap_or_else(|| fail("assets folder not found".into()));
+    let registry = ld_assets::load_blocks(&assets).unwrap_or_else(|e| fail(e));
+    let biomes = Arc::new(ld_assets::load_biomes(&assets).unwrap_or_else(|e| fail(e)));
+    let ores = ld_assets::read_data(&assets, "ores.toml").unwrap_or_else(|e| fail(e));
+    let g = ld_worldgen::Overworld::new(seed, &registry, biomes.clone(), &ores).unwrap_or_else(|e| fail(e));
+    let _ = settings;
+    let step = 4;
+    let px = (blocks / step).max(16);
+    let (sx, _, sz) = ld_worldgen::TerrainGenerator::find_spawn(&g);
+    let start = Instant::now();
+    // Rows are independent: generate them on all cores.
+    let rows: Vec<Vec<u8>> = {
+        use std::sync::Mutex;
+        let out = Mutex::new(vec![Vec::new(); px as usize]);
+        std::thread::scope(|scope| {
+            let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+            for t in 0..threads {
+                let (g, out) = (&g, &out);
+                scope.spawn(move || {
+                    for row in (t..px as usize).step_by(threads) {
+                        let mut line = Vec::with_capacity(px as usize * 3);
+                        for col in 0..px {
+                            let x = sx + (col as i32 - px as i32 / 2) * step as i32;
+                            let z = sz + (row as i32 - px as i32 / 2) * step as i32;
+                            let p = g.column_profile(x, z);
+                            let rgb = if p.water_above {
+                                let depth = (ld_worldgen::SEA_LEVEL - p.top) as f32;
+                                let k = (1.0 - depth / 50.0).clamp(0.25, 1.0);
+                                [0.15 * k, 0.35 * k, 0.85 * k]
+                            } else {
+                                let b = g.biomes().get(p.biome);
+                                let base = match b.name.as_str() {
+                                    "desert" | "beach" => [0.86, 0.8, 0.55],
+                                    "snowy_plains" => [0.95, 0.97, 1.0],
+                                    "mountains" if p.top > 170 => [0.97, 0.97, 0.97],
+                                    "mountains" if p.top > 140 => [0.55, 0.55, 0.55],
+                                    _ => b.grass_color,
+                                };
+                                let shade = 0.65 + ((p.top - 63) as f32 / 160.0).clamp(0.0, 0.5);
+                                base.map(|c| c * shade)
+                            };
+                            line.extend(rgb.map(|c| (c.clamp(0.0, 1.0) * 255.0) as u8));
+                        }
+                        out.lock().unwrap()[row] = line;
+                    }
+                });
+            }
+        });
+        out.into_inner().unwrap()
+    };
+    let mut img = image::RgbImage::new(px, px);
+    for (y, line) in rows.iter().enumerate() {
+        for x in 0..px as usize {
+            img.put_pixel(x as u32, y as u32, image::Rgb([line[x * 3], line[x * 3 + 1], line[x * 3 + 2]]));
+        }
+    }
+    // Mark spawn with a small red cross.
+    let c = px / 2;
+    for d in 0..5u32 {
+        for (x, y) in [(c - 2 + d, c), (c, c - 2 + d)] {
+            img.put_pixel(x, y, image::Rgb([255, 0, 0]));
+        }
+    }
+    match img.save(path) {
+        Ok(()) => println!(
+            "map of {blocks}×{blocks} blocks (seed {}) around spawn ({sx}, {sz}) saved to {} in {:.1} s",
+            seed as i64,
+            path.display(),
+            start.elapsed().as_secs_f64()
+        ),
+        Err(e) => fail(format!("could not save map: {e}")),
+    }
+}
+
 pub fn run(options: Options, settings: Settings) -> Result<(), Box<dyn std::error::Error>> {
     // Load game data before opening a window, so data errors are reported clearly.
-    let (world, textures) = load_world(&settings)?;
+    let (world, textures) = load_world(&settings, options.seed)?;
 
     let event_loop = EventLoop::new()?;
     let mut app = App::new(options, settings, world, textures);
@@ -145,7 +239,11 @@ impl App {
         Self {
             bindings: settings.keybinds.clone(),
             show_debug: settings.interface.show_debug_overlay,
-            game: Game::new(world, options.autopilot),
+            game: {
+                let mut g = Game::new(world, options.autopilot);
+                g.apply_dev_start(options.start_pos, options.start_look, options.fly);
+                g
+            },
             textures: Some(textures),
             world_ready_logged: false,
             options,

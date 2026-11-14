@@ -6,11 +6,12 @@ use ld_core::coords::SectionPos;
 use ld_mesh::{PackedVertex, SectionMesh};
 use wgpu::util::DeviceExt;
 
-/// One section's mesh on the GPU: opaque vertices first, then cutout vertices.
+/// One section's mesh on the GPU: opaque, then cutout, then translucent vertices.
 struct GpuSection {
     buffer: wgpu::Buffer,
     opaque_quads: u32,
     cutout_quads: u32,
+    translucent_quads: u32,
 }
 
 /// Counters for the debug overlay.
@@ -32,6 +33,7 @@ pub struct ChunkStats {
 pub(crate) struct ChunkRenderer {
     opaque_pipeline: wgpu::RenderPipeline,
     cutout_pipeline: wgpu::RenderPipeline,
+    translucent_pipeline: wgpu::RenderPipeline,
     texture_layout: wgpu::BindGroupLayout,
     texture_bind_group: wgpu::BindGroup,
     sections: AHashMap<SectionPos, GpuSection>,
@@ -85,7 +87,7 @@ impl ChunkRenderer {
             Some(wgpu::VertexBufferLayout {
                 array_stride: std::mem::size_of::<PackedVertex>() as u64,
                 step_mode: wgpu::VertexStepMode::Vertex,
-                attributes: &wgpu::vertex_attr_array![0 => Uint32x2],
+                attributes: &wgpu::vertex_attr_array![0 => Uint32x3],
             }),
             Some(wgpu::VertexBufferLayout {
                 array_stride: INSTANCE_STRIDE,
@@ -93,7 +95,7 @@ impl ChunkRenderer {
                 attributes: &wgpu::vertex_attr_array![1 => Float32x4],
             }),
         ];
-        let pipeline = |label, entry| {
+        let pipeline = |label, entry, translucent: bool| {
             device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
                 label: Some(label),
                 layout: Some(&layout),
@@ -106,12 +108,15 @@ impl ChunkRenderer {
                 primitive: wgpu::PrimitiveState {
                     topology: wgpu::PrimitiveTopology::TriangleList,
                     front_face: wgpu::FrontFace::Ccw,
-                    cull_mode: Some(wgpu::Face::Back),
+                    // Water must be visible from below too, so no culling there.
+                    cull_mode: if translucent { None } else { Some(wgpu::Face::Back) },
                     ..Default::default()
                 },
                 depth_stencil: Some(wgpu::DepthStencilState {
                     format: depth_format,
-                    depth_write_enabled: Some(true),
+                    // Translucent surfaces test depth but don't write it, so
+                    // things behind them stay visible.
+                    depth_write_enabled: Some(!translucent),
                     depth_compare: Some(wgpu::CompareFunction::Greater), // reverse-Z
                     stencil: Default::default(),
                     bias: Default::default(),
@@ -131,8 +136,9 @@ impl ChunkRenderer {
                 cache: None,
             })
         };
-        let opaque_pipeline = pipeline("chunk opaque", "fs_opaque");
-        let cutout_pipeline = pipeline("chunk cutout", "fs_cutout");
+        let opaque_pipeline = pipeline("chunk opaque", "fs_opaque", false);
+        let cutout_pipeline = pipeline("chunk cutout", "fs_cutout", false);
+        let translucent_pipeline = pipeline("chunk translucent", "fs_translucent", true);
 
         // Until real textures arrive, bind a tiny placeholder (2 layers: the
         // OpenGL backend treats 1-layer arrays as plain 2D textures).
@@ -146,6 +152,7 @@ impl ChunkRenderer {
         Self {
             opaque_pipeline,
             cutout_pipeline,
+            translucent_pipeline,
             texture_layout,
             texture_bind_group,
             sections: AHashMap::new(),
@@ -260,17 +267,20 @@ impl ChunkRenderer {
 
     pub fn upload(&mut self, device: &wgpu::Device, pos: SectionPos, mesh: &SectionMesh) {
         self.remove(pos);
-        let quads = (mesh.opaque.len() + mesh.cutout.len()) / 4;
+        let quads = (mesh.opaque.len() + mesh.cutout.len() + mesh.translucent.len()) / 4;
         if quads == 0 {
             return;
         }
-        if quads as u32 > self.quad_capacity {
-            self.quad_capacity = (quads as u32).next_power_of_two();
+        let largest =
+            [mesh.opaque.len(), mesh.cutout.len(), mesh.translucent.len()].into_iter().max().unwrap_or(0) / 4;
+        if largest as u32 > self.quad_capacity {
+            self.quad_capacity = (largest as u32).next_power_of_two();
             self.quad_indices = Self::make_quad_indices(device, self.quad_capacity);
         }
         let mut verts = Vec::with_capacity(quads * 4);
         verts.extend_from_slice(&mesh.opaque);
         verts.extend_from_slice(&mesh.cutout);
+        verts.extend_from_slice(&mesh.translucent);
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("section mesh"),
             contents: bytemuck::cast_slice(&verts),
@@ -283,6 +293,7 @@ impl ChunkRenderer {
                 buffer,
                 opaque_quads: (mesh.opaque.len() / 4) as u32,
                 cutout_quads: (mesh.cutout.len() / 4) as u32,
+                translucent_quads: (mesh.translucent.len() / 4) as u32,
             },
         );
     }
@@ -350,12 +361,26 @@ impl ChunkRenderer {
         pass.set_index_buffer(self.quad_indices.slice(..), wgpu::IndexFormat::Uint32);
         let mut quads = 0u64;
         let mut calls = 0u32;
-        for (pipeline, cutout) in [(&self.opaque_pipeline, false), (&self.cutout_pipeline, true)] {
-            pass.set_pipeline(pipeline);
-            for (i, pos) in visible.iter().enumerate() {
+        // 0 = opaque (front to back), 1 = cutout, 2 = translucent (back to front,
+        // so nearer water blends over farther water).
+        for pass_kind in 0..3 {
+            pass.set_pipeline(match pass_kind {
+                0 => &self.opaque_pipeline,
+                1 => &self.cutout_pipeline,
+                _ => &self.translucent_pipeline,
+            });
+            let order: Box<dyn Iterator<Item = (usize, &SectionPos)>> = if pass_kind == 2 {
+                Box::new(visible.iter().enumerate().rev())
+            } else {
+                Box::new(visible.iter().enumerate())
+            };
+            for (i, pos) in order {
                 let Some(s) = self.sections.get(pos) else { continue };
-                let (count, first) =
-                    if cutout { (s.cutout_quads, s.opaque_quads) } else { (s.opaque_quads, 0) };
+                let (count, first) = match pass_kind {
+                    0 => (s.opaque_quads, 0),
+                    1 => (s.cutout_quads, s.opaque_quads),
+                    _ => (s.translucent_quads, s.opaque_quads + s.cutout_quads),
+                };
                 if count == 0 {
                     continue;
                 }

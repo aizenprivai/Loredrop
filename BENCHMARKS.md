@@ -64,3 +64,25 @@ time from world loading (0.37 s headless vs ~9 s in-game). They say nothing
 about real graphics cards. ~62–74 k triangles, ~190–230 draw calls per frame.
 
 **Pending:** real-GPU measurements on the director's hardware.
+
+## Phase 4 — world generation (2026-11-14)
+
+Same container (4 cores, no GPU), release build, seed 12345.
+
+| Benchmark | Time |
+|---|---|
+| Generate one chunk column (all stages) | **1.30 ms** (10.3 ms before tree-candidate filtering) |
+| Profile one block column (cross-chunk trees, spawn, maps) | 87 µs |
+| Mesh a typical surface section (12-byte vertices, biome colours) | 0.28 ms |
+
+### World loading, headless (`--bench-world`, 3 worker threads)
+| Render distance | Columns | Sections meshed | Quads | Time | World data | Mesh data |
+|---|---|---|---|---|---|---|
+| 8 | 361 | 1 729 | 292 501 | **0.49 s** | 7.0 MB | 14.0 MB |
+| 12 | 729 | 3 694 | 598 537 | 1.01 s | 14.1 MB | 28.7 MB |
+| 16 | 1 225 | 6 701 | 1 119 676 | 1.78 s | 24.1 MB | 53.7 MB |
+
+Real terrain has ~3× the geometry of Phase 3's test hills. Render distance 8
+uses ~21 MB for world + meshes, far within the 4 GB minimum target.
+In-game software rendering: ~24 FPS, ~186 k triangles, ~650 draw calls (CPU
+emulating a GPU — not meaningful for real hardware; draw calls are a Phase 10 target).

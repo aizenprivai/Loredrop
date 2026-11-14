@@ -1479,6 +1479,7 @@ dependencies = [
  "ld_core",
  "ld_mesh",
  "log",
+ "naga",
  "pollster",
  "wgpu",
 ]
@@ -1498,8 +1499,11 @@ dependencies = [
 name = "ld_worldgen"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "ld_core",
  "ld_world",
+ "serde",
+ "toml",
 ]
 
 [[package]]

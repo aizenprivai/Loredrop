@@ -131,6 +131,34 @@ impl Section {
         }
     }
 
+    /// Builds a section from a full array of blocks (fast path for world
+    /// generation: one palette pass instead of 4096 individual `set` calls).
+    pub fn from_blocks(blocks: &[BlockId; VOLUME]) -> Self {
+        let first = blocks[0];
+        if blocks.iter().all(|&b| b == first) {
+            return Section::Uniform(first);
+        }
+        let mut palette: Vec<BlockId> = Vec::new();
+        let mut indices = vec![0u16; VOLUME];
+        for (i, &b) in blocks.iter().enumerate() {
+            // Palettes are tiny, so a linear search beats hashing here.
+            let slot = match palette.iter().position(|&p| p == b) {
+                Some(s) => s,
+                None => {
+                    palette.push(b);
+                    palette.len() - 1
+                }
+            };
+            indices[i] = slot as u16;
+        }
+        let bits = (usize::BITS - (palette.len() - 1).leading_zeros()).max(MIN_BITS);
+        let mut p = Paletted::new(bits, palette);
+        for (i, &v) in indices.iter().enumerate() {
+            p.set_index(i, v as usize);
+        }
+        Section::Paletted(p)
+    }
+
     /// True if the whole section is air (nothing to draw or collide with).
     pub fn is_empty(&self) -> bool {
         matches!(self, Section::Uniform(b) if *b == BlockId::AIR)
@@ -235,6 +263,20 @@ mod tests {
         assert_eq!(s.get(0), BlockId(10));
         assert_eq!(s.get(1), BlockId(11));
         assert_eq!(s.get(100), BlockId(1));
+    }
+
+    #[test]
+    fn from_blocks_matches_individual_sets() {
+        let mut arr = [BlockId::AIR; VOLUME];
+        for (i, b) in arr.iter_mut().enumerate() {
+            *b = BlockId((i * 31 % 40) as u16);
+        }
+        let s = Section::from_blocks(&arr);
+        for (i, b) in arr.iter().enumerate() {
+            assert_eq!(s.get(i), *b);
+        }
+        assert_eq!(s.bits_per_block(), 6);
+        assert_eq!(Section::from_blocks(&[BlockId(3); VOLUME]), Section::Uniform(BlockId(3)));
     }
 
     #[test]

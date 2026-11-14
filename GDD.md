@@ -41,7 +41,7 @@ configurability**.
 | Terrain-generation *techniques* (multi-noise, density) | Dimensions (own fire realm + final realm) |
 | Generic content: stone, dirt, ores, wood, cows, zombies… | The top tool tier, the final boss |
 
-Worlds are **not seed-compatible** with Minecraft.
+Worlds are **not seed-compatible** with Minecraft. Seeds can be numbers or text; random if omitted.
 
 ---
 
@@ -268,6 +268,7 @@ palette-compressed chunks, multithreaded generation/meshing/lighting/saving, LOD
    sounds, Hardcore/Spectator, multiplayer, mobile.
 
 ## 16. Open design items (to decide later)
+- Own equivalent (if any) of Minecraft's redstone — deliberately not generated (Phase 4)
 - Seasons: default on/off, length, gameplay impact
 - World lore / backstory and ruin types
 - Dramatic biome list; underground layer themes

@@ -3,12 +3,11 @@
 A voxel sandbox game written in Rust: the feel of modern Minecraft, with its own
 world, art and lore. See `GDD.md` for the design and `ROADMAP.md` for progress.
 
-**Current state: Phase 3 (voxel engine & chunk system)** — an endless,
-streamed voxel world (temporary hills-and-trees terrain) built from compressed
-chunks, meshed on background threads with greedy meshing and ambient
-occlusion, rendered with Vulkan-first wgpu. Walk, sprint and fly with
-Minecraft-faithful physics; F3 shows performance and chunk statistics. No real
-world generation (biomes, caves, water) or block editing yet.
+**Current state: Phase 4 (world generation, in progress)** — endless seeded
+worlds with continents, oceans, rivers, 11 biomes, snow-capped mountains,
+caves, ores, deepslate, trees and plants, streamed on background threads and
+rendered Vulkan-first. F3 shows performance, chunk, biome and seed info. No
+structures, block editing, survival or lighting yet.
 
 ## Build & run
 
@@ -44,6 +43,8 @@ explained by a comment. Run `loredrop --help` for command-line options.
 cargo test --workspace      # all unit/integration tests (no GPU needed)
 cargo bench -p ld_mesh      # meshing benchmarks (also: -p ld_world)
 cargo run --release -- --bench-world 8   # headless world-loading benchmark
+cargo run --release -- --map 4096 map.png --seed 42   # top-down world map
+cargo run --release -- --seed "my world"  # play a specific seed
 cargo clippy --workspace --all-targets
 cargo doc --no-deps --open  # browsable docs from code comments
 ```

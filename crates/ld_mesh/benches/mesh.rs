@@ -21,7 +21,7 @@ textures = { top = "grass_block_top", bottom = "dirt", side = "grass_block_side"
 
 fn bench(c: &mut Criterion) {
     let r = BlockRegistry::from_toml(BLOCKS).unwrap();
-    let table = MeshTable::new(&r, |_| 0);
+    let table = MeshTable::new(&r, None, |_| 0);
     let (stone, dirt, grass) = (r.id("stone").unwrap(), r.id("dirt").unwrap(), r.id("grass_block").unwrap());
     // Rolling hills crossing the section: the typical surface case.
     let terrain = Neighborhood::from_fn(|x, y, z| {
