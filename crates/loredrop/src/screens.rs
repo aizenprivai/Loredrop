@@ -26,6 +26,8 @@ pub enum Screen {
     Tablet { era: String, index: usize },
     /// The journal of discovered lore.
     Journal,
+    /// "You died" with the cause; only the Respawn button closes it.
+    Death { message: String },
 }
 
 /// State that lives while menus are open.
@@ -65,6 +67,7 @@ pub fn draw(ctx: &egui::Context, screen: &Screen, m: &mut MenuCtx) -> bool {
         Screen::Furnace(_) => inventory_screen(ctx, m, 0),
         Screen::Tablet { era, index } => tablet_screen(ctx, m, era, *index),
         Screen::Journal => journal_screen(ctx, m),
+        Screen::Death { message } => death_screen(ctx, message),
     }
 }
 
@@ -617,4 +620,37 @@ fn journal_screen(ctx: &egui::Context, m: &MenuCtx) -> bool {
             });
         });
     close
+}
+
+/// The death screen: dark red tint, the cause, and a Respawn button.
+/// Returns true when Respawn is clicked.
+fn death_screen(ctx: &egui::Context, message: &str) -> bool {
+    let screen = ctx.content_rect();
+    ctx.layer_painter(egui::LayerId::new(egui::Order::Middle, egui::Id::unique("death_tint"))).rect_filled(
+        screen,
+        0.0,
+        Color32::from_rgba_unmultiplied(120, 0, 0, 110),
+    );
+    let mut respawn = false;
+    egui::Area::new(egui::Id::unique("death"))
+        .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+        .order(egui::Order::Foreground)
+        .show(ctx, |ui| {
+            ui.vertical_centered(|ui| {
+                ui.label(egui::RichText::new("You died!").color(Color32::WHITE).size(42.0).strong());
+                ui.add_space(8.0);
+                ui.label(egui::RichText::new(message).color(Color32::from_gray(230)).size(18.0));
+                ui.add_space(24.0);
+                if ui
+                    .add(
+                        egui::Button::new(egui::RichText::new("Respawn").size(20.0))
+                            .min_size(Vec2::new(220.0, 40.0)),
+                    )
+                    .clicked()
+                {
+                    respawn = true;
+                }
+            });
+        });
+    respawn
 }

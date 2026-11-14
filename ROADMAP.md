@@ -9,8 +9,8 @@ Each phase ends with a report and requires director approval before the next beg
 | 2 | Core engine foundation | ✅ Complete (approved; real-hardware test pending) |
 | 3 | Voxel engine & chunk system | ✅ Complete (approved) |
 | 4 | Procedural world generation | ✅ Complete (approved) |
-| 5 | Core gameplay | 🟡 Implemented & tested — awaiting approval |
-| 6 | Survival systems | ⏳ |
+| 5 | Core gameplay | ✅ Complete (approved) |
+| 6 | Survival systems | 🟡 Implemented & tested — awaiting approval |
 | 7 | Entities & AI | ⏳ |
 | 8 | World simulation & atmosphere (incl. seasons) | ⏳ |
 | 9 | Persistence & advanced systems (incl. mod runtime investigation) | ⏳ |

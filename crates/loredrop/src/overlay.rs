@@ -67,7 +67,7 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
         GameMode::Survival => "Survival",
     };
     let left = vec![
-        format!("Loredrop {} (Phase 4 · world generation)", env!("CARGO_PKG_VERSION")),
+        format!("Loredrop {} (development build)", env!("CARGO_PKG_VERSION")),
         format!("{} fps  (avg {:.2} ms, worst {:.2} ms)", d.stats.fps, d.stats.avg_ms, d.stats.worst_ms),
         format!("{} ticks/s (target 20)   tick {}", d.stats.tps, d.game.tick),
         String::new(),
@@ -81,6 +81,15 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
         format!("Facing: {}  ({:.1} / {:.1})", facing(d.game.yaw), d.game.yaw, d.game.pitch),
         format!("Speed: {speed:.2} blocks/s   Vertical: {:.3}", p.vel.y),
         format!("Mode: {mode}   Ground: {}   Flying: {}", yes(p.on_ground), yes(p.flying)),
+        format!(
+            "Health {:.1}  Food {} (sat. {:.1}, exh. {:.2})  Air {}  Armour {}",
+            d.game.stats.health,
+            d.game.stats.food,
+            d.game.stats.saturation,
+            d.game.stats.exhaustion,
+            d.game.stats.air,
+            d.game.armor_points()
+        ),
         format!("Sprinting: {}   Sneaking: {}", yes(p.sprinting), yes(p.sneaking)),
         format!("Standing on: {}", standing_on(d.game)),
         format!("Biome: {}", biome_here(d.game)),

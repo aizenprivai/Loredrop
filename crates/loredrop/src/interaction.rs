@@ -64,6 +64,11 @@ impl Game {
         self.attack_cooldown = self.attack_cooldown.saturating_sub(1);
         self.use_cooldown = self.use_cooldown.saturating_sub(1);
         let attack_pressed = input.take_press(Action::Attack);
+        if attack_pressed {
+            // Every swing (at a block, a creature or thin air) restarts the
+            // attack cooldown, as in Minecraft's 1.9+ combat.
+            self.ticks_since_swing = 0;
+        }
         match self.mode {
             GameMode::Creative => {
                 self.breaking = None;

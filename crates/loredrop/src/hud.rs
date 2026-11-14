@@ -121,6 +121,23 @@ impl StatIcons {
     }
 }
 
+/// The attack-cooldown indicator under the crosshair (shown while recharging).
+pub fn draw_attack_indicator(ctx: &egui::Context, strength: f32) {
+    if strength >= 1.0 {
+        return;
+    }
+    let painter =
+        ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::unique("cooldown")));
+    let c = ctx.content_rect().center() + Vec2::new(0.0, 14.0);
+    let r = Rect::from_center_size(c, Vec2::new(18.0, 3.0));
+    painter.rect_filled(r, 0.0, Color32::from_black_alpha(150));
+    painter.rect_filled(
+        Rect::from_min_size(r.min, Vec2::new(r.width() * strength, 3.0)),
+        0.0,
+        Color32::from_gray(230),
+    );
+}
+
 /// What the survival bars show this frame.
 pub struct Bars {
     pub health: f32,

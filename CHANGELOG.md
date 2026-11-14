@@ -171,3 +171,32 @@
   type); journal (J) collects discovered fragments.
 - New blocks: crafting table, furnace, lit furnace; 10 crack textures.
 - 106 automated tests; clippy and rustdoc clean.
+- Phase 5 approved by director.
+
+### 2026-11-14 — Phase 6: survival systems
+- **Player stats** (`ld_game::stats`): 20 health with Minecraft's
+  invulnerability frames; food, saturation and exhaustion (sprint, jump,
+  sprint-jump, mining, swimming, damage); fast and slow regeneration;
+  starvation limited by difficulty; 15 s of breath then drowning; burning.
+- **Damage sources**: falling (1 per block beyond 3), lava (+fire), fire,
+  drowning, suffocation, cactus, void. Creative is invulnerable.
+- **Swimming**: water and lava movement (slow acceleration, drag, weak
+  gravity, swim up with jump, climb out at banks); water cancels fall damage;
+  mining under water is 5× slower; can't sprint at 3 shanks or less.
+- **HUD**: hearts, hunger, armour and air bars (original 9×9 icons), blinking
+  hearts and red flash when hurt, eating progress, attack-cooldown indicator;
+  survival stats line in F3.
+- **Food**: apples (4 food, 0.3 saturation) drop from oak leaves (0.5 %);
+  eating takes 32 ticks; block drops can now list several items.
+- **Armour**: iron, gold, diamond sets (12 items, original sprites, Minecraft
+  points/toughness/durability, recipes), right-click to wear, slot rules,
+  Minecraft's damage-reduction formula, durability loss.
+- **Combat rules** (`ld_game::combat`): 1.9+ attack cooldown by weapon speed,
+  20 %–100 % damage scaling, critical hits, sword sweep, weapon wear. (Nothing
+  to hit until creatures arrive in Phase 7.)
+- **Death & respawn**: death screen with cause, inventory spilled as items,
+  respawn at world spawn with full stats.
+- **Settings**: `gameplay.difficulty` (peaceful/easy/normal/hard),
+  `gameplay.game_mode` (new games start in Survival with an empty inventory).
+- Fixed: `--pos` no longer moves the world spawn.
+- 123 automated tests; clippy and rustdoc clean.

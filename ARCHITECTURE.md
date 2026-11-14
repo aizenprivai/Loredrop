@@ -1,6 +1,6 @@
 # Loredrop — Technical Architecture
 
-> **Status:** APPROVED v1.0 (Phase 1) · updated v1.4 after Phase 5
+> **Status:** APPROVED v1.0 (Phase 1) · updated v1.5 after Phase 6
 > **Last updated:** 2026-11-14
 
 This document describes *how* Loredrop is built. *What* we build is in `GDD.md`.
@@ -321,6 +321,20 @@ measured on the director's hardware. CPU-side systems are measured here.
 - **Block entities:** furnaces live in `Game::furnaces` keyed by position;
   a general block-entity store (chests etc.) will follow the same pattern and
   must be saved in Phase 9.
+
+### Changes made during Phase 6 (v1.5)
+
+- `ld_game` gained `stats` (health/hunger/air/fire state machine, armour
+  formula, fall damage) and `combat` (cooldown and hit rules). Both are pure
+  and unit-tested against Minecraft's published numbers.
+- `ld_physics::player` handles liquids (`Fluid`) and tracks fall distance,
+  reporting landings to the game rather than applying damage itself — physics
+  stays free of gameplay rules.
+- Environmental damage is checked in `Game::survival_tick` from world queries
+  (body/eye blocks, touched blocks); `Game::hurt` routes all damage through
+  armour, so creatures in Phase 7 use the same path.
+- New `Screen::Death`; app-level flow: death detected after the tick →
+  inventory spilled once → death screen → Respawn resets the game state.
 
 ## 13. Decisions approved in Phase 1
 

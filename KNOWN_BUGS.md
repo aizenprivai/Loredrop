@@ -23,3 +23,5 @@
 | KB-019 | Low | Open | If the inventory is full when a menu closes, items left on the cursor or in the crafting grid are lost instead of dropping. |
 | KB-020 | Low | Open | A tablet's story era is recognised from the block under it; a player-moved tablet may show a different era's fragment. |
 | KB-021 | Info | Open | Simulated input in the test environment doubles mouse-wheel events (like mouse motion); real hardware is unaffected. |
+| KB-022 | Low | Open | Attacks have nothing to hit until creatures exist (Phase 7); the cooldown indicator still works. |
+| KB-023 | Low | Open | The only food so far is apples (rare from oak leaves); Survival food is scarce until animals arrive in Phase 7. |

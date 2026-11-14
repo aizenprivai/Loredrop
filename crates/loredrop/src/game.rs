@@ -88,6 +88,8 @@ pub struct Game {
     pub difficulty: ld_game::stats::Difficulty,
     /// Ticks spent eating the held food (32 = done).
     pub eating: u32,
+    /// Ticks since the last arm swing (drives the attack cooldown).
+    pub ticks_since_swing: u32,
 }
 
 impl Game {
@@ -170,6 +172,7 @@ impl Game {
             stats: Default::default(),
             difficulty: ld_game::stats::Difficulty::Normal,
             eating: 0,
+            ticks_since_swing: 100,
         }
     }
 
@@ -178,6 +181,7 @@ impl Game {
         self.prev_pos = self.player.pos;
         self.prev_eye = self.eye;
         self.tick += 1;
+        self.ticks_since_swing = self.ticks_since_swing.saturating_add(1);
 
         // Don't simulate the player until the ground under them exists.
         if !self.world.is_loaded(self.player_chunk()) {
@@ -462,6 +466,33 @@ impl Game {
         self.pitch = (self.pitch + (dy * k) as f32).clamp(-90.0, 90.0);
     }
 
+    /// Current attack strength (0..1) with the held weapon.
+    pub fn attack_strength(&self) -> f32 {
+        let (_, speed) = ld_game::combat::weapon_stats(self.inventory.held(), &self.items);
+        ld_game::combat::attack_strength(self.ticks_since_swing, speed)
+    }
+
+    /// Called when the player dies: everything carried spills on the ground
+    /// (as in Minecraft) and the inventory empties.
+    pub fn on_death(&mut self) {
+        let p = self.player.pos;
+        let (x, y, z) = (p.x.floor() as i32, (p.y + 0.5).floor() as i32, p.z.floor() as i32);
+        let inv = std::mem::take(&mut self.inventory);
+        for s in inv.slots.into_iter().chain(inv.armor).chain(std::iter::once(inv.offhand)).flatten() {
+            self.entities.drop_from_block(x, y, z, s);
+        }
+        self.breaking = None;
+        self.eating = 0;
+    }
+
+    /// Brings the player back at the world spawn with full health and hunger.
+    pub fn respawn(&mut self) {
+        self.stats = Default::default();
+        self.player = PlayerBody::new(self.spawn);
+        self.prev_pos = self.spawn;
+        self.placed = false;
+    }
+
     /// Sets the starting game mode. Survival starts with an empty inventory,
     /// like a fresh Minecraft world; Creative keeps the starter hotbar.
     pub fn set_start_mode(&mut self, mode: GameMode) {
@@ -475,9 +506,9 @@ impl Game {
     /// Developer start options (`--pos`, `--look`, `--fly`).
     pub fn apply_dev_start(&mut self, pos: Option<[f64; 3]>, look: Option<[f32; 2]>, fly: bool) {
         if let Some([x, y, z]) = pos {
-            self.spawn = DVec3::new(x, y, z);
-            self.player.pos = self.spawn;
-            self.prev_pos = self.spawn;
+            // Only the starting position: respawning still uses the world spawn.
+            self.player.pos = DVec3::new(x, y, z);
+            self.prev_pos = self.player.pos;
             self.placed = true; // trust the given position
         }
         if let Some([yaw, pitch]) = look {
@@ -715,6 +746,50 @@ mod tests {
         run(&mut g, &mut input, 1);
         assert_eq!(g.stats.food, 14);
         assert_eq!(g.inventory.slots[0].unwrap().count, 1);
+    }
+
+    #[test]
+    fn dying_drops_everything_and_respawning_restores_the_player() {
+        let mut g = game();
+        g.set_start_mode(GameMode::Survival);
+        let dirt = g.items.id("dirt").unwrap();
+        g.inventory.slots[3] = Some(ld_game::ItemStack::new(dirt, 20));
+        let mut input = InputState::new();
+        run(&mut g, &mut input, 1);
+        g.player.pos = glam::DVec3::new(0.5, 40.0, 0.5);
+        for _ in 0..120 {
+            run(&mut g, &mut input, 1);
+            if g.stats.is_dead() {
+                break;
+            }
+        }
+        assert_eq!(g.stats.death, Some(ld_game::stats::DamageSource::Fall));
+        g.on_death();
+        assert_eq!(g.inventory.count_of(dirt), 0);
+        assert_eq!(
+            g.entities.list.iter().map(|e| e.stack.count as u32).sum::<u32>(),
+            20,
+            "items spilled on the ground"
+        );
+        g.respawn();
+        run(&mut g, &mut input, 5);
+        assert!(!g.stats.is_dead() && g.stats.health == 20.0 && g.stats.food == 20);
+        assert!(g.player.pos.y < 2.0, "back at spawn");
+    }
+
+    #[test]
+    fn attack_cooldown_resets_on_swing() {
+        let mut g = game();
+        let mut input = InputState::new();
+        run(&mut g, &mut input, 30);
+        assert_eq!(g.attack_strength(), 1.0);
+        g.pitch = -90.0;
+        press(&mut input, "MouseLeft", true);
+        run(&mut g, &mut input, 1);
+        press(&mut input, "MouseLeft", false);
+        assert!(g.attack_strength() < 0.5, "a swing at the air resets the cooldown");
+        run(&mut g, &mut input, 6);
+        assert_eq!(g.attack_strength(), 1.0, "bare hand recharges in 5 ticks");
     }
 
     #[test]

@@ -77,18 +77,39 @@
 - [x] Tools, mining speeds, harvest tiers, durability
 - [x] Basic progression: wood → stone → iron (furnace) → diamond
 - [x] Dropped items; lore tablets + journal
-- [ ] Director approval of Phase 5 report
+- [x] Director approval of Phase 5 report
 
 ## Deferred from Phase 5
 - [ ] Falling blocks (sand, gravel) — Minecraft core behaviour, not yet implemented
 - [ ] Leaf decay, saplings, tree growth; seeds and farming (hoes till soil)
 - [ ] Chests (item storage block), torches (needs lighting, Phase 8), doors, ladders, beds, signs
-- [ ] Armour equipping and protection (Phase 6), off-hand use
+- [x] Armour equipping and protection (Phase 6)
+- [ ] Off-hand use
 - [ ] Recipe-book "auto-fill" (place ingredients for a recipe automatically)
 - [ ] Items left on the cursor when a menu closes with a full inventory are lost (should drop)
 - [ ] Journal, inventory and furnaces are not saved yet (Phase 9)
-- [ ] Survival should start with an empty inventory (currently F4 keeps the Creative starter hotbar)
+- [x] Survival starts with an empty inventory (Phase 6)
 - [ ] Final lore names (placeholders in lore.toml)
+
+## Phase 6 — Survival systems
+- [x] Health, hunger, saturation, exhaustion, regeneration, starvation
+- [x] Damage: fall, lava/fire, drowning, suffocation, cactus, void
+- [x] Swimming in water/lava
+- [x] Food (apples) and eating
+- [x] Armour (iron/gold/diamond) with Minecraft's formula and durability
+- [x] Combat rules (cooldown, crits, sweep) + indicator
+- [x] Death screen, item drops on death, respawn
+- [x] Difficulty and starting game-mode settings
+- [ ] Director approval of Phase 6 report
+
+## Deferred from Phase 6
+- [ ] Hitting creatures, knockback, mob damage to the player — Phase 7 (combat rules are ready)
+- [ ] More food: meat from animals (Phase 7), bread/farming, cooked food in the furnace
+- [ ] Leather and chainmail armour (needs leather from animals — Phase 7)
+- [ ] Experience/XP and enchanting — not planned yet (design decision needed)
+- [ ] Bed / custom spawn point
+- [ ] Hunger effects on movement while eating (Minecraft slows you)
+- [ ] Health/hunger saved between sessions — Phase 9
 
 ## Infrastructure
 - [x] Local git repository with history

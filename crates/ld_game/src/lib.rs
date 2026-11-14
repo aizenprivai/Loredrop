@@ -5,12 +5,14 @@
 //! * [`inventory`] — item stacks, the player inventory and Minecraft's
 //!   click rules for moving items around.
 //!
+//! * [`combat`] — modern attack cooldown, critical hits, sweeping.
 //! * [`crafting`] — crafting and smelting recipes, fuels.
 //!
 //! * [`furnace`] — smelting with fuel, Minecraft's timing.
 //! * [`mining`] — break times (Minecraft's formula), harvest tiers, drops.
 //! * [`stats`] — health, hunger, air, damage and regeneration.
 
+pub mod combat;
 pub mod crafting;
 pub mod furnace;
 pub mod inventory;

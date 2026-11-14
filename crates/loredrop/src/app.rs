@@ -500,14 +500,15 @@ impl App {
         if self.input.take_press(Action::Screenshot) {
             self.screenshot_requested = true;
         }
-        if self.input.take_press(Action::Inventory) {
+        let dead_screen = matches!(self.screen, crate::screens::Screen::Death { .. });
+        if self.input.take_press(Action::Inventory) && !dead_screen {
             if self.screen == crate::screens::Screen::None {
                 self.open_screen(crate::screens::Screen::Inventory);
             } else {
                 self.close_screen();
             }
         }
-        if self.input.take_press(Action::Journal) {
+        if self.input.take_press(Action::Journal) && !dead_screen {
             if self.screen == crate::screens::Screen::Journal {
                 self.close_screen();
             } else if self.screen == crate::screens::Screen::None {
@@ -528,7 +529,18 @@ impl App {
         let auto_shot = self.options.screenshot_after == Some(self.frames);
 
         if std::mem::take(&mut self.pending_close) {
+            if matches!(self.screen, crate::screens::Screen::Death { .. }) {
+                self.game.respawn(); // the death screen's only button is Respawn
+            }
             self.close_screen();
+        }
+        // Death: spill the inventory once and show the death screen.
+        if self.game.stats.is_dead() && !matches!(self.screen, crate::screens::Screen::Death { .. }) {
+            let message = self.game.stats.death.map(|d| d.death_message()).unwrap_or("You died").to_string();
+            self.menu = crate::screens::MenuState::default(); // anything on the cursor is lost with the rest
+            self.screen = crate::screens::Screen::None;
+            self.game.on_death();
+            self.open_screen(crate::screens::Screen::Death { message });
         }
         // The game asked for a menu (e.g. right-clicked a crafting table).
         if let Some(screen) = self.game.open_request.take()
@@ -584,6 +596,8 @@ impl App {
         };
         let show_debug = self.show_debug;
         let creative = self.game.mode == GameMode::Creative;
+        let menu_open = self.screen != crate::screens::Screen::None;
+        let strength = self.game.attack_strength();
         let stat_icons = &r.stat_icons;
         let bars = (!creative).then(|| crate::hud::Bars {
             health: self.game.stats.health,
@@ -603,6 +617,9 @@ impl App {
             crate::hud::draw_hotbar(ui.ctx(), inv, icons, items);
             if let Some(b) = &bars {
                 crate::hud::draw_bars(ui.ctx(), stat_icons, b);
+            }
+            if !menu_open {
+                crate::hud::draw_attack_indicator(ui.ctx(), strength);
             }
             let mut m = crate::screens::MenuCtx {
                 inventory: inv,
@@ -819,6 +836,9 @@ impl ApplicationHandler for App {
                 let name = format!("{code:?}");
                 let pressed = event.state == ElementState::Pressed;
                 if name == "Escape" && pressed {
+                    if matches!(self.screen, crate::screens::Screen::Death { .. }) {
+                        return; // only Respawn leaves the death screen
+                    }
                     if self.screen != crate::screens::Screen::None {
                         self.close_screen();
                     } else {
