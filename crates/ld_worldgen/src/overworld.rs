@@ -24,6 +24,7 @@
 //!    sandstone, snow, gravel sea floors, bare stone on steep mountains).
 //! 7. **Ores** — veins by depth (`ores.toml`).
 //! 8. **Vegetation** — trees (which may hang over chunk borders) and plants.
+//! 9. **Structures** — ruins of the Builders (see `structures`).
 //!
 //! Everything is a pure function of (seed, position), so chunks can be
 //! generated in any order on any thread with identical results.
@@ -126,6 +127,7 @@ pub struct Overworld {
     biome_blocks: Vec<BiomeBlocks>,
     ores: Vec<OreRule>,
     pub(crate) trees: features::TreeBlocks,
+    ruins: crate::structures::RuinBlocks,
     /// For each biome: (tree kinds with weights, total weight).
     biome_trees: Vec<(Vec<(TreeKind, u32)>, u32)>,
     /// For each biome: plants (block, attempts per chunk).
@@ -268,6 +270,7 @@ impl Overworld {
             surface_noise,
             blocks: gen_blocks,
             trees: features::TreeBlocks::new(blocks)?,
+            ruins: crate::structures::RuinBlocks::new(blocks)?,
             biomes,
             biome_blocks,
             ores,
@@ -618,6 +621,9 @@ impl TerrainGenerator for Overworld {
         // 8. Vegetation (trees may come from neighbouring chunks).
         features::place_trees(self, &mut blocks, pos, &biomes, &terrain_top);
         self.place_plants(&mut blocks, &biomes, &terrain_top, pos);
+
+        // 9. Structures (ruins), last so they clear vegetation in their footprint.
+        crate::structures::place_structures(self, &mut blocks, pos, &self.ruins);
 
         // Pack into sections.
         let mut col = ChunkColumn::new(pos);

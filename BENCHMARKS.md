@@ -93,3 +93,8 @@ Linux, prebuilt release binary, default settings (render distance 8, VSync on):
 **steady 60 FPS (VSync-capped)**. Mouse sensitivity confirmed correct.
 Still to collect: GPU model, uncapped FPS (`vsync = false`), and higher render
 distances.
+
+### Phase 4 part 2 — structures
+Generation with ruins: **1.49 ms per column** (+0.2 ms for structure lookups).
+Seed 12345 within 4 km of spawn: 70 surface ruins, 8 desert halls, 38 sunken
+towers, 141 deep vaults (underground).

@@ -119,3 +119,23 @@
 - First real-hardware test by the director (Linux): runs at a steady 60 FPS
   (VSync), mouse speed confirmed — KB-001 closed. Added a troubleshooting
   section to the README (touchpad "disable while typing", VSync, glibc).
+
+### 2026-11-14 — Phase 4 (part 2): ruins of the Builders
+- Lore outline approved by the director (inspired by the *shape* of fan
+  theories about lost builder civilisations; all names and details original).
+- **Structure system** (`ld_worldgen::structures`): Minecraft-style random-spread
+  placement per region with separation, biome and terrain checks, structures
+  spanning chunk borders (each chunk rebuilds overlapping layouts from their
+  seed), deterministic per-block decay, foundations down to the ground.
+- **Four ruin types**, one per story era: surface ruins (golden age), desert
+  halls and sunken towers (expansion), deep vaults in the deepslate (the dark
+  chapter). Each holds one lore tablet.
+- **Lore**: `assets/data/lore.toml` with 12 draft fragments (3 eras) using
+  placeholder names substituted from a names table; parsed and validated by
+  `ld_assets::load_lore`. Tablets pick a fragment deterministically (reading
+  them comes with interaction in Phase 5).
+- **Blocks**: stone/deepslate bricks (+ cracked, mossy, chiseled), cut and
+  chiseled sandstone, and the original **lore tablet**; 10 new textures.
+- **Underwater view**: blue fog and tint when the camera is in water.
+- `--map` marks ruins (red/orange/cyan/purple) and prints the nearest of each kind.
+- 83 automated tests; clippy and rustdoc clean.

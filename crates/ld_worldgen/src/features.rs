@@ -87,7 +87,6 @@ impl TreeBlocks {
     }
 
     /// Logs, leaves, cacti and plants (anything that isn't terrain).
-    #[allow(dead_code)] // used by tests; kept for structure placement later
     pub fn is_vegetation(&self, id: BlockId) -> bool {
         [
             self.oak_log,

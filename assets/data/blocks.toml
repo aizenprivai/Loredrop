@@ -334,3 +334,61 @@ display = "Cornflower"
 layer = "cutout"
 shape = "cross"
 textures = { all = "cornflower" }
+
+# --- Phase 4b: ruins of the Builders -----------------------------------------
+
+[[block]]
+name = "stone_bricks"
+display = "Stone Bricks"
+layer = "opaque"
+textures = { all = "stone_bricks" }
+
+[[block]]
+name = "cracked_stone_bricks"
+display = "Cracked Stone Bricks"
+layer = "opaque"
+textures = { all = "cracked_stone_bricks" }
+
+[[block]]
+name = "mossy_stone_bricks"
+display = "Mossy Stone Bricks"
+layer = "opaque"
+textures = { all = "mossy_stone_bricks" }
+
+[[block]]
+name = "chiseled_stone_bricks"
+display = "Chiseled Stone Bricks"
+layer = "opaque"
+textures = { all = "chiseled_stone_bricks" }
+
+[[block]]
+name = "deepslate_bricks"
+display = "Deepslate Bricks"
+layer = "opaque"
+textures = { all = "deepslate_bricks" }
+
+[[block]]
+name = "cracked_deepslate_bricks"
+display = "Cracked Deepslate Bricks"
+layer = "opaque"
+textures = { all = "cracked_deepslate_bricks" }
+
+[[block]]
+name = "cut_sandstone"
+display = "Cut Sandstone"
+layer = "opaque"
+textures = { side = "cut_sandstone", top = "sandstone_top", bottom = "sandstone_top" }
+
+[[block]]
+name = "chiseled_sandstone"
+display = "Chiseled Sandstone"
+layer = "opaque"
+textures = { side = "chiseled_sandstone", top = "sandstone_top", bottom = "sandstone_top" }
+
+# Original Loredrop block: a carved tablet holding a fragment of the Builders'
+# story (reading tablets arrives with interaction in Phase 5).
+[[block]]
+name = "lore_tablet"
+display = "Lore Tablet"
+layer = "opaque"
+textures = { side = "lore_tablet_side", top = "lore_tablet_top", bottom = "lore_tablet_top" }

@@ -379,8 +379,87 @@ for name, colour in ORES.items():
     TEXTURES[f"{name}_ore"] = (lambda c=colour, s=len(name): lambda: ore(stone, c, 100 + s))()
     TEXTURES[f"deepslate_{name}_ore"] = (lambda c=colour, s=len(name): lambda: ore(deepslate, c, 200 + s))()
 
+
+
+# ---------------------------------------------------------------------------
+# Phase 4b: ruins
+# ---------------------------------------------------------------------------
+
+def bricks(seed, base, mortar, rows=4, crack=0.0, moss=0.0):
+    rng = random.Random(seed)
+    img = Image.new("RGBA", (N, N))
+    h = N // rows
+    for y in range(N):
+        row = y // h
+        offset = (row % 2) * (N // 4)
+        for x in range(N):
+            edge = (y % h == h - 1) or ((x + offset) % (N // 2) == 0)
+            k = rng.uniform(-9, 9)
+            c = mortar if edge else tuple(b + k for b in base)
+            if not edge and moss and rng.random() < moss:
+                c = (70 + k, 110 + k, 50 + k)
+            img.putpixel((x, y), tuple(clamp(v) for v in c) + (255,))
+    if crack:
+        x, y = rng.randrange(3, 12), 0
+        while y < N:
+            img.putpixel((x % N, y), tuple(clamp(m - 15) for m in mortar) + (255,))
+            x += rng.choice([-1, 0, 1])
+            y += 1
+    return img
+
+
+def chiseled(seed, base, dark):
+    img = bricks(seed, base, dark, rows=2)
+    for i in range(4, 12):  # carved square ring
+        for p in [(i, 4), (i, 11), (4, i), (11, i)]:
+            img.putpixel(p, tuple(clamp(d) for d in dark) + (255,))
+    return img
+
+
+def lore_tablet_side():
+    """Dark carved slab with rows of glyphs that glint gold — original design."""
+    rng = random.Random(60)
+    img = Image.new("RGBA", (N, N))
+    for y in range(N):
+        for x in range(N):
+            k = rng.uniform(-6, 6)
+            border = x in (0, N - 1) or y in (0, N - 1)
+            c = (40 + k, 38 + k, 46 + k) if border else (62 + k, 60 + k, 70 + k)
+            img.putpixel((x, y), tuple(clamp(v) for v in c) + (255,))
+    for row in (3, 7, 11):  # three lines of glyphs
+        x = 2
+        while x < N - 3:
+            w = rng.choice([1, 2])
+            for dx in range(w):
+                for dy in range(rng.choice([1, 2])):
+                    img.putpixel((x + dx, row + dy), (214, 178, 84, 255))
+            x += w + 1
+    return img
+
+
+def lore_tablet_top():
+    img = noise_tex(61, (58, 56, 66), 6)
+    for i in range(4, 12):
+        img.putpixel((i, 7), (214, 178, 84, 255))
+        img.putpixel((7, i), (214, 178, 84, 255))
+    return img
+
+
+TEXTURES.update({
+    "stone_bricks": lambda: bricks(50, (126, 126, 126), (88, 88, 88)),
+    "cracked_stone_bricks": lambda: bricks(51, (120, 120, 120), (84, 84, 84), crack=1),
+    "mossy_stone_bricks": lambda: bricks(52, (122, 124, 120), (86, 88, 84), moss=0.3),
+    "chiseled_stone_bricks": lambda: chiseled(53, (128, 128, 128), (80, 80, 80)),
+    "deepslate_bricks": lambda: bricks(54, (70, 70, 76), (44, 44, 50)),
+    "cracked_deepslate_bricks": lambda: bricks(55, (66, 66, 72), (40, 40, 46), crack=1),
+    "cut_sandstone": lambda: bricks(56, (216, 202, 154), (190, 174, 124), rows=2),
+    "chiseled_sandstone": lambda: chiseled(57, (214, 200, 150), (176, 158, 110)),
+    "lore_tablet_side": lore_tablet_side,
+    "lore_tablet_top": lore_tablet_top,
+})
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     for name, fn in TEXTURES.items():
         fn().save(os.path.join(OUT, name + ".png"))
-    print(f"wrote {len(TEXTURES)} textures (incl. Phase 4) to {os.path.normpath(OUT)}")
+    print(f"wrote {len(TEXTURES)} textures (incl. ruins) to {os.path.normpath(OUT)}")

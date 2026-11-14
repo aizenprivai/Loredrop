@@ -6,15 +6,18 @@
 //!
 //! * [`Overworld`] — the real generator (Phase 4): climate-driven terrain,
 //!   biomes, caves, water, ores and vegetation. See its module docs.
+//! * [`structures`] — ruins of the Builders (the lore structures).
 //! * [`TestTerrain`] — the simple Phase 3 hills generator, kept for fast tests.
 
 mod features;
 pub mod noise;
 mod ores;
 pub mod overworld;
+pub mod structures;
 mod test_terrain;
 
 pub use overworld::{Climate, ColumnProfile, Overworld, SEA_LEVEL};
+pub use structures::{StructureKind, StructureStart};
 pub use test_terrain::TestTerrain;
 
 use ld_core::coords::ChunkPos;

@@ -54,6 +54,60 @@ pub fn read_data(assets: &Path, name: &str) -> Result<String, String> {
     std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))
 }
 
+/// Story fragments for lore tablets (`data/lore.toml`), with `{tag}`
+/// placeholders already replaced by the names table.
+#[derive(Debug, Clone)]
+pub struct Lore {
+    /// (era, text) in file order.
+    pub fragments: Vec<(String, String)>,
+}
+
+impl Lore {
+    /// Fragments belonging to one era (`golden`, `expansion`, `deep`).
+    pub fn era(&self, era: &str) -> Vec<&str> {
+        self.fragments.iter().filter(|(e, _)| e == era).map(|(_, t)| t.as_str()).collect()
+    }
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LoreFile {
+    names: std::collections::HashMap<String, String>,
+    fragment: Vec<LoreEntry>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LoreEntry {
+    era: String,
+    text: String,
+}
+
+/// Parses lore text: substitutes `{tags}` and rejects unknown tags or eras.
+pub fn parse_lore(text: &str) -> Result<Lore, String> {
+    let file: LoreFile = toml::from_str(text).map_err(|e| format!("lore file: {e}"))?;
+    let mut fragments = Vec::new();
+    for f in file.fragment {
+        if !["golden", "expansion", "deep"].contains(&f.era.as_str()) {
+            return Err(format!("lore: unknown era '{}'", f.era));
+        }
+        let mut t = f.text.clone();
+        for (k, v) in &file.names {
+            t = t.replace(&format!("{{{k}}}"), v);
+        }
+        if let Some(start) = t.find('{') {
+            return Err(format!("lore: unknown name tag in \"{}\"", &t[start..t.len().min(start + 30)]));
+        }
+        fragments.push((f.era, t));
+    }
+    Ok(Lore { fragments })
+}
+
+/// Loads `data/lore.toml`.
+pub fn load_lore(assets: &Path) -> Result<Lore, String> {
+    parse_lore(&read_data(assets, "lore.toml")?)
+}
+
 /// Square RGBA textures, all the same size, ready for a texture array.
 pub struct TextureSet {
     /// Width = height, in pixels.
@@ -163,6 +217,17 @@ mod tests {
         assert_eq!(set.size, 16);
         assert_eq!(set.layers.len(), reg.texture_names().len() + 1);
         assert!(set.layers.iter().all(|l| l.len() == 16 * 16 * 4));
+    }
+
+    #[test]
+    fn lore_loads_with_names_substituted() {
+        let lore = load_lore(&assets()).expect("lore.toml must parse");
+        for era in ["golden", "expansion", "deep"] {
+            assert!(lore.era(era).len() >= 3, "era {era} needs fragments");
+        }
+        assert!(lore.fragments.iter().all(|(_, t)| !t.contains('{')));
+        assert!(parse_lore("[names]\n[[fragment]]\nera='golden'\ntext='{nobody}'\n").is_err());
+        assert!(parse_lore("[names]\n[[fragment]]\nera='future'\ntext='x'\n").is_err());
     }
 
     #[test]

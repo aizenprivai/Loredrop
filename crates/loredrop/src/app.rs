@@ -31,6 +31,8 @@ const SKY: [f32; 3] = [0.47, 0.65, 1.0];
 /// Placeholder plains-like tints until biomes exist (Phase 4).
 const GRASS_TINT: [f32; 3] = [0.57, 0.74, 0.35];
 const FOLIAGE_TINT: [f32; 3] = [0.47, 0.67, 0.18];
+/// Murky blue used for the sky/fog when the camera is under water.
+const UNDERWATER: [f32; 3] = [0.08, 0.22, 0.45];
 
 /// Loads game data and creates the (empty) world.
 fn load_world(
@@ -173,6 +175,42 @@ pub fn draw_map(blocks: u32, path: &std::path::Path, settings: &Settings, seed: 
     for (y, line) in rows.iter().enumerate() {
         for x in 0..px as usize {
             img.put_pixel(x as u32, y as u32, image::Rgb([line[x * 3], line[x * 3 + 1], line[x * 3 + 2]]));
+        }
+    }
+    // Mark ruins: red = surface ruin, orange = desert hall, cyan = sunken tower,
+    // purple = deep vault. Also list the nearest of each kind to spawn.
+    let half_blocks = (px as i32 / 2) * step as i32;
+    let ruins = g.structures_in_area(sx - half_blocks, sz - half_blocks, sx + half_blocks, sz + half_blocks);
+    for r in &ruins {
+        let color = match r.kind {
+            ld_worldgen::StructureKind::SurfaceRuin => [230, 40, 40],
+            ld_worldgen::StructureKind::DesertHall => [255, 150, 0],
+            ld_worldgen::StructureKind::SunkenTower => [0, 230, 230],
+            ld_worldgen::StructureKind::DeepVault => [170, 60, 230],
+        };
+        let (cx, cy) = ((r.x - sx + half_blocks) / step as i32, (r.z - sz + half_blocks) / step as i32);
+        for dy in -2..=2 {
+            for dx in -2..=2 {
+                let (x, y) = (cx + dx, cy + dy);
+                if (0..px as i32).contains(&x) && (0..px as i32).contains(&y) {
+                    img.put_pixel(x as u32, y as u32, image::Rgb(color));
+                }
+            }
+        }
+    }
+    for kind in ld_worldgen::StructureKind::ALL {
+        let nearest =
+            ruins.iter().filter(|r| r.kind == kind).min_by_key(|r| (r.x - sx).pow(2) + (r.z - sz).pow(2));
+        match nearest {
+            Some(r) => println!(
+                "nearest {:<13} at {} {} {} ({} found on map)",
+                kind.name(),
+                r.x,
+                r.y,
+                r.z,
+                ruins.iter().filter(|q| q.kind == kind).count()
+            ),
+            None => println!("no {} on this map", kind.name()),
         }
     }
     // Mark spawn with a small red cross.
@@ -369,19 +407,28 @@ impl App {
             pixels_per_point: out.pixels_per_point,
         };
 
+        let eye = self.game.eye_position(alpha);
+        // Under water: short blue fog instead of the sky (like Minecraft).
+        let underwater = self.game.world.map.block(ld_core::coords::BlockPos::new(
+            eye.x.floor() as i32,
+            eye.y.floor() as i32,
+            eye.z.floor() as i32,
+        )) == self.game.world.registry.id("water");
         let params = FrameParams {
             camera: Camera {
-                position: self.game.eye_position(alpha),
+                position: eye,
                 yaw_deg: self.game.yaw,
                 pitch_deg: self.game.pitch,
                 fov_deg: self.settings.graphics.fov,
             },
-            sky_color: SKY,
-            fog: self.settings.graphics.fog.then(|| {
-                // Fade out over the last stretch before the loaded edge.
-                let end = self.settings.graphics.render_distance as f32 * 16.0 - 4.0;
-                (end * 0.7, end)
-            }),
+            sky_color: if underwater { UNDERWATER } else { SKY },
+            fog: if underwater { Some((2.0, 28.0)) } else { None }.or(self.settings.graphics.fog.then(
+                || {
+                    // Fade out over the last stretch before the loaded edge.
+                    let end = self.settings.graphics.render_distance as f32 * 16.0 - 4.0;
+                    (end * 0.7, end)
+                },
+            )),
             grass_tint: GRASS_TINT,
             foliage_tint: FOLIAGE_TINT,
         };

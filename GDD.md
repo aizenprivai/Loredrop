@@ -82,10 +82,22 @@ More varied underground than vanilla: distinct depth bands with their own stone
 types, cave biomes, ores and hazards. 🔓 OPEN: number of layers and their themes.
 
 ### 3.5 Ruins with lore (original — the game's namesake)
-Ruined structures scattered across the world holding fragments of a shared
-history: inscriptions, books/tablets, murals, unique loot. Collected lore is
-tracked in an in-game journal. 🔓 OPEN: the world's backstory, structure types,
-how lore is presented.
+**Approved story outline (2026-11-14):**
+1. **The Builders** (placeholder name) — a master-builder civilisation covers the world.
+2. They open gateways to the **fire realm** and mine a wondrous material (the top tool tier).
+3. Reaching further, they enter the **final realm**; something there transforms
+   them into the **hollow wanderers** that roam at night, still moving blocks with
+   no memory why (our own iconic hostile creature).
+4. **The awakened one** — what they touched — is the final boss.
+5. Some Builders hid their knowledge in ruins as **lore tablets** ("lore drops");
+   the player collects them in a journal and follows the trail.
+6. **Ruins by era:** surface ruins (golden age) → desert halls & sunken towers
+   (expansion) → deep vaults in the deepslate (what they became).
+7. **The survivors** — simple villages of those who refused; passive, later traders.
+
+Progression: surface ruins → deep vaults → fire realm → final realm → boss.
+Implemented in Phase 4: four ruin types and tablets (`assets/data/lore.toml`,
+12 draft fragments). 🔓 OPEN: final names; journal UI (Phase 5).
 
 ### 3.6 Seasons (original)
 Seasonal cycle affecting foliage colour, snow cover, crop growth, and possibly

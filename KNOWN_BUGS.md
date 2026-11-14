@@ -17,3 +17,5 @@
 | KB-013 | Low | Open | Caves are as bright as the surface — no lighting system yet (Phase 8). |
 | KB-014 | Low | Open | Ore veins are clipped at chunk borders. |
 | KB-015 | Info | Open | Translucent faces inside one section aren't depth-sorted (only sections are). |
+| KB-016 | Low | Open | Lore tablets can't be read yet (Phase 5: interaction). |
+| KB-017 | Info | Open | Ruins may occasionally intersect caves or cut slightly into hillsides (they sit on the height at their centre). |

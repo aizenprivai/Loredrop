@@ -1426,6 +1426,8 @@ dependencies = [
  "image",
  "ld_world",
  "log",
+ "serde",
+ "toml",
 ]
 
 [[package]]

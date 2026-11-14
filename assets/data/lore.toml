@@ -1,0 +1,72 @@
+# Loredrop lore fragments — DRAFT (Phase 4)
+#
+# Story outline approved by the director (GDD §3.5): a civilisation of master
+# builders opened the burning realm, then reached the silent final realm,
+# where something changed them into the hollow wanderers that roam at night.
+# Some hid their knowledge in ruins as tablets — these fragments.
+#
+# Names are PLACEHOLDERS until the director chooses them. Text uses {tags}
+# that are replaced from [names], so renaming is a one-line change here.
+#
+# Eras decide which ruins hold a fragment:
+#   golden    — surface ruins            (the age of building)
+#   expansion — desert halls, sunken towers (the gateways and the burning realm)
+#   deep      — deep vaults in deepslate (what they became)
+#
+# Tablets can be read once interaction exists (Phase 5).
+
+[names]
+builders = "the Builders"
+fire_realm = "the Burning Realm"
+final_realm = "the Silent Realm"
+wanderers = "the Hollow"
+awakened = "the One Below the Stars"
+material = "emberstone"
+
+[[fragment]]
+era = "golden"
+text = "We raised our halls from the bones of the hills, and the hills did not mind. Every stone was laid by hand, and every hand was proud."
+
+[[fragment]]
+era = "golden"
+text = "The roads of {builders} ran from the ice to the sand. A traveller could walk a whole season and never leave a street."
+
+[[fragment]]
+era = "golden"
+text = "Our elders said there was no shape the world could not be given. We believed them. We were right, for a time."
+
+[[fragment]]
+era = "golden"
+text = "Those who would not build left for the river valleys and lived simply. We pitied them. Now I envy them."
+
+[[fragment]]
+era = "expansion"
+text = "Beneath the desert we found a door that was not a door — a frame of stone that showed fire on its far side. We named the place beyond it {fire_realm}."
+
+[[fragment]]
+era = "expansion"
+text = "From {fire_realm} we carried {material}. It does not dull, it does not break, and it is warm to the touch, always."
+
+[[fragment]]
+era = "expansion"
+text = "The sea took the tower at Low Harbour in a single night. We said it was the tide. The tide had never done that before."
+
+[[fragment]]
+era = "expansion"
+text = "With {material} our tools could cut anything. And so the council asked: what lies past the fire? What is the farthest place?"
+
+[[fragment]]
+era = "deep"
+text = "Those who returned from {final_realm} do not speak. They stand in the dark and move stones from place to place, as if building something only they can see."
+
+[[fragment]]
+era = "deep"
+text = "We call them {wanderers} now, though they were our sisters and brothers. They do not like to be looked at. I think they remember."
+
+[[fragment]]
+era = "deep"
+text = "Something waits in {final_realm}. We woke it by reaching for it. It is not angry. It is patient. That is worse."
+
+[[fragment]]
+era = "deep"
+text = "If you are reading this, you are not one of us, and you are not one of them. Follow the old roads. Find the gateways. End what we began."

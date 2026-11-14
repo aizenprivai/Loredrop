@@ -52,10 +52,14 @@
 - [x] Caves (cheese/spaghetti/noodle-style); sealed sea floors; lava lakes
 - [x] Ore distribution; trees/vegetation per biome (cross-chunk trees)
 - [x] Oceans and rivers (water block + translucent pass)
-- [ ] **Structures: ruins with lore** — waiting for director's lore decisions
+- [x] Lore outline approved; structure system + 4 ruin types with lore tablets
+- [ ] Final names for the Builders, realms, wanderers, boss, material (placeholders in lore.toml)
 - [ ] Director approval of Phase 4 report
 
 ## Deferred from Phase 4
+- [ ] Reading lore tablets + lore journal (needs interaction) — Phase 5
+- [ ] Data-driven structure templates (ruins are procedural code for now)
+- [ ] More ruin types (roads, gateways to the fire realm, villages of the survivors) — later
 - [ ] Aquifers (local underground water levels) — caves are always dry above Y −54
 - [ ] Non-cube blocks (slabs, stairs, snow layer, lower water surface)
 - [ ] Water/lava flow — Phase 8

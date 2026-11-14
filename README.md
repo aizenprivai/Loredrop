@@ -3,11 +3,12 @@
 A voxel sandbox game written in Rust: the feel of modern Minecraft, with its own
 world, art and lore. See `GDD.md` for the design and `ROADMAP.md` for progress.
 
-**Current state: Phase 4 (world generation, in progress)** — endless seeded
+**Current state: Phase 4 (world generation)** — endless seeded
 worlds with continents, oceans, rivers, 11 biomes, snow-capped mountains,
 caves, ores, deepslate, trees and plants, streamed on background threads and
-rendered Vulkan-first. F3 shows performance, chunk, biome and seed info. No
-structures, block editing, survival or lighting yet.
+rendered Vulkan-first. F3 shows performance, chunk, biome and seed info. Ruins of the
+Builders (four kinds, with lore tablets) are scattered across the world. No
+block editing, survival or lighting yet.
 
 ## Build & run
 
