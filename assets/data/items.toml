@@ -504,3 +504,11 @@ armor = "boots"
 defense = 1
 toughness = 0.0
 durability = 65
+
+# --- Lore (Loredrop original) ----------------------------------------------------
+# A broken piece of a tablet, rarely carried by the Hollow. Right-click to read
+# a fragment you haven't found yet; it is added to your journal.
+[[item]]
+name = "lore_fragment"
+display = "Lore Fragment"
+max_stack = 16

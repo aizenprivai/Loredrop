@@ -12,6 +12,8 @@ use serde::Deserialize;
 pub enum Category {
     Passive,
     Hostile,
+    /// Peaceful until provoked (the Hollow).
+    Neutral,
 }
 
 /// How a model part moves.
@@ -218,6 +220,8 @@ mod tests {
         let zombie = mobs.get(mobs.id("zombie").unwrap());
         assert!(zombie.spawn.dark && zombie.category == Category::Hostile && zombie.attack_damage > 0.0);
         assert!(mobs.get(mobs.id("skeleton").unwrap()).ranged);
+        let hollow = mobs.get(mobs.id("hollow").unwrap());
+        assert_eq!((hollow.category, hollow.height), (Category::Neutral, 2.5));
         for name in mobs.texture_names() {
             let p = format!("{}/../../assets/textures/entity/{name}.png", env!("CARGO_MANIFEST_DIR"));
             assert!(std::path::Path::new(&p).is_file(), "missing creature texture {p}");

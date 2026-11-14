@@ -231,7 +231,30 @@ def arrow():
     return img
 
 
+def lore_fragment():
+    """A broken shard of a lore tablet with a gold glyph (Loredrop original)."""
+    img = blank()
+    shard = [(4, 3), (11, 2), (13, 9), (8, 14), (3, 11)]
+    import math
+    for y in range(N):
+        for x in range(N):
+            # Inside the irregular shard polygon (ray casting).
+            inside = False
+            j = len(shard) - 1
+            for i in range(len(shard)):
+                (xi, yi), (xj, yj) = shard[i], shard[j]
+                if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+                    inside = not inside
+                j = i
+            if inside:
+                put(img, x, y, (62, 60, 70))
+    for (x, y) in [(6, 6), (7, 6), (8, 6), (7, 7), (7, 8), (6, 9), (8, 9), (10, 7), (10, 8)]:
+        put(img, x, y, (232, 196, 96))
+    return img
+
+
 ITEMS.update({
+    "lore_fragment": lore_fragment,
     "beef": lambda: meat((190, 40, 40), 20), "cooked_beef": lambda: meat((120, 66, 40), 21),
     "porkchop": lambda: meat((236, 140, 140), 22), "cooked_porkchop": lambda: meat((200, 140, 90), 23),
     "chicken": lambda: meat((240, 200, 190), 24), "cooked_chicken": lambda: meat((210, 150, 80), 25),

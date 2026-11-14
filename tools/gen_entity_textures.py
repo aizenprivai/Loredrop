@@ -82,7 +82,33 @@ def ribs(seed):
     return img
 
 
+def hollow(seed, cracks=3, blank_face=False):
+    """Weathered stone-grey skin with cracks glowing faint gold (Loredrop original)."""
+    rng = random.Random(seed)
+    img = fill(seed, (122, 120, 116), 10)
+    for _ in range(cracks):
+        x, y = rng.randrange(N), rng.randrange(N)
+        for _ in range(rng.randrange(5, 10)):
+            img.putpixel((x % N, y % N), (232, 196, 96, 255))  # the gold of the lore tablets
+            if rng.random() < 0.5:
+                img.putpixel(((x + 1) % N, y % N), (150, 120, 60, 255))
+            x += rng.choice([-1, 0, 1])
+            y += 1
+    if blank_face:
+        # A smooth, featureless face: slightly lighter, no eyes or mouth.
+        for y in range(3, 13):
+            for x in range(3, 13):
+                r, g, b, a = img.getpixel((x, y))
+                img.putpixel((x, y), (min(255, r + 14), min(255, g + 14), min(255, b + 14), a))
+    return img
+
+
 TEXTURES = {
+    # The Hollow (Loredrop original creature)
+    "hollow_face": lambda: hollow(80, cracks=1, blank_face=True),
+    "hollow_head": lambda: hollow(81, cracks=2),
+    "hollow_body": lambda: hollow(82, cracks=4),
+    "hollow_limb": lambda: hollow(83, cracks=2),
     # Cow: brown with cream patches
     "cow_face": lambda: face((96, 64, 40), (20, 20, 20), snout((200, 170, 150), (60, 40, 30)), seed=10),
     "cow_head": lambda: fill(11, (96, 64, 40), 8),
