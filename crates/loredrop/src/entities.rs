@@ -65,7 +65,7 @@ impl ItemEntities {
             z as f64 + 0.25 + self.rand() * 0.5,
         );
         let vel = DVec3::new((self.rand() - 0.5) * 0.2, 0.2, (self.rand() - 0.5) * 0.2);
-        let phase = self.rand() as f32 * 6.28;
+        let phase = self.rand() as f32 * std::f32::consts::TAU;
         self.list.push(ItemEntity { pos, vel, stack, age: 0, pickup_delay: 10, phase });
     }
 
@@ -74,7 +74,7 @@ impl ItemEntities {
         if self.rng == 0 {
             self.rng = 0x1234_5678_9ABC_DEF1;
         }
-        let phase = self.rand() as f32 * 6.28;
+        let phase = self.rand() as f32 * std::f32::consts::TAU;
         self.list.push(ItemEntity {
             pos: eye - DVec3::new(0.0, 0.3, 0.0),
             vel: look * 0.3 + DVec3::new(0.0, 0.1, 0.0),

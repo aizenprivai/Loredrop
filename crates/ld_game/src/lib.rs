@@ -7,9 +7,11 @@
 //!
 //! * [`crafting`] — crafting and smelting recipes, fuels.
 //!
+//! * [`furnace`] — smelting with fuel, Minecraft's timing.
 //! * [`mining`] — break times (Minecraft's formula), harvest tiers, drops.
 
 pub mod crafting;
+pub mod furnace;
 pub mod inventory;
 pub mod items;
 pub mod mining;

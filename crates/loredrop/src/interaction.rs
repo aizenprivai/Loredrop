@@ -81,11 +81,12 @@ impl Game {
         let use_pressed = input.take_press(Action::UseItem);
         // Using a block (crafting table…) takes priority over placing, unless
         // sneaking — exactly like Minecraft.
-        if use_pressed && !input.is_held(Action::Sneak) && self.use_target_block() {
-            self.use_cooldown = PLACE_REPEAT_TICKS;
-        } else if (use_pressed || (input.is_held(Action::UseItem) && self.use_cooldown == 0))
-            && self.place_held()
-        {
+        let used = use_pressed && !input.is_held(Action::Sneak) && self.use_target_block();
+        // Only place if the click wasn't used on a block (short-circuit order matters).
+        let placed = !used
+            && (use_pressed || (input.is_held(Action::UseItem) && self.use_cooldown == 0))
+            && self.place_held();
+        if used || placed {
             self.use_cooldown = PLACE_REPEAT_TICKS;
         }
         if input.take_press(Action::PickBlock) {
@@ -101,6 +102,11 @@ impl Game {
             self.open_request = Some(crate::screens::Screen::CraftingTable);
             return true;
         }
+        if id.is_some() && (id == self.ids.furnace || id == self.ids.lit_furnace) {
+            self.furnaces.entry(hit.pos).or_default();
+            self.open_request = Some(crate::screens::Screen::Furnace(hit.pos));
+            return true;
+        }
         false
     }
 
@@ -114,6 +120,12 @@ impl Game {
     /// Removes a block; plants standing on it lose their support and pop
     /// off too. With `drop_items`, popped plants drop as items (Survival).
     fn remove_block(&mut self, pos: BlockPos, drop_items: bool) {
+        // A furnace spills its contents when broken (in any mode).
+        if let Some(f) = self.furnaces.remove(&pos) {
+            for s in f.contents() {
+                self.entities.drop_from_block(pos.x, pos.y, pos.z, s);
+            }
+        }
         self.world.set_block(pos, BlockId::AIR);
         let above = BlockPos::new(pos.x, pos.y + 1, pos.z);
         if let Some(id) = self.world.map.block(above)

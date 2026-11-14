@@ -28,6 +28,8 @@ pub struct GameIds {
     pub water: Option<ld_world::BlockId>,
     pub lava: Option<ld_world::BlockId>,
     pub crafting_table: Option<ld_world::BlockId>,
+    pub furnace: Option<ld_world::BlockId>,
+    pub lit_furnace: Option<ld_world::BlockId>,
 }
 
 pub struct Game {
@@ -71,6 +73,8 @@ pub struct Game {
     /// Ticks to wait before starting to mine the next block (Minecraft: 5).
     pub(crate) break_delay: u32,
     pub(crate) rng: u64,
+    /// Furnaces placed in the world, by position (created when first opened).
+    pub furnaces: std::collections::HashMap<ld_core::coords::BlockPos, ld_game::furnace::Furnace>,
 }
 
 impl Game {
@@ -85,6 +89,8 @@ impl Game {
             water: world.registry.id("water"),
             lava: world.registry.id("lava"),
             crafting_table: world.registry.id("crafting_table"),
+            furnace: world.registry.id("furnace"),
+            lit_furnace: world.registry.id("lit_furnace"),
         };
         // A starter hotbar of building blocks for Creative mode.
         let mut inventory = ld_game::Inventory::default();
@@ -96,7 +102,7 @@ impl Game {
             "oak_planks",
             "oak_log",
             "glass",
-            "stone_bricks",
+            "furnace",
             "crafting_table",
         ]
         .iter()
@@ -141,6 +147,7 @@ impl Game {
             breaking: None,
             break_delay: 0,
             rng: 0x2545_F491_4F6C_DD1D,
+            furnaces: Default::default(),
         }
     }
 
@@ -217,6 +224,7 @@ impl Game {
         }
         let player_box = self.player.aabb();
         self.entities.tick(&self.world, &player_box, &mut self.inventory, &self.items);
+        self.tick_furnaces();
 
         // Smoothly lower/raise the camera when sneaking (Minecraft eases this too).
         self.eye += (self.player.eye_height() - self.eye) * 0.5;
@@ -226,6 +234,20 @@ impl Game {
             self.player = PlayerBody::new(self.spawn);
             self.prev_pos = self.player.pos;
             self.placed = false;
+        }
+    }
+
+    /// Smelts in every furnace and swaps the block between lit and unlit.
+    fn tick_furnaces(&mut self) {
+        let (Some(unlit), Some(lit)) = (self.ids.furnace, self.ids.lit_furnace) else { return };
+        let mut changes = Vec::new();
+        for (pos, f) in self.furnaces.iter_mut() {
+            if f.tick(&self.recipes, &self.items) {
+                changes.push((*pos, if f.is_lit() { lit } else { unlit }));
+            }
+        }
+        for (pos, block) in changes {
+            self.world.set_block(pos, block);
         }
     }
 

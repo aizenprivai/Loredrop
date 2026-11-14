@@ -20,6 +20,8 @@ pub enum Screen {
     Inventory,
     /// A crafting table's 3×3 grid.
     CraftingTable,
+    /// The furnace at this position.
+    Furnace(ld_core::coords::BlockPos),
 }
 
 /// State that lives while menus are open.
@@ -44,6 +46,8 @@ pub struct MenuCtx<'a> {
     pub creative: bool,
     pub state: &'a mut MenuState,
     pub recipes: &'a RecipeBook,
+    /// The open furnace, when the screen is a furnace.
+    pub furnace: Option<&'a mut ld_game::furnace::Furnace>,
 }
 
 /// Draws the open screen. Returns true if it asked to close.
@@ -52,6 +56,7 @@ pub fn draw(ctx: &egui::Context, screen: &Screen, m: &mut MenuCtx) -> bool {
         Screen::None => false,
         Screen::Inventory => inventory_screen(ctx, m, 2),
         Screen::CraftingTable => inventory_screen(ctx, m, 3),
+        Screen::Furnace(_) => inventory_screen(ctx, m, 0),
     }
 }
 
@@ -98,7 +103,11 @@ fn inventory_screen(ctx: &egui::Context, m: &mut MenuCtx, grid_size: usize) -> b
                     ui.add_space(10.0);
                 }
                 ui.horizontal(|ui| {
-                    crafting_grid(ui, m, grid_size);
+                    if grid_size == 0 {
+                        furnace_panel(ui, m);
+                    } else {
+                        crafting_grid(ui, m, grid_size);
+                    }
                     ui.add_space(16.0);
                     recipe_browser(ui, m);
                 });
@@ -393,4 +402,85 @@ pub fn return_grid(state: &mut MenuState, inventory: &mut Inventory, items: &Ite
             let _ = inventory.add(s, items);
         }
     }
+}
+
+/// Furnace: input on top, fuel below with a flame meter, arrow showing
+/// smelting progress, output on the right.
+fn furnace_panel(ui: &mut egui::Ui, m: &mut MenuCtx) {
+    let Some(f) = m.furnace.take() else { return };
+    ui.vertical(|ui| {
+        ui.label(egui::RichText::new("Furnace").color(Color32::WHITE).size(16.0));
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                let mut input = f.input;
+                slot_ui(ui, &mut input, m, None);
+                f.input = input;
+                // Flame meter: how much of the current fuel item is left.
+                let (r, _) = ui.allocate_exact_size(Vec2::new(SLOT - 2.0, 10.0), Sense::hover());
+                ui.painter().rect_filled(r, 0.0, Color32::from_gray(40));
+                if f.burn_total > 0 {
+                    let w = r.width() * f.burn_left as f32 / f.burn_total as f32;
+                    ui.painter().rect_filled(
+                        Rect::from_min_size(r.min, Vec2::new(w, r.height())),
+                        0.0,
+                        Color32::from_rgb(255, 140, 30),
+                    );
+                }
+                let mut fuel = f.fuel;
+                slot_ui(ui, &mut fuel, m, None);
+                f.fuel = fuel;
+            });
+            ui.add_space(10.0);
+            // Progress arrow.
+            let (r, _) = ui.allocate_exact_size(Vec2::new(44.0, SLOT), Sense::hover());
+            let y = r.center().y;
+            ui.painter().rect_filled(
+                Rect::from_min_max(Pos2::new(r.left(), y - 4.0), Pos2::new(r.right() - 10.0, y + 4.0)),
+                0.0,
+                Color32::from_gray(60),
+            );
+            if f.cook_total > 0 {
+                let w = (r.width() - 10.0) * f.cook as f32 / f.cook_total as f32;
+                ui.painter().rect_filled(
+                    Rect::from_min_max(Pos2::new(r.left(), y - 4.0), Pos2::new(r.left() + w, y + 4.0)),
+                    0.0,
+                    Color32::WHITE,
+                );
+            }
+            ui.painter().add(egui::Shape::convex_polygon(
+                vec![
+                    Pos2::new(r.right() - 12.0, y - 9.0),
+                    Pos2::new(r.right(), y),
+                    Pos2::new(r.right() - 12.0, y + 9.0),
+                ],
+                Color32::from_gray(160),
+                Stroke::NONE,
+            ));
+            ui.add_space(10.0);
+            // Output: take only (left = all, right = half, shift = into inventory).
+            let (rect, resp) = ui.allocate_exact_size(Vec2::splat(SLOT + 6.0), Sense::click());
+            draw_slot(ui.painter(), rect, f.output, m.icons, m.items, resp.hovered());
+            if let Some(out) = f.output {
+                if resp.clicked() && ui.input(|i| i.modifiers.shift) {
+                    f.output = m.inventory.add(out, m.items);
+                } else if resp.clicked() || resp.secondary_clicked() {
+                    let max = m.items.get(out.item).max_stack;
+                    match &mut m.state.cursor {
+                        None => {
+                            m.state.cursor = Some(out);
+                            f.output = None;
+                        }
+                        Some(c) if c.stacks_with(&out) => {
+                            let moved = (max - c.count).min(out.count);
+                            c.count += moved;
+                            f.output =
+                                (out.count > moved).then_some(ItemStack { count: out.count - moved, ..out });
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        });
+    });
+    m.furnace = Some(f);
 }

@@ -577,3 +577,15 @@ harvest_level = 0
 display = "Furnace"
 layer = "opaque"
 textures = { top = "furnace_top", bottom = "furnace_top", side = "furnace_side", north = "furnace_front", south = "furnace_front" }
+
+# A burning furnace (switched automatically; not an item, drops a furnace).
+[[block]]
+name = "lit_furnace"
+hardness = 3.5
+tool = "pickaxe"
+harvest_level = 0
+drops = "furnace"
+item = false
+display = "Furnace"
+layer = "opaque"
+textures = { top = "furnace_top", bottom = "furnace_top", side = "furnace_side", north = "furnace_front_on", south = "furnace_front_on" }

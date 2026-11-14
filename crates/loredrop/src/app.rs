@@ -537,6 +537,12 @@ impl App {
         // The inventory is lent to the menus for this frame (and put back
         // below), so the overlay can read the rest of the game at the same time.
         let mut inv = std::mem::take(&mut self.game.inventory);
+        // Likewise the open furnace (if any).
+        let furnace_pos = match &self.screen {
+            crate::screens::Screen::Furnace(p) => Some(*p),
+            _ => None,
+        };
+        let mut furnace = furnace_pos.and_then(|p| self.game.furnaces.remove(&p));
         let size = r.window.inner_size();
         r.egui_ctx.set_zoom_factor(self.settings.interface.gui_scale);
         let raw = r.egui_state.take_egui_input(&r.window);
@@ -557,15 +563,26 @@ impl App {
         let creative = self.game.mode == GameMode::Creative;
         let (inv, items, icons, recipes) = (&mut inv, &self.game.items, &r.icon_textures, &self.game.recipes);
         let (screen, menu) = (&self.screen, &mut self.menu);
+
         let mut close_requested = false;
         let out = r.egui_ctx.run_ui(raw, |ui| {
             overlay::draw(ui.ctx(), show_debug, &overlay_data);
             crate::hud::draw_hotbar(ui.ctx(), inv, icons, items);
-            let mut m =
-                crate::screens::MenuCtx { inventory: inv, items, icons, creative, state: menu, recipes };
+            let mut m = crate::screens::MenuCtx {
+                inventory: inv,
+                items,
+                icons,
+                creative,
+                state: menu,
+                recipes,
+                furnace: furnace.as_mut(),
+            };
             close_requested = crate::screens::draw(ui.ctx(), screen, &mut m);
         });
         let _ = overlay_data; // end of the overlay's borrow of the game
+        if let (Some(p), Some(f)) = (furnace_pos, furnace) {
+            self.game.furnaces.insert(p, f);
+        }
         self.game.inventory = std::mem::take(inv);
         r.egui_state.handle_platform_output(&r.window, out.platform_output);
         let wants_keyboard = r.egui_ctx.egui_wants_keyboard_input();
