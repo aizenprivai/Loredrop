@@ -30,4 +30,4 @@
 | KB-026 | Low | Open (Phase 9) | Creatures are not saved: any creature in an area that unloads (or when the game closes) is removed. The list of Hollow-placed blocks is not saved either, so after a restart breaking them angers nobody. |
 | KB-027 | Info | By design | Hollows leave one-block holes in the ground where they pick blocks up (like their Minecraft counterpart). They never take blocks from under the player or another creature, or blocks a Hollow placed. |
 | KB-028 | Low | Open | The Hollow's long legs swing as far as a zombie's, so its stride looks exaggerated. |
-| KB-029 | Info | Open | Attacking one Hollow angers only that Hollow; breaking a Hollow-placed block angers all Hollows within 16 blocks. (Design detail to confirm with the director.) |
+| KB-029 | Info | By design (director, 2026-11-14) | Attacking one Hollow angers only that Hollow; breaking a Hollow-placed block angers all Hollows within 16 blocks. |

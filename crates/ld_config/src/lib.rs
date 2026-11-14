@@ -66,6 +66,10 @@ pub struct PerformanceSettings {
 pub struct GameplaySettings {
     pub difficulty: Difficulty,
     pub game_mode: GameModeSetting,
+    /// Whether time passes (day turns to night).
+    pub daylight_cycle: bool,
+    /// Real-time minutes for one full day (Minecraft: 20).
+    pub day_length_minutes: u32,
 }
 
 /// Settings in the **Controls** tab.
@@ -101,6 +105,8 @@ impl Default for Settings {
             gameplay: GameplaySettings {
                 difficulty: Difficulty::Normal,
                 game_mode: GameModeSetting::Survival,
+                daylight_cycle: true,
+                day_length_minutes: 20,
             },
             controls: ControlSettings {
                 mouse_sensitivity: 100,

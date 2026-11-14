@@ -7,6 +7,13 @@ struct Camera {
     fog: vec4<f32>,
     // Unused since Phase 4 (biome colours are per vertex); kept for layout stability.
     tints: array<vec4<f32>, 2>,
+    // Phase 8 sky data (see sky.wgsl); only misc.y (daylight) is used here.
+    inv_view_proj: mat4x4<f32>,
+    sky_zenith: vec4<f32>,
+    sky_horizon: vec4<f32>,
+    glow: vec4<f32>,
+    sun: vec4<f32>,
+    misc: vec4<f32>,
 };
 @group(0) @binding(0) var<uniform> cam: Camera;
 
@@ -78,7 +85,8 @@ fn vs_main(@location(0) packed: vec3<u32>, @location(1) origin: vec4<f32>) -> Ve
 }
 
 fn shade(in: VertexOut, texel: vec4<f32>) -> vec4<f32> {
-    var c = texel.rgb * in.color * in.light;
+    // Daylight dims everything at night (until per-block light arrives).
+    var c = texel.rgb * in.color * in.light * cam.misc.y;
     if (cam.fog.z > 0.5) {
         let d = length(in.rel_pos.xz);
         c = mix(c, cam.fog_color.rgb, smoothstep(cam.fog.x, cam.fog.y, d));

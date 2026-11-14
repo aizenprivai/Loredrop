@@ -301,6 +301,29 @@ pub fn schema() -> Vec<SettingDef> {
             apply: Apply::OnRestart,
             access: choice_field!(gameplay.game_mode: GameModeSetting),
         },
+        SettingDef {
+            section: "gameplay",
+            name: "daylight_cycle",
+            label: "Day/night cycle",
+            description: "Whether time passes. When off, the time of day stays where it is \
+                (always day in a new world).",
+            performance: "none",
+            kind: Kind::Bool,
+            apply: Apply::Immediately,
+            access: bool_field!(gameplay.daylight_cycle),
+        },
+        SettingDef {
+            section: "gameplay",
+            name: "day_length_minutes",
+            label: "Day length (minutes)",
+            description: "How many real minutes one full day and night takes. Minecraft's is 20 \
+                (10 of daylight, 7 of night, plus dusk and dawn). Creatures and furnaces are \
+                not affected, only the sun.",
+            performance: "none",
+            kind: Kind::Int { min: 1, max: 240 },
+            apply: Apply::Immediately,
+            access: int_field!(gameplay.day_length_minutes as u32),
+        },
         // ---------------- Controls ----------------
         SettingDef {
             section: "controls",

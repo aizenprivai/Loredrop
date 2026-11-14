@@ -18,6 +18,9 @@ Read this first. It replaces the memory of earlier conversations.
 - Keep these documents up to date: `GDD.md`, `ROADMAP.md`, `ARCHITECTURE.md`,
   `CHANGELOG.md`, `TODO.md`, `KNOWN_BUGS.md`, `BENCHMARKS.md`, `README.md`.
 - Commit and push regularly (GitHub: `aizenprivai/Loredrop`, branch `main`).
+- **When a phase is finished, launch the game for the director to test**
+  (release build, normal window, no `--exit-after`), right after the report.
+  Run it in the background so the session isn't blocked.
 
 ## Creative direction (see GDD.md for details)
 
@@ -37,10 +40,8 @@ Read this first. It replaces the memory of earlier conversations.
 
 ## Current status (update this section as work progresses)
 
-- Phases 0–6 complete and approved. **Phase 7 (creatures & AI) implemented,
-  report delivered, awaiting director approval.** Phase 8 next (world
-  simulation & atmosphere incl. day/night, lighting, seasons) — don't start
-  without approval.
+- Phases 0–7 complete and approved. **Phase 8 (world simulation &
+  atmosphere) in progress** — see the Phase 8 section of TODO.md.
 - Done in Phase 7: data-driven creatures (`assets/data/mobs.toml`), box-model
   rendering with animation, pathfinding, passive/hostile AI, ranged
   skeletons, combat against creatures, spawning, despawning, loot, new foods,
@@ -52,8 +53,8 @@ Read this first. It replaces the memory of earlier conversations.
   the player breaks a block it placed; fast and strong when angry (7 damage,
   40 health); rarely drops a `lore_fragment` item. **Fully implemented**
   (anger, block moving, provocation, carried-block rendering, natural
-  spawning, readable lore fragments). Open detail: attacking one Hollow
-  angers only that one (KB-029).
+  spawning, readable lore fragments). Director decision: attacking one
+  Hollow angers only that one.
 - Open design items (ask the director when relevant): final lore names,
   fire realm / final realm / boss, top tool tier, redstone equivalent,
   XP/enchanting, multiplayer.

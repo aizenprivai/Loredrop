@@ -131,7 +131,7 @@
 - [x] Hollow: natural spawning in dark roofed places (with the hostiles)
 - [x] Right-click `lore_fragment` → read an undiscovered fragment into the journal
 - [x] Tests, screenshots, docs, Phase 7 report
-- [ ] Director approval of Phase 7 report
+- [x] Director approval of Phase 7 report
 
 ## Deferred from Phase 7
 - [ ] Hostiles on the surface at night — needs the day/night cycle (Phase 8)
@@ -140,6 +140,20 @@
 - [ ] Hollow-placed block list is not saved (Phase 9)
 - [ ] Hollows on the surface at night (needs day/night, Phase 8)
 - [ ] Long-legged walk animation looks exaggerated on the Hollow (tune swing by leg length)
+
+## Phase 8 — World simulation & atmosphere
+- [x] Part 1: day/night cycle (Minecraft timing), sky gradient, sunrise/sunset glow, sun, moon phases, stars; daylight dims the world; settings + `--time`; F3 clock
+- [ ] Part 2: lighting engine — sky light + block light per block, propagation, smooth lighting in meshes; light-emitting blocks (lava, lit furnace, torch)
+- [ ] Part 3: hostiles (and Hollows) spawn on the surface at night by light level
+- [ ] Part 4: weather (rain, snow, thunderstorms)
+- [ ] Part 5: water/lava flow; falling sand and gravel
+- [ ] Part 6: seasons (design questions for the director first)
+- [ ] Part 7: audio (kira): ambient, block, creature sounds; music system
+- [ ] Phase 8 report, launch the game for the director
+- [ ] Director approval of Phase 8 report
+
+## Deferred from Phase 8
+- [ ] Fog toward the sunset should take the glow colour (now always the horizon colour)
 
 ## Infrastructure
 - [x] Local git repository with history

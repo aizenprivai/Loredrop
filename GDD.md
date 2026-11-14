@@ -136,8 +136,9 @@ Our first original creature, from the lore's hollow wanderers.
 - **Look:** tall (2.5 blocks) weathered-stone figure, gold glow in the cracks, blank face.
 - **Behaviour:** neutral. Wanders at night and in caves, picking up and placing
   natural blocks "as if building something only it can see".
-- **Provocation:** turns hostile if attacked, or if the player breaks a block
-  a Hollow placed (nearby Hollows join in).
+- **Provocation:** turns hostile if attacked (only the Hollow that was hit —
+  director decision), or if the player breaks a block a Hollow placed (every
+  Hollow within 16 blocks joins in). Anger lasts 30 seconds.
 - **When angry:** fast and strong — 7 damage, 40 health.
 - **Drop:** rarely a `lore_fragment` item; right-click to read an undiscovered
   lore fragment into the journal.

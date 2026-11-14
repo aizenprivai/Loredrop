@@ -27,8 +27,6 @@ use winit::window::{CursorGrabMode, Fullscreen, Window, WindowId};
 
 const TICK: f64 = 1.0 / TICKS_PER_SECOND;
 const MAX_TICKS_PER_FRAME: u32 = 10;
-/// Classic Minecraft daytime sky.
-const SKY: [f32; 3] = [0.47, 0.65, 1.0];
 /// Placeholder plains-like tints until biomes exist (Phase 4).
 const GRASS_TINT: [f32; 3] = [0.57, 0.74, 0.35];
 const FOLIAGE_TINT: [f32; 3] = [0.47, 0.67, 0.18];
@@ -414,6 +412,9 @@ impl App {
                 g.lore = lore;
                 g.mobs = crate::mobs::Mobs::new(mobs);
                 g.pending_summons = options.summon.clone();
+                if let Some(t) = options.time {
+                    g.time = ld_game::time::WorldTime::at(t);
+                }
                 g.set_start_mode(match settings.gameplay.game_mode {
                     ld_config::GameModeSetting::Survival => GameMode::Survival,
                     ld_config::GameModeSetting::Creative => GameMode::Creative,
@@ -679,6 +680,7 @@ impl App {
             eye.y.floor() as i32,
             eye.z.floor() as i32,
         )) == self.game.world.registry.id("water");
+        let sky = self.game.time.sky();
         let params = FrameParams {
             camera: Camera {
                 position: eye,
@@ -686,7 +688,7 @@ impl App {
                 pitch_deg: self.game.pitch,
                 fov_deg: self.settings.graphics.fov,
             },
-            sky_color: if underwater { UNDERWATER } else { SKY },
+            sky_color: if underwater { UNDERWATER } else { sky.horizon },
             fog: if underwater { Some((2.0, 28.0)) } else { None }.or(self.settings.graphics.fog.then(
                 || {
                     // Fade out over the last stretch before the loaded edge.
@@ -696,6 +698,16 @@ impl App {
             )),
             grass_tint: GRASS_TINT,
             foliage_tint: FOLIAGE_TINT,
+            sky: (!underwater).then_some(ld_render::SkyParams {
+                zenith: sky.zenith,
+                horizon: sky.horizon,
+                glow: sky.glow,
+                glow_strength: sky.glow_strength,
+                sun_dir: sky.sun_dir,
+                stars: sky.stars,
+                moon_phase: sky.moon_phase,
+            }),
+            daylight: sky.daylight,
         };
         // Dropped items and the cracks on the block being mined.
         self.entity_vertices.clear();

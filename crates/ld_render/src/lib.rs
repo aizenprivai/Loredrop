@@ -56,6 +56,28 @@ pub struct FrameParams {
     /// sRGB tint colours for grass and foliage faces.
     pub grass_tint: [f32; 3],
     pub foliage_tint: [f32; 3],
+    /// The sky to draw behind the world, or `None` to show just `sky_color`
+    /// (e.g. underwater).
+    pub sky: Option<SkyParams>,
+    /// Brightness of sunlit surfaces (1 = day, ≈0.2 = moonlit night).
+    pub daylight: f32,
+}
+
+/// What the sky looks like this frame (from `ld_game::time::SkyState`).
+#[derive(Debug, Clone, Copy)]
+pub struct SkyParams {
+    /// sRGB colours straight up and at the horizon.
+    pub zenith: [f32; 3],
+    pub horizon: [f32; 3],
+    /// sRGB sunrise/sunset glow colour and its strength 0..1.
+    pub glow: [f32; 3],
+    pub glow_strength: f32,
+    /// Unit vector toward the sun (the moon is drawn opposite).
+    pub sun_dir: [f32; 3],
+    /// Star visibility 0..1.
+    pub stars: f32,
+    /// Moon phase 0..7 (0 = full).
+    pub moon_phase: u32,
 }
 
 /// UI to draw on top of the world (already tessellated by egui).
@@ -80,6 +102,13 @@ struct CameraUniform {
     fog_color: [f32; 4],
     fog: [f32; 4],
     tints: [[f32; 4]; 2],
+    // --- Phase 8: sky and daylight (see sky.wgsl for the meaning) ---
+    inv_view_proj: [[f32; 4]; 4],
+    sky_zenith: [f32; 4],
+    sky_horizon: [f32; 4],
+    glow: [f32; 4],
+    sun: [f32; 4],
+    misc: [f32; 4],
 }
 
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
@@ -92,6 +121,9 @@ pub struct Renderer {
     camera_bind_group: wgpu::BindGroup,
     mesh_layout: wgpu::BindGroupLayout,
     world_pipeline: wgpu::RenderPipeline,
+    sky_pipeline: wgpu::RenderPipeline,
+    /// Whether to draw the sky this frame (set in `render`).
+    draw_sky: bool,
     meshes: mesh::MeshStore,
     chunks: chunks::ChunkRenderer,
     outline_pipeline: wgpu::RenderPipeline,
@@ -198,6 +230,46 @@ impl Renderer {
 
         let chunks = chunks::ChunkRenderer::new(device, &camera_layout, gpu.config.format, DEPTH_FORMAT);
 
+        // Sky: a full-screen triangle drawn first, behind everything.
+        let sky_shader = device.create_shader_module(wgpu::include_wgsl!("shaders/sky.wgsl"));
+        let sky_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("sky layout"),
+            bind_group_layouts: &[Some(&camera_layout)],
+            immediate_size: 0,
+        });
+        let sky_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("sky pipeline"),
+            layout: Some(&sky_layout),
+            vertex: wgpu::VertexState {
+                module: &sky_shader,
+                entry_point: Some("vs_main"),
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
+            primitive: wgpu::PrimitiveState::default(),
+            // Never writes depth, so the world drawn afterwards always covers it.
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: DEPTH_FORMAT,
+                depth_write_enabled: Some(false),
+                depth_compare: Some(wgpu::CompareFunction::Always),
+                stencil: Default::default(),
+                bias: Default::default(),
+            }),
+            multisample: Default::default(),
+            fragment: Some(wgpu::FragmentState {
+                module: &sky_shader,
+                entry_point: Some("fs_main"),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: gpu.config.format,
+                    blend: None,
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            multiview_mask: None,
+            cache: None,
+        });
+
         // Selection outline: 12 edges = 24 line vertices, rewritten each frame.
         let outline_shader = device.create_shader_module(wgpu::include_wgsl!("shaders/outline.wgsl"));
         let outline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -259,6 +331,8 @@ impl Renderer {
             camera_bind_group,
             mesh_layout,
             world_pipeline,
+            sky_pipeline,
+            draw_sky: false,
             meshes: mesh::MeshStore::default(),
             chunks,
             outline_pipeline,
@@ -394,7 +468,24 @@ impl Renderer {
             fog_color: [sky_lin[0], sky_lin[1], sky_lin[2], 1.0],
             fog: [fog_start, fog_end, fog_on, if self.gpu.manual_gamma { 1.0 } else { 0.0 }],
             tints: [lin(frame.grass_tint), lin(frame.foliage_tint)],
+            inv_view_proj: view_proj.inverse().to_cols_array_2d(),
+            sky_zenith: frame.sky.map_or([0.0; 4], |s| lin(s.zenith)),
+            sky_horizon: frame.sky.map_or([0.0; 4], |s| lin(s.horizon)),
+            glow: frame.sky.map_or([0.0; 4], |s| {
+                let g = lin(s.glow);
+                [g[0], g[1], g[2], s.glow_strength]
+            }),
+            sun: frame
+                .sky
+                .map_or([0.0, 1.0, 0.0, 0.0], |s| [s.sun_dir[0], s.sun_dir[1], s.sun_dir[2], s.stars]),
+            misc: [
+                frame.sky.map_or(0.0, |s| s.moon_phase as f32),
+                frame.daylight,
+                if frame.sky.is_some() { 1.0 } else { 0.0 },
+                0.0,
+            ],
         };
+        self.draw_sky = frame.sky.is_some();
         queue.write_buffer(&self.camera_buffer, 0, bytemuck::bytes_of(&cam));
         for m in self.meshes.iter() {
             // f64 subtraction first, then f32: see world.wgsl header.
@@ -534,6 +625,12 @@ impl Renderer {
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
+            if self.draw_sky {
+                pass.set_pipeline(&self.sky_pipeline);
+                pass.set_bind_group(0, &self.camera_bind_group, &[]);
+                pass.draw(0..3, 0..1);
+                stats.draw_calls += 1;
+            }
             self.chunks.draw(&mut pass, &self.camera_bind_group, visible);
             if self.outline.is_some() {
                 pass.set_pipeline(&self.outline_pipeline);
@@ -619,6 +716,7 @@ mod shader_tests {
             ("chunk.wgsl", include_str!("shaders/chunk.wgsl")),
             ("outline.wgsl", include_str!("shaders/outline.wgsl")),
             ("entity.wgsl", include_str!("shaders/entity.wgsl")),
+            ("sky.wgsl", include_str!("shaders/sky.wgsl")),
         ] {
             let module = naga::front::wgsl::parse_str(src)
                 .unwrap_or_else(|e| panic!("{name}: {}", e.emit_to_string(src)));

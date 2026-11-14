@@ -254,3 +254,16 @@
 - 9 new tests (138 total) plus an ignored timing test (`creature_tick_cost`).
 - Toolchain: fixed warnings raised by Rust 1.100 (clippy `as_chunks`, three
   unused dependencies); clippy clean again.
+- Phase 7 approved by director. Decision: hitting a Hollow angers only that one.
+
+### 2026-11-14 — Phase 8 (part 1): day/night cycle and sky
+- **World time** (`ld_game::time`): Minecraft timing (24 000-tick day, tick 0 =
+  sunrise), Minecraft's celestial-angle curve, 8 moon phases, night detection;
+  our own sky colours. Unit-tested.
+- **Sky pass** (`ld_render`, `sky.wgsl`): full-screen sky drawn behind the
+  world — horizon→zenith gradient, darker lower sky, sunrise/sunset glow,
+  square sun with halo, square moon with phases and craters, twinkling stars.
+- **Daylight** dims the world at night (to 20 %, moonlight) until the lighting
+  engine (part 2) makes caves and torches work properly. Fog follows the sky.
+- Settings: `gameplay.daylight_cycle`, `gameplay.day_length_minutes`.
+- `--time <ticks|day|noon|sunset|night|midnight>`; F3 shows day, clock, moon phase.

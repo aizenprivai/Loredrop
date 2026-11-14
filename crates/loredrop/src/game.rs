@@ -38,6 +38,10 @@ pub struct GameIds {
 
 pub struct Game {
     pub world: World,
+    /// The world clock (day/night cycle).
+    pub time: ld_game::time::WorldTime,
+    /// Fractional day ticks not yet added (for day lengths other than 20 min).
+    time_accum: f64,
     spawn: DVec3,
     /// Set once the spawn column has loaded and the player was placed safely.
     placed: bool,
@@ -141,6 +145,8 @@ impl Game {
         let player = PlayerBody::new(spawn);
         let eye = player.eye_height();
         Self {
+            time: ld_game::time::WorldTime::default(),
+            time_accum: 0.0,
             prev_pos: player.pos,
             prev_eye: eye,
             eye,
@@ -191,6 +197,7 @@ impl Game {
 
     /// Advances the world by one tick.
     pub fn tick(&mut self, input: &mut InputState, settings: &Settings) {
+        self.advance_time(settings);
         self.prev_pos = self.player.pos;
         self.prev_eye = self.eye;
         self.tick += 1;
@@ -426,6 +433,19 @@ impl Game {
             }
         }
         false
+    }
+
+    /// Moves the clock forward one game tick's worth of day: exactly one day
+    /// tick with Minecraft's 20-minute day, proportionally more or less otherwise.
+    fn advance_time(&mut self, settings: &Settings) {
+        if !settings.gameplay.daylight_cycle {
+            return;
+        }
+        let minutes = settings.gameplay.day_length_minutes.max(1) as f64;
+        self.time_accum += ld_game::time::DAY_TICKS as f64 / (minutes * 60.0 * 20.0);
+        let whole = self.time_accum.floor();
+        self.time.ticks += whole as u64;
+        self.time_accum -= whole;
     }
 
     /// Creatures: spawning, AI, their attacks on the player, deaths and loot.
@@ -1133,6 +1153,27 @@ mod tests {
         }
         let per_tick = start.elapsed().as_secs_f64() * 1000.0 / ticks as f64;
         println!("{} creatures: {per_tick:.3} ms per tick (budget 50 ms)", g.mobs.list.len());
+    }
+
+    #[test]
+    fn time_follows_the_day_length_setting() {
+        let mut g = game();
+        let mut input = InputState::new();
+        let mut s = Settings::default();
+        for _ in 0..100 {
+            g.tick(&mut input, &s);
+        }
+        assert_eq!(g.time.ticks, 100, "20-minute day: one day tick per game tick");
+        s.gameplay.day_length_minutes = 40; // twice as long: half speed
+        for _ in 0..100 {
+            g.tick(&mut input, &s);
+        }
+        assert_eq!(g.time.ticks, 150);
+        s.gameplay.daylight_cycle = false;
+        for _ in 0..100 {
+            g.tick(&mut input, &s);
+        }
+        assert_eq!(g.time.ticks, 150, "frozen");
     }
 
     #[test]

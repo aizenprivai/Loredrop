@@ -5,7 +5,17 @@
 struct Camera {
     view_proj: mat4x4<f32>,
     fog_color: vec4<f32>,
+    // x = fog start, y = fog end, z = 1 if fog on, w = 1 if the shader must gamma-encode.
     fog: vec4<f32>,
+    // Unused since Phase 4 (biome colours are per vertex); kept for layout stability.
+    tints: array<vec4<f32>, 2>,
+    // Phase 8 sky data (see sky.wgsl); only misc.y (daylight) is used here.
+    inv_view_proj: mat4x4<f32>,
+    sky_zenith: vec4<f32>,
+    sky_horizon: vec4<f32>,
+    glow: vec4<f32>,
+    sun: vec4<f32>,
+    misc: vec4<f32>,
 };
 @group(0) @binding(0) var<uniform> cam: Camera;
 @group(1) @binding(0) var block_textures: texture_2d_array<f32>;
@@ -38,7 +48,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     if (texel.a < 0.5) {
         discard;
     }
-    var c = texel.rgb * in.color;
+    var c = texel.rgb * in.color * cam.misc.y;
     if (cam.fog.z > 0.5) {
         c = mix(c, cam.fog_color.rgb, smoothstep(cam.fog.x, cam.fog.y, length(in.rel_pos.xz)));
     }

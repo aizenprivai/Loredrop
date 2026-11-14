@@ -12,6 +12,7 @@
 //! * [`mining`] — break times (Minecraft's formula), harvest tiers, drops.
 //! * [`mobs`] — creature definitions (stats, drops, spawns, box models).
 //! * [`stats`] — health, hunger, air, damage and regeneration.
+//! * [`time`] — the day/night cycle, sun position, sky colours, daylight.
 
 pub mod combat;
 pub mod crafting;
@@ -21,6 +22,7 @@ pub mod items;
 pub mod mining;
 pub mod mobs;
 pub mod stats;
+pub mod time;
 
 pub use crafting::RecipeBook;
 pub use inventory::{Click, Inventory, ItemStack};

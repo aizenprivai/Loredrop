@@ -107,6 +107,17 @@ pub fn draw(ctx: &egui::Context, show_debug: bool, d: &OverlayData) {
             None => "Looking at: nothing in reach".into(),
         },
         format!("Seed: {}", d.game.world.seed as i64),
+        {
+            let t = d.game.time;
+            let (h, m) = t.clock();
+            format!(
+                "Time: day {}  {h:02}:{m:02}  (tick {})  moon phase {}{}",
+                t.day(),
+                t.time_of_day(),
+                t.moon_phase(),
+                if t.is_night() { "  night" } else { "" }
+            )
+        },
         String::new(),
         format!(
             "Chunks: {}/{} ready (render distance {})   loaded {}",

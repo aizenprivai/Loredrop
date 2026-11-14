@@ -13,6 +13,8 @@ USAGE: loredrop [OPTIONS]
   --look <yaw> <pitch>       start looking this way (developer option)
   --fly                      start flying (developer option)
   --summon <a,b,...>         place creatures in front of you at start (developer option)
+  --time <ticks or name>     start at a time of day: 0 = sunrise, 6000 = noon, or
+                             day / noon / sunset / night / midnight (developer option)
   --map <blocks> <file.png>  no window: draw a top-down map around spawn
   -h, --help                 show this help
 

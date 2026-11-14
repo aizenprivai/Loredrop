@@ -20,6 +20,7 @@
 //! --look <yaw> <pitch>       start looking this way (developer option)
 //! --fly                      start flying (developer option)
 //! --summon <a,b,...>         place these creatures in front of you at start (developer option)
+//! --time <ticks|noon|...>    start at this time of day (developer option)
 //! --map <blocks> <file.png>  no window: draw a top-down map of the world around spawn
 //! ```
 
@@ -53,6 +54,7 @@ pub struct Options {
     pub fly: bool,
     pub map: Option<(u32, PathBuf)>,
     pub summon: Vec<String>,
+    pub time: Option<u64>,
 }
 
 fn parse_args() -> Result<Options, String> {
@@ -69,6 +71,7 @@ fn parse_args() -> Result<Options, String> {
         fly: false,
         map: None,
         summon: Vec::new(),
+        time: None,
     };
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -101,6 +104,7 @@ fn parse_args() -> Result<Options, String> {
                 o.start_look = Some(v);
             }
             "--fly" => o.fly = true,
+            "--time" => o.time = Some(parse_time(&value("--time")?)?),
             "--summon" => o.summon = value("--summon")?.split(',').map(|s| s.trim().to_string()).collect(),
             "--map" => {
                 let size = args.next().and_then(|a| a.parse().ok()).ok_or("--map needs <blocks> <file>")?;
@@ -115,6 +119,20 @@ fn parse_args() -> Result<Options, String> {
         }
     }
     Ok(o)
+}
+
+/// Time of day for `--time`: ticks (0 = sunrise, 6000 = noon) or a name.
+fn parse_time(text: &str) -> Result<u64, String> {
+    Ok(match text {
+        "sunrise" | "day" => 0,
+        "noon" => 6_000,
+        "sunset" => 12_000,
+        "night" => 14_000,
+        "midnight" => 18_000,
+        t => t
+            .parse()
+            .map_err(|_| format!("--time: '{t}' is not a number or day/noon/sunset/night/midnight"))?,
+    })
 }
 
 /// Numbers are used as-is; any other text is hashed into a number, so
