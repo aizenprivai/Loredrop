@@ -1,0 +1,12 @@
+[package]
+name = "ld_physics"
+description = "AABB collision and movement against voxel terrain."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ld_core = { workspace = true }
+glam = { workspace = true }

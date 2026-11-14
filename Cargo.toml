@@ -1,0 +1,74 @@
+# Loredrop workspace.
+#
+# Every engine system lives in its own crate under `crates/` so that systems stay
+# decoupled, compile in parallel, and can be tested in isolation.
+# See ARCHITECTURE.md for the dependency graph and the rules about which crate
+# may depend on which.
+
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT OR Apache-2.0"
+publish = false
+
+# Shared dependency versions. Crates opt in with `foo = { workspace = true }`,
+# so a version is only ever changed in this one place.
+[workspace.dependencies]
+# --- internal crates ---
+ld_core    = { path = "crates/ld_core" }
+ld_config  = { path = "crates/ld_config" }
+ld_world   = { path = "crates/ld_world" }
+ld_mesh    = { path = "crates/ld_mesh" }
+ld_render  = { path = "crates/ld_render" }
+ld_input   = { path = "crates/ld_input" }
+ld_physics = { path = "crates/ld_physics" }
+ld_worldgen = { path = "crates/ld_worldgen" }
+ld_assets  = { path = "crates/ld_assets" }
+
+# --- platform / graphics ---
+wgpu     = "30"       # GPU abstraction; Vulkan is our primary backend.
+winit    = "0.30"     # Windowing + OS input events (0.31 is still beta).
+pollster = "1"        # Blocks on wgpu's async setup calls at startup.
+egui       = { version = "0.37", features = ["default_fonts"] } # Immediate-mode UI for the debug overlay and settings menus.
+egui-wgpu  = "0.37"
+egui-winit = { version = "0.37", default-features = false, features = ["links", "wayland", "x11"] }
+bytemuck = { version = "1", features = ["derive"] } # Safe casting of vertex data to bytes.
+
+# --- math / data ---
+glam  = { version = "0.34", features = ["bytemuck"] } # Vectors, matrices, SIMD-backed.
+ahash = "0.8"         # Fast non-cryptographic hashing for chunk maps.
+image = { version = "0.25", default-features = false, features = ["png"] } # Screenshot PNG encoding.
+
+# --- concurrency ---
+rayon             = "1"   # Work-stealing thread pool for chunk jobs.
+crossbeam-channel = "0.5" # Lock-free channels between threads.
+parking_lot       = "0.13"
+
+# --- config / serialization ---
+serde     = { version = "1", features = ["derive"] }
+toml      = "1"       # Reads data files (block definitions, …) via serde.
+toml_edit = "0.25"    # Writes TOML while keeping comments (every setting is documented).
+
+# --- testing ---
+criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
+
+# --- diagnostics ---
+log        = "0.4"
+env_logger = "0.11"
+
+[profile.dev]
+# Voxel code is unbearably slow unoptimized; give dev builds basic optimization.
+opt-level = 1
+
+[profile.dev.package."*"]
+# Dependencies (wgpu, etc.) are compiled once, so optimize them fully.
+opt-level = 3
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

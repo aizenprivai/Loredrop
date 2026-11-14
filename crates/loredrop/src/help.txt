@@ -1,0 +1,17 @@
+Loredrop — voxel sandbox (development build)
+
+USAGE: loredrop [OPTIONS]
+
+  --settings <file>          settings file to use (default: settings.toml)
+  --screenshot-after <n>     save a screenshot after n frames, then exit
+  --screenshot-path <file>   where to save that screenshot (default: autotest.png)
+  --autopilot                walk and jump automatically (game-loop test)
+  --exit-after <seconds>     quit automatically after a time
+  --bench-world <distance>   no window: time world generation + meshing
+  -h, --help                 show this help
+
+CONTROLS (defaults; change them in settings.toml under [keybinds])
+  Click window   capture mouse        Esc   release mouse
+  W A S D        move                 Space jump (double-tap: fly)
+  Left Shift     sneak / fly down     Left Ctrl  sprint
+  F3             debug overlay        F2    screenshot     F11 fullscreen

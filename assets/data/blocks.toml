@@ -1,0 +1,86 @@
+# Loredrop block definitions.
+#
+# Each [[block]] entry defines one block type. Fields:
+#   name      stable ID used in saves and commands. NEVER rename a block.
+#   display   name shown to players (defaults to `name`).
+#   layer     opaque      — solid, hides what's behind it
+#             cutout      — pixels fully visible or fully see-through (leaves, glass)
+#             translucent — partly see-through (water); not drawn yet
+#             invisible   — never drawn
+#   solid     whether players/creatures collide with it (default: true unless invisible)
+#   cull_same hide faces between two blocks of this type (glass: yes; leaves: no)
+#   textures  texture per face. Keys: all, side, top, bottom, north, south, east, west
+#             (more specific keys win). Names are files in assets/textures/block/
+#             and match Minecraft Java resource-pack names, so packs can replace them.
+#   tint      faces coloured by the biome: "grass" or "foliage".
+#
+# `air` is built in and must not be listed.
+
+[[block]]
+name = "stone"
+display = "Stone"
+layer = "opaque"
+textures = { all = "stone" }
+
+[[block]]
+name = "cobblestone"
+display = "Cobblestone"
+layer = "opaque"
+textures = { all = "cobblestone" }
+
+[[block]]
+name = "dirt"
+display = "Dirt"
+layer = "opaque"
+textures = { all = "dirt" }
+
+[[block]]
+name = "grass_block"
+display = "Grass Block"
+layer = "opaque"
+textures = { top = "grass_block_top", bottom = "dirt", side = "grass_block_side" }
+tint = { top = "grass" }
+
+[[block]]
+name = "sand"
+display = "Sand"
+layer = "opaque"
+textures = { all = "sand" }
+
+[[block]]
+name = "gravel"
+display = "Gravel"
+layer = "opaque"
+textures = { all = "gravel" }
+
+[[block]]
+name = "bedrock"
+display = "Bedrock"
+layer = "opaque"
+textures = { all = "bedrock" }
+
+[[block]]
+name = "oak_log"
+display = "Oak Log"
+layer = "opaque"
+textures = { side = "oak_log", top = "oak_log_top", bottom = "oak_log_top" }
+
+[[block]]
+name = "oak_planks"
+display = "Oak Planks"
+layer = "opaque"
+textures = { all = "oak_planks" }
+
+[[block]]
+name = "oak_leaves"
+display = "Oak Leaves"
+layer = "cutout"
+textures = { all = "oak_leaves" }
+tint = { all = "foliage" }
+
+[[block]]
+name = "glass"
+display = "Glass"
+layer = "cutout"
+cull_same = true
+textures = { all = "glass" }

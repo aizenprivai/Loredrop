@@ -1,0 +1,13 @@
+[package]
+name = "ld_assets"
+description = "Finds and loads game data files and textures."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ld_world = { workspace = true }
+image = { workspace = true }
+log = { workspace = true }

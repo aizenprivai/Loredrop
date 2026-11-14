@@ -1,0 +1,20 @@
+[package]
+name = "ld_mesh"
+description = "CPU-side chunk meshing (culling, greedy meshing, ambient occlusion)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ld_core = { workspace = true }
+ld_world = { workspace = true }
+bytemuck = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "mesh"
+harness = false

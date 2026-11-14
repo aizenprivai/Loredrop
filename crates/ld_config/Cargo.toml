@@ -1,0 +1,13 @@
+[package]
+name = "ld_config"
+description = "Settings schema with per-option descriptions; TOML load/save."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ld_input = { workspace = true }
+toml_edit = { workspace = true }
+log = { workspace = true }
