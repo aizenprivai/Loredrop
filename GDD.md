@@ -249,7 +249,9 @@ render_distance = 8
   request; director chose **3D first person**). A separate engine in
   `numworks/` sharing the PC game's blocks, textures and numbers. Differences
   forced by the hardware: 48-block-tall world, 6–14 block view distance, no
-  saving, simpler lighting. See `numworks/README.md`.
+  saving, simpler lighting. Survival (NW2) follows the PC rules; on
+  calculator, crafting also has a recipe book (one key press) because grid
+  crafting with arrow keys is slow. See `numworks/README.md`.
 
 ## 12. Performance targets
 

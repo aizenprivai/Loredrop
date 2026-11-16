@@ -27,7 +27,7 @@ report and needs approval.
 | Phase | Name | Status |
 |---|---|---|
 | NW1 | 3D engine, world generation, exploration & building | ✅ Done on PC — waiting for the director's real-calculator test |
-| NW2 | Survival: health, hunger, fall damage, inventory, crafting, tools | ⏳ |
+| NW2 | Survival: health, hunger, fall damage, inventory, crafting, tools, furnace | ✅ Done on PC — waiting for report approval and a real-calculator test |
 | NW3 | Creatures (animals, zombies, skeletons, the Hollow), ruins with lore | ⏳ |
 | NW4 | Speed & polish (based on real-calculator results) | ⏳ |
 

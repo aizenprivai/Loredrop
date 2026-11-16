@@ -2,7 +2,8 @@
 //!
 //! The list of blocks, their properties and their textures live in
 //! `gen_blocks.rs`, generated from the PC game's `assets/data/blocks.toml`, so
-//! both editions share the same names, hardness values and drops.
+//! both editions share the same names, hardness values and harvest rules.
+//! Mining speed and drops (which depend on the tool held) are in `items`.
 
 pub use crate::gen_blocks::*;
 
@@ -40,6 +41,8 @@ pub enum Tool {
     Shovel,
     /// Hoe.
     Hoe,
+    /// Sword.
+    Sword,
 }
 
 /// Properties of one block type.
@@ -57,10 +60,9 @@ pub struct BlockDef {
     pub hardness: f32,
     /// The tool that mines it fast.
     pub tool: Tool,
-    /// Whether it only drops something when mined with the right tool.
-    pub needs_tool: bool,
-    /// The block given when it is broken (`AIR` = nothing).
-    pub drop: Block,
+    /// If 0 or more, the block only drops something when mined with `tool`
+    /// of at least this tier level (0 wood/gold, 1 stone, 2 iron, 3 diamond).
+    pub harvest_level: i8,
     /// Light the block gives off, 0–15.
     pub light: u8,
 }
@@ -83,41 +85,15 @@ pub fn is_replaceable(b: Block) -> bool {
     matches!(def(b).layer, Layer::Air | Layer::Water | Layer::Lava)
 }
 
-/// Game ticks (1/20 s) needed to mine `b` with bare hands, or `None` if it
-/// cannot be mined. Same rule as Minecraft: 1.5 s per hardness point when the
-/// block can be harvested by hand, 5 s per point when it needs a tool.
-pub fn hand_mining_ticks(b: Block) -> Option<u32> {
-    let d = def(b);
-    if d.hardness < 0.0 || b == AIR || matches!(d.layer, Layer::Water | Layer::Lava) {
-        return None;
-    }
-    let per_point = if d.needs_tool { 100.0 } else { 30.0 };
-    let t = d.hardness * per_point;
-    let ticks = t as u32;
-    Some(if (ticks as f32) < t { ticks + 1 } else { ticks })
-}
-
-/// What mining `b` with bare hands gives (`AIR` = nothing).
-pub fn hand_drop(b: Block) -> Block {
-    let d = def(b);
-    if d.needs_tool { AIR } else { d.drop }
+/// Whether `b` is a liquid (water or lava).
+#[inline]
+pub fn is_liquid(b: Block) -> bool {
+    matches!(def(b).layer, Layer::Water | Layer::Lava)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn minecraft_mining_times() {
-        // Dirt: hardness 0.5 → 0.75 s = 15 ticks by hand.
-        assert_eq!(hand_mining_ticks(DIRT), Some(15));
-        // Stone needs a pickaxe: 1.5 × 5 s = 7.5 s = 150 ticks, and drops nothing.
-        assert_eq!(hand_mining_ticks(STONE), Some(150));
-        assert_eq!(hand_drop(STONE), AIR);
-        assert_eq!(hand_mining_ticks(BEDROCK), None);
-        assert_eq!(hand_drop(GRASS_BLOCK), DIRT);
-        assert_eq!(hand_drop(OAK_LOG), OAK_LOG);
-    }
 
     #[test]
     fn table_is_consistent() {
@@ -131,5 +107,8 @@ mod tests {
         assert_eq!(def(WATER).layer, Layer::Water);
         assert!(!def(WATER).solid);
         assert_eq!(def(OAK_LEAVES).layer, Layer::Cutout);
+        assert_eq!(def(STONE).harvest_level, 0);
+        assert_eq!(def(DIRT).harvest_level, -1);
+        assert_eq!(def(DIAMOND_ORE).harvest_level, 2);
     }
 }

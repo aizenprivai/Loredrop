@@ -54,6 +54,18 @@ pub struct Player {
     pub sneaking: bool,
     /// Bumped into a wall during the last tick.
     pub hit_wall: bool,
+    /// In lava (slow, sticky movement).
+    pub in_lava: bool,
+    /// Eyes under water (breath runs out).
+    pub eyes_in_water: bool,
+    /// Blocks fallen since last standing on something.
+    pub fall_distance: f32,
+    /// Fall distance if the player landed during the last tick, else 0.
+    pub landed_fall: f32,
+    /// Jumped during the last tick.
+    pub jumped: bool,
+    /// Horizontal distance moved during the last tick.
+    pub moved: f32,
 }
 
 impl Player {
@@ -69,6 +81,12 @@ impl Player {
             flying: false,
             sneaking: false,
             hit_wall: false,
+            in_lava: false,
+            eyes_in_water: false,
+            fall_distance: 0.0,
+            landed_fall: 0.0,
+            jumped: false,
+            moved: 0.0,
         }
     }
 
@@ -86,9 +104,26 @@ impl Player {
 
     /// Advances one tick (1/20 s).
     pub fn tick(&mut self, world: &World, input: MoveInput, auto_jump: bool) {
-        self.sneaking = input.sneak && !self.flying;
-        let feet = world.get(ifloor(self.pos[0]), ifloor(self.pos[1] + 0.4), ifloor(self.pos[2]));
+        let before = self.pos;
+        self.landed_fall = 0.0;
+        self.jumped = false;
+        let (x, z) = (ifloor(self.pos[0]), ifloor(self.pos[2]));
+        let feet = world.get(x, ifloor(self.pos[1] + 0.4), z);
         self.in_water = def(feet).layer == Layer::Water || feet == WATER;
+        self.in_lava = def(feet).layer == Layer::Lava;
+        let eye = self.eye();
+        self.eyes_in_water = def(world.get(x, ifloor(eye[1]), z)).layer == Layer::Water;
+        self.step(world, input, auto_jump);
+        if self.in_water || self.in_lava || self.flying {
+            self.fall_distance = 0.0;
+        }
+        let (dx, dz) = (self.pos[0] - before[0], self.pos[2] - before[2]);
+        self.moved = crate::math::sqrt(dx * dx + dz * dz);
+    }
+
+    /// Movement for one tick, by medium (air, water, lava, flying).
+    fn step(&mut self, world: &World, input: MoveInput, auto_jump: bool) {
+        self.sneaking = input.sneak && !self.flying;
 
         // Wished horizontal direction in world space.
         let (fx, fz) = (-sin(self.yaw), cos(self.yaw));
@@ -126,7 +161,9 @@ impl Player {
             return;
         }
 
-        if self.in_water {
+        if self.in_water || self.in_lava {
+            // Water: friction 0.8; lava is much thicker (0.5), as on PC.
+            let drag = if self.in_lava { 0.5 } else { 0.8 };
             let accel = 0.02;
             self.vel[0] += wx * accel * speed_mul;
             self.vel[2] += wz * accel * speed_mul;
@@ -134,9 +171,9 @@ impl Player {
                 self.vel[1] += 0.04;
             }
             self.move_by(world);
-            self.vel[0] *= 0.8;
-            self.vel[2] *= 0.8;
-            self.vel[1] = self.vel[1] * 0.8 - 0.02;
+            self.vel[0] *= drag;
+            self.vel[2] *= drag;
+            self.vel[1] = self.vel[1] * drag - 0.02;
             // Hop out onto a ledge when swimming against it.
             if self.hit_wall && input.jump {
                 self.vel[1] = 0.3;
@@ -165,6 +202,7 @@ impl Player {
 
     fn jump(&mut self, sprint: bool) {
         self.vel[1] = 0.42;
+        self.jumped = true;
         if sprint {
             // Sprint-jumping gives a small forward boost, as on PC.
             self.vel[0] += -sin(self.yaw) * 0.2;
@@ -184,6 +222,13 @@ impl Player {
         self.pos[2] += dz;
         self.on_ground = wanted[1] < 0.0 && dy > wanted[1];
         self.hit_wall = dx != wanted[0] || dz != wanted[2];
+        // Fall distance, for fall damage.
+        if self.on_ground {
+            self.landed_fall = self.fall_distance;
+            self.fall_distance = 0.0;
+        } else if dy < 0.0 {
+            self.fall_distance -= dy;
+        }
         if dy != wanted[1] {
             self.vel[1] = 0.0;
         }

@@ -57,9 +57,13 @@ Read this first. It replaces the memory of earlier conversations.
   Hollow angers only that one.
 - **NumWorks calculator edition** (side project in `numworks/`, started
   2026-11-16 at the director's request; director chose **3D**). NW phase 1
-  done on PC (engine, worldgen, survival mining, creative, menus), checked
-  with NumWorks' `nwlink`; **waiting for the director's test on a real
-  calculator** (install via my.numworks.com/apps, `numworks/loredrop.nwa`).
+  done on PC (engine, worldgen, survival mining, creative, menus). The
+  director couldn't test on the calculator yet and approved starting NW2.
+  **NW2 done** (items/tools/drops, inventory, crafting + recipe book,
+  furnace, health/hunger/fall/drowning/lava, death) — waiting for report
+  approval; still **no real-calculator test** (install via
+  my.numworks.com/apps, `numworks/loredrop.nwa`). Next proposed: NW3
+  (creatures, the Hollow, ruins with lore, item entities).
   Phase 8 of the PC game is paused, not abandoned. See `numworks/README.md`.
   Cloud sessions can't build/run the official NumWorks simulator (the
   sandbox blocked building downloaded code); test with `ld_nw_desktop`.

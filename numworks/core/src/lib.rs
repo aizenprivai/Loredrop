@@ -27,19 +27,27 @@
 
 pub mod blocks;
 pub mod color;
+pub mod furnace;
 pub mod game;
 #[rustfmt::skip]
 #[allow(clippy::all)]
 pub mod gen_blocks;
+#[rustfmt::skip]
+#[allow(clippy::all)]
+pub mod gen_items;
 pub mod hud;
 pub mod input;
+pub mod inventory;
+pub mod items;
 pub mod math;
 pub mod noise;
 pub mod player;
 pub mod render;
 pub mod settings;
 pub mod sky;
+pub mod survival;
 pub mod text;
+pub mod ui;
 pub mod world;
 pub mod worldgen;
 

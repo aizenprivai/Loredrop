@@ -43,5 +43,9 @@
 | NW-003 | Low | By design | Only 1024 changed blocks are remembered; past that, changes far from the player are forgotten when their area reloads (a message warns). |
 | NW-004 | Low | Open | No plants (grass, flowers), no falling sand/gravel, water doesn't flow, no torches. |
 | NW-005 | Low | Open | Dark/lit areas use a simple "sees the sky straight up" rule: hard light edges at cave mouths and under overhangs (no smooth light). |
-| NW-006 | Low | Open | Item drops (coal, sticks...) aren't supported yet: only blocks go into the hotbar. |
+| NW-006 | — | Fixed (NW2) | ~~Item drops (coal, sticks...) aren't supported yet~~ — items, tools and drops added. |
+| NW-008 | Low | Open (NW3) | No item entities: drops go straight into the inventory (lost if full), items left in a crafting grid when the inventory is full are lost, and dying loses the whole inventory (on PC, items drop on the ground). |
+| NW-009 | Low | Open (NW3) | Apples are the only food until creatures arrive; hunger then sits at 0 and health at half a heart (Normal difficulty can't starve you to death). |
+| NW-010 | Info | By design | At most 8 furnaces per world; they keep smelting while far away (PC furnaces only work in loaded chunks). |
+| NW-011 | Low | Open | Armour, torches and plants from the PC game aren't in the calculator edition yet (their recipes are left out). |
 | NW-007 | Info | Open | Installing with NumWorks' web installer replaces other apps installed that way; exam mode removes them. |

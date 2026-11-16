@@ -6,9 +6,10 @@ separate engine written for a machine with no graphics chip and a few
 hundred KB of memory. It shares the PC game's blocks, textures, mining
 numbers and physics.
 
-> Status: **NW phase 1** (exploration and building). Built and tested on PC
-> through a test harness. It has **not run on a real calculator yet**: the
-> director's test on a real calculator is the first real check.
+> Status: **NW phase 2** (survival: health, hunger, inventory, crafting,
+> tools, furnace). Built and tested on PC through a test harness. It has
+> **not run on a real calculator yet**: the director's test on a real
+> calculator is the first real check.
 
 ## What's in it
 
@@ -21,10 +22,24 @@ numbers and physics.
   granite/diorite/andesite pockets, oak, birch and spruce trees, cacti.
 - Minecraft physics at 20 ticks per second (walking 4.3 m/s, sprinting,
   jumping 1.25 blocks, swimming, sneaking, optional auto-jump).
-- Survival mode: mining by hand at the PC game's speeds (stone takes 7.5 s
-  and drops nothing without a pickaxe, as on PC), with mining cracks and
-  drops collected into the hotbar. Creative mode: every block, instant
-  breaking, flying.
+- Survival mode (NW2), with the PC game's (Minecraft's) rules and numbers:
+  - 10 hearts and 10 food; hunger from sprinting, jumping, swimming and
+    mining; saturation; fast healing when well fed; starving (down to half
+    a heart); fall damage; drowning after 15 s; lava and burning; death
+    screen and respawn (items are lost).
+  - Mining speed depends on the tool: 5 tiers (wooden, stone, iron, golden,
+    diamond) of pickaxe, axe, shovel, hoe and sword, with durability; ores
+    need the right tier to drop anything; drops include coal, raw iron,
+    raw copper, raw gold, diamonds, lapis, emeralds, sticks and apples.
+  - 36-slot inventory (9 in the hotbar) with stack counts and tool wear bars.
+  - Crafting in a 2x2 grid (inventory) or 3x3 (crafting table), shaped and
+    shapeless recipes, plus a recipe book that lists what you can make now
+    and crafts it in one key press.
+  - Furnaces (up to 8): smelt ores, sand, cobblestone, logs, meat, with
+    fuel times from the PC game (coal = 8 items); lit furnaces glow.
+  - Eating (hold EXE, 1.6 s).
+- Creative mode: every item from a paged palette, instant breaking, flying,
+  no damage.
 - Day and night (20-minute day), square sun and moon, stars, sunrise
   glow, dark caves and shadows under overhangs, water you can see into,
   distance fog.
@@ -42,12 +57,18 @@ numbers and physics.
 | 1 | Sneak, fly down |
 | 3 | Sprint (until you stop walking) |
 | OK (hold) | Mine the block you look at |
-| EXE | Place the selected block |
+| EXE | Place the held block; use a crafting table or furnace; hold to eat |
 | 7 / 9 | Previous / next hotbar slot |
-| ( / ) | Creative: change the block in the slot |
+| Var | Inventory (creative: item palette) |
 | Toolbox | Creative: fly on / off |
 | Back | Pause menu |
 | Home | Quit |
+
+In inventory screens: arrows move the cursor; **OK** picks up / puts down /
+swaps a stack; **EXE** takes half or puts down one; on the crafting result,
+OK crafts once and EXE crafts as many as possible; **Toolbox** opens the
+recipe book (OK = craft one, EXE = craft all); **( )** turns the creative
+palette's pages; **Back** or **Var** closes.
 
 ## Installing on a calculator
 
@@ -90,16 +111,18 @@ See the header of `desktop/src/main.rs` for every option.
 
 ```text
 numworks/
-  core/        the game (no_std, no heap): world, worldgen, render, player, hud, game
+  core/        the game (no_std, no heap): world, worldgen, render, player,
+               items, inventory (+ crafting), furnace, survival, ui, hud, game
   desktop/     PC test harness (fake screen and keyboard, PNG screenshots, benchmark)
   app/         the calculator app: EADK bindings, icon, .cargo config for ARM
   tools/       Python generators: blocks+textures from the PC game's data, icon, PC font
   build_nwa.sh builds app/ and writes loredrop.nwa
 ```
 
-`core/src/gen_blocks.rs` is generated from `../assets/data/blocks.toml` and
-`../assets/textures/block/*.png` by `tools/gen_blocks.py`; re-run it when
-the PC game's blocks change.
+`core/src/gen_blocks.rs` and `core/src/gen_items.rs` are generated from the
+PC game's `assets/data/blocks.toml`, `items.toml`, `recipes.toml` and
+textures by `tools/gen_blocks.py`; re-run it when the PC game's data
+changes. (Plants, torches and armour are left out for now.)
 
 ## Limits (by design, for the calculator)
 
@@ -110,3 +133,7 @@ the PC game's blocks change.
   forgotten).
 - View distance 6 to 14 blocks.
 - No saving (calculator apps have no storage access).
+- No dropped items lying on the ground yet: drops go straight into the
+  inventory (lost if it's full), and dying loses everything.
+- Until creatures arrive (NW3), apples (rare, from oak leaves) are the only
+  food; hunger can't kill you (Normal difficulty stops at half a heart).

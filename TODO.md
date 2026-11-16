@@ -167,9 +167,18 @@
 - [ ] Test on the official NumWorks simulator (building it was blocked in the cloud session)
 - [ ] NW phase 1 approval
 
+## NumWorks edition — NW phase 2 (survival)
+- [x] Items, tool tiers, durability, drops (generated from the PC data)
+- [x] 36-slot inventory, 2x2 / 3x3 crafting, recipe book, creative palette
+- [x] Furnaces (smelting, fuels, lit block)
+- [x] Health, hunger, saturation, regeneration, starvation, fall damage, drowning, lava/fire
+- [x] Eating, death screen, respawn
+- [ ] NW2 report approval
+- [ ] Real-calculator test (still pending since NW1)
+
 ## Deferred / next for the NumWorks edition
-- [ ] Health, hunger, fall damage, breath (NW2)
-- [ ] Full inventory, crafting, tools and tool tiers, item drops (NW2)
+- [ ] Dropped items on the ground (needs entities: NW3); keep items after death
+- [ ] Armour (needs creatures to matter)
 - [ ] Plants (grass, flowers) — need cross-shaped sprites in the ray caster
 - [ ] Falling sand/gravel, flowing water
 - [ ] Torches and block light

@@ -320,3 +320,34 @@
 - Checked with NumWorks' own linker (`nwlink nwa-elf`): links, no missing
   symbols, no double-precision instructions. **Not yet run on a real
   calculator or the official simulator.**
+- Status line shows "-- FPS" until the counter has a full second of data
+  (it showed "0 FPS" at first, which the director noticed on screenshots).
+
+### 2026-11-16 — NumWorks edition, NW phase 2: survival (director approved starting it)
+- **Data**: `gen_blocks.py` now also writes `gen_items.rs` from the PC game's
+  `items.toml` / `recipes.toml`: 5 tool tiers, 54 items (tools, ores,
+  ingots, food, materials), 33 shaped + 3 shapeless recipes, 10 smelting
+  recipes, 15 fuels, every block's drops (counts and chances).
+  `BlockDef` gets `harvest_level` (replaces `needs_tool`/`drop`).
+- **Items & tools** (`items`): Minecraft mining formula (tool speed, /30 or
+  /100 when not harvestable), harvest tiers, durability and wear (swords
+  wear twice as fast), drop rolls.
+- **Inventory & crafting** (`inventory`): 36 slots, stacking, shaped
+  (mirrored too) and shapeless matching, recipe book crafting from the
+  inventory.
+- **Furnace** (`furnace`): input/fuel/output, 200-tick smelting, fuel burn
+  times, progress falling back when unlit, lit-furnace block swap; up to 8
+  furnaces; contents returned when broken.
+- **Survival** (`survival`): health, food, saturation, exhaustion (sprint,
+  jump, swim, mining, damage), fast/slow regeneration, starvation to half a
+  heart, fall damage, drowning (15 s of breath), lava and fire, hurt
+  cooldown. Player tracks fall distance, lava (thicker than water), moves.
+- **Screens** (`ui`): inventory (2x2), crafting table (3x3), furnace with
+  flame and progress gauges, creative palette (3 pages), recipe book;
+  cursor moved with arrows. Death screen with respawn. Hearts, food and air
+  bubbles next to the hotbar; stack counts and wear bars; red/orange frame
+  when hurt or burning. EXE now also uses tables/furnaces and eats.
+- 37 unit tests (17 new: mining times and tiers, drops, fuels, crafting,
+  recipe book, furnace, survival rules, inventory screen, game-level tests
+  for tool wear/breaking, eating, furnace contents, death and respawn).
+- `loredrop.nwa`: 333 KB (155 KB code, 69 KB game state), nwlink check passed.

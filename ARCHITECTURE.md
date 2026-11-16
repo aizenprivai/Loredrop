@@ -407,8 +407,15 @@ A separate Cargo workspace, so the PC workspace (`crates/*`) is untouched and
     streamed to the screen row by row (no frame buffer).
   - `player`: Minecraft movement and AABB collision at 20 TPS.
   - `game`/`hud`: screens, input, mining/placing, bottom bar redrawn only on change.
-- **`gen_blocks.rs`** is generated from the PC game's `blocks.toml` and
-  textures (`numworks/tools/gen_blocks.py`) — one source of truth for blocks.
+  - NW2: `items` (item ids: blocks first, so item id = block id; mining
+    formula, harvest tiers, wear, drop rolls), `inventory` (36 slots,
+    recipe matching, recipe book), `furnace` (fixed list of 8), `survival`
+    (vitals and Minecraft's hunger/damage rules, fed an `Activity` built
+    from the player's motion each tick), `ui` (inventory/table/furnace/
+    creative screens driven by a cursor; the world keeps ticking while open).
+- **`gen_blocks.rs` / `gen_items.rs`** are generated from the PC game's
+  `blocks.toml`, `items.toml`, `recipes.toml` and textures
+  (`numworks/tools/gen_blocks.py`) — one source of truth for both editions.
 - **`ld_nw_desktop`** — PC harness implementing `Platform` with a frame
   buffer and scripted keys (screenshots, benchmark, maps).
 - **`app`** — `thumbv7em-none-eabihf` binary (its own workspace): EADK FFI,

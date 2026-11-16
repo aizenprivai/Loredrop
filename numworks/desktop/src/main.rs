@@ -17,6 +17,8 @@
 //!   50 ms of game time (one tick).
 //! * `--look YAW PITCH`    set the view (degrees) after loading
 //! * `--time TICKS`        set the time of day after loading
+//! * `--give ITEMS`        fill the inventory, e.g. `oak_log:10,wooden_pickaxe`
+//! * `--health N`, `--food N`  set health / food points (0–20)
 //! * `--pos X Y Z`         move the player (feet) after loading; with
 //!   `--creative` the player starts flying there
 //! * `--pixel N`           pixel size setting (2 or 4)
@@ -128,6 +130,7 @@ fn key_by_name(name: &str) -> Key {
         "Home" => Home,
         "Exe" => Exe,
         "Toolbox" => Toolbox,
+        "Var" => Var,
         "(" => LeftParen,
         ")" => RightParen,
         "0" => Zero,
@@ -167,6 +170,9 @@ struct Options {
     frames: u32,
     out: String,
     pos: Option<[f32; 3]>,
+    give: String,
+    health: Option<f32>,
+    food: Option<u8>,
 }
 
 fn parse_args(args: &[String]) -> Options {
@@ -181,6 +187,9 @@ fn parse_args(args: &[String]) -> Options {
         frames: 60,
         out: "shot.png".into(),
         pos: None,
+        give: String::new(),
+        health: None,
+        food: None,
     };
     let mut i = 0;
     let next = |i: &mut usize| -> String {
@@ -198,6 +207,9 @@ fn parse_args(args: &[String]) -> Options {
                 o.look = Some((y, p));
             }
             "--time" => o.time = Some(next(&mut i).parse().unwrap()),
+            "--give" => o.give = next(&mut i),
+            "--health" => o.health = Some(next(&mut i).parse().unwrap()),
+            "--food" => o.food = Some(next(&mut i).parse().unwrap()),
             "--pos" => {
                 let x = next(&mut i).parse().unwrap();
                 let y = next(&mut i).parse().unwrap();
@@ -229,6 +241,23 @@ fn start(o: &Options, d: &mut Desktop) -> Box<Game> {
     }
     if let Some(t) = o.time {
         g.time = t;
+    }
+    // `--give oak_log:10,wooden_pickaxe`: item names as shown in game,
+    // with underscores for spaces (case doesn't matter).
+    for part in o.give.split(',').filter(|s| !s.is_empty()) {
+        use ld_nw_core::items::{ITEM_COUNT, Item, Stack, item_def};
+        let (name, n) = part.split_once(':').unwrap_or((part, "1"));
+        let wanted = name.replace('_', " ").to_lowercase();
+        let item = (1..ITEM_COUNT as Item)
+            .find(|&i| item_def(i).name.to_lowercase() == wanted)
+            .unwrap_or_else(|| panic!("unknown item '{name}'"));
+        g.inventory.add(Stack::new(item, n.parse().expect("count")));
+    }
+    if let Some(h) = o.health {
+        g.vitals.health = h;
+    }
+    if let Some(f) = o.food {
+        g.vitals.food = f;
     }
     if let Some(pos) = o.pos {
         g.player.pos = pos;

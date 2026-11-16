@@ -139,6 +139,10 @@ shown in the status line).
 | Host time per frame, view 6 / 14 | 2.0 / 3.2 ms |
 | App size | 242 KB file; 96 KB code + 68 KB initialised data (game state) |
 
+After NW2 (survival, inventory, crafting): `loredrop.nwa` is 333 KB (155 KB
+code + textures, 69 KB game state). The 3D view's cost is unchanged; the
+hearts/food panel is only redrawn when what it shows changes.
+
 Rough guess for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
 settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
 about 3–4 times faster.
