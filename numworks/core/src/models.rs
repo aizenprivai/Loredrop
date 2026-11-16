@@ -260,7 +260,9 @@ impl EntityScene {
         };
         let mut k = 0;
         for i in 0..self.count {
-            let mut v = self.views[i];
+            // Worked on in place: a view is about 900 bytes, too big to copy
+            // around every frame.
+            let v = &mut self.views[i];
             let Some(rect) = project(v.center, v.radius) else { continue };
             v.rect = rect;
             // Each box gets its own (smaller) rectangle.
@@ -271,7 +273,9 @@ impl EntityScene {
                     None => [1, 1, 0, 0], // empty
                 };
             }
-            self.views[k] = v;
+            if k != i {
+                self.views.swap(k, i);
+            }
             k += 1;
         }
         self.count = k;

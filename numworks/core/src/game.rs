@@ -611,7 +611,11 @@ impl Game {
         let mut view_settings = self.settings;
         view_settings.view_distance = self.view_distance();
         let sky = Sky::at(self.time);
-        let cam = Camera { eye: self.player.eye(), yaw: self.player.yaw, pitch: self.player.pitch };
+        // The 3D runs look level, in the four compass directions in turn
+        // (two runs each), so results don't depend on where the player was
+        // looking — looking at the ground is much faster than at a horizon.
+        let eye = self.player.eye();
+        let cam_for = |k: u64| Camera { eye, yaw: k as f32 * (crate::math::PI / 2.0), pitch: 0.0 };
         let (sun, cave) = render::light_levels(&sky, &self.settings);
         let view = self.view_distance() as f32;
 
@@ -634,7 +638,8 @@ impl Game {
 
         // 2. 3D computed but not sent to the display.
         let t1 = p.millis();
-        for _ in 0..RUNS {
+        for k in 0..RUNS {
+            let cam = cam_for(k);
             models::build(&mut self.scene, &self.entities, &self.world, cam.eye, view, sun, cave);
             let mut quiet = NoDisplay(&mut *p);
             render::render(
@@ -654,7 +659,8 @@ impl Game {
 
         // 3. The complete 3D view.
         let t2 = p.millis();
-        for _ in 0..RUNS {
+        for k in 0..RUNS {
+            let cam = cam_for(k);
             models::build(&mut self.scene, &self.entities, &self.world, cam.eye, view, sun, cave);
             render::render(
                 p,
@@ -703,12 +709,12 @@ impl Game {
             // Memory probes, in nanoseconds per operation.
             let [alu, small, big, flash, hot] = self.probe_results;
             let mut m: Text<48> = Text::new();
-            let _ = write!(m, "ns: calc {}.{}  ram6k {}.{}", alu / 10, alu % 10, small / 10, small % 10);
+            let _ = write!(m, "ns: calc {}.{}  ram1k {}.{}", alu / 10, alu % 10, small / 10, small % 10);
             hud::centered_small(p, m.as_str(), 164, hud::TEXT);
             m.clear();
             let _ = write!(
                 m,
-                "ram48k {}.{}  flash {}.{}  hot {}.{}",
+                "ram32k {}.{}  flash {}.{}  hot {}.{}",
                 big / 10,
                 big % 10,
                 flash / 10,
@@ -972,7 +978,12 @@ impl Game {
             },
         });
         let sky = Sky::at(self.time);
-        let cam = Camera { eye: self.player.eye(), yaw: self.player.yaw, pitch: self.player.pitch };
+        // The 3D runs look level, in the four compass directions in turn
+        // (two runs each), so results don't depend on where the player was
+        // looking — looking at the ground is much faster than at a horizon.
+        let eye = self.player.eye();
+        let cam_for = |k: u64| Camera { eye, yaw: k as f32 * (crate::math::PI / 2.0), pitch: 0.0 };
+        let cam = cam_for(0);
         let (sun, cave) = render::light_levels(&sky, &self.settings);
         let view = self.view_distance() as f32;
         models::build(&mut self.scene, &self.entities, &self.world, cam.eye, view, sun, cave);

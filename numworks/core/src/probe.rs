@@ -3,16 +3,20 @@
 //! The first real-calculator test showed each ray costing far more CPU
 //! cycles than its instruction count explains, so the processor is mostly
 //! waiting. These tiny loops measure, on the calculator itself, how long
-//! one operation takes in each place the renderer reads from:
+//! one read takes in each place the renderer reads from:
 //!
-//! * plain arithmetic (no memory) — the CPU's own speed,
-//! * random reads in a small RAM table (the 6 KB fill map),
-//! * random reads in the big RAM table (the 48 KB world),
-//! * random reads in the textures, which live in the app's flash memory,
-//! * reads that keep hitting the same 64 bytes of flash (does the CPU's
-//!   cache keep recently read flash, e.g. constants stored next to code?).
+//! * `calc` — the loop alone (a pseudo-random number and an addition, no
+//!   memory read); the other numbers have this subtracted,
+//! * `ram1k` — random reads in 1 KB of RAM: if the CPU's data cache is on,
+//!   this fits in it and should cost almost nothing,
+//! * `ram32k` — random reads in 32 KB of RAM (the world store),
+//! * `flash` — random reads in the textures, which live in the app's
+//!   external flash memory,
+//! * `hot` — reads that keep hitting the same 64 bytes of flash, like the
+//!   constants the compiler places next to the code.
 //!
-//! Comparing them tells which memory is slow, and so what to optimise next.
+//! All table sizes are powers of two so the index is a simple bit mask (an
+//! earlier version used a division there, which polluted the RAM numbers).
 
 use crate::Platform;
 use crate::blocks::TEXTURES;
@@ -25,69 +29,55 @@ fn lcg(x: u32) -> u32 {
     x.wrapping_mul(1_664_525).wrapping_add(1_013_904_223)
 }
 
-/// Runs `f` and returns tenths of a nanosecond per operation for `ops`
-/// operations (the clock only counts milliseconds, so many operations are
-/// timed together).
-fn time(p: &mut dyn Platform, ops: u32, f: impl FnOnce() -> u32) -> u32 {
+/// Loop iterations per probe.
+const N: u32 = 1 << 21;
+
+/// Runs `f` and returns tenths of a nanosecond per iteration (the clock
+/// only counts milliseconds, so many iterations are timed together).
+fn time(p: &mut dyn Platform, f: impl FnOnce(u32) -> u32) -> u32 {
+    let n = black_box(N);
     let t0 = p.millis();
-    black_box(f());
+    black_box(f(n));
     let ms = p.millis() - t0;
-    (ms * 10_000_000 / ops as u64) as u32
+    (ms * 10_000_000 / N as u64) as u32
 }
 
-/// Results in tenths of a nanosecond per operation: arithmetic, small-RAM
-/// read, big-RAM read, random flash read, repeated flash read.
+/// The probe loop: `n` random indices below `mask + 1`, each passed to
+/// `read`, results summed. Every probe runs this same loop, so they differ
+/// only by the read itself.
+#[inline(always)]
+fn walk(n: u32, mask: u32, seed: u32, read: impl Fn(usize) -> u32) -> u32 {
+    let mut x = black_box(seed);
+    let mut acc = 0u32;
+    for _ in 0..n {
+        x = lcg(x);
+        acc = acc.wrapping_add(read(((x >> 8) & mask) as usize));
+    }
+    acc
+}
+
+/// Results in tenths of a nanosecond: the bare loop, then the extra cost of
+/// one read in 1 KB of RAM, 32 KB of RAM, random flash and repeated flash.
 pub fn run(p: &mut dyn Platform, world: &World) -> [u32; 5] {
-    const N: u32 = 2_000_000;
     let (blocks, filled) = world.raw_tables();
-    let alu = time(p, N, || {
-        let mut x = black_box(1u32);
-        for _ in 0..N {
-            x = lcg(x);
-        }
-        x
+    let (ram1k, ram32k) = (&filled[..1024], &blocks[..32 * 1024]);
+    let flash_texels = TEXTURES.len() * 256;
+    assert!(flash_texels >= 1 << 15);
+    // SAFETY (all reads): every index is masked below the length checked here.
+    let calc = time(p, |n| walk(n, 1023, 1, |i| i as u32));
+    let small = time(p, |n| walk(n, 1023, 7, |i| unsafe { *ram1k.get_unchecked(i) } as u32));
+    let big = time(p, |n| walk(n, 32 * 1024 - 1, 7, |i| unsafe { *ram32k.get_unchecked(i) } as u32));
+    let flash = time(p, |n| {
+        walk(n, (1 << 15) - 1, 3, |i| unsafe { *TEXTURES.get_unchecked(i >> 8).get_unchecked(i & 255) }
+            as u32)
     });
-    let read = |table: &[u8]| {
-        let len = table.len() as u32;
-        let mut x = black_box(7u32);
-        let mut acc = 0u32;
-        for _ in 0..N {
-            x = lcg(x);
-            // SAFETY: the index is reduced modulo the table length.
-            acc = acc.wrapping_add(unsafe { *table.get_unchecked(((x >> 8) % len) as usize) } as u32);
-        }
-        acc
-    };
-    let small = time(p, N, || read(filled));
-    let big = time(p, N, || read(blocks));
-    let flash = time(p, N, || {
-        let len = (TEXTURES.len() * 256) as u32;
-        let mut x = black_box(3u32);
-        let mut acc = 0u32;
-        for _ in 0..N {
-            x = lcg(x);
-            let i = ((x >> 8) % len) as usize;
-            acc = acc.wrapping_add(TEXTURES[i / 256][i % 256] as u32);
-        }
-        acc
-    });
-    let flash_hot = time(p, N, || {
-        let mut x = black_box(5u32);
-        let mut acc = 0u32;
-        for _ in 0..N {
-            x = lcg(x);
-            // Always within the first 32 texels (64 bytes) of one texture.
-            acc = acc.wrapping_add(TEXTURES[black_box(1)][((x >> 8) & 31) as usize] as u32);
-        }
-        acc
-    });
-    // The read loops also do the arithmetic: report the extra cost of the read.
+    let hot = time(p, |n| walk(n, 31, 5, |i| unsafe { *TEXTURES.get_unchecked(1).get_unchecked(i) } as u32));
     [
-        alu,
-        small.saturating_sub(alu),
-        big.saturating_sub(alu),
-        flash.saturating_sub(alu),
-        flash_hot.saturating_sub(alu),
+        calc,
+        small.saturating_sub(calc),
+        big.saturating_sub(calc),
+        flash.saturating_sub(calc),
+        hot.saturating_sub(calc),
     ]
 }
 

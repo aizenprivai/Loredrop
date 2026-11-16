@@ -141,6 +141,29 @@ impl World {
         (idx, add, mask)
     }
 
+    /// The height (y) of storage index `idx` from `index_stepper`. Negative
+    /// when a ray stepped below the world (the index wrapped around).
+    #[inline(always)]
+    pub fn index_y(idx: u32) -> i32 {
+        (idx as i32) >> (2 * SHIFT)
+    }
+
+    /// The x and z of storage index `idx`, wrapped into the window
+    /// (`0..SIZE`); their low bits are those of the real coordinates.
+    #[inline(always)]
+    pub fn index_xz(idx: u32) -> (u32, u32) {
+        (idx & MASK as u32, (idx >> SHIFT) & MASK as u32)
+    }
+
+    /// `group_high` of the column holding storage index `idx` (x and z
+    /// come straight from the index's low bits).
+    #[inline(always)]
+    pub fn group_high_at(&self, idx: u32) -> i32 {
+        let (x, z) = ((idx >> 2) & (MASK as u32 >> 2), (idx >> (SHIFT + 2)) & (MASK as u32 >> 2));
+        // SAFETY: both parts are below SIZE / 4, so the index is below GROUPS.
+        unsafe { *self.group_high.get_unchecked((z as usize) * (SIZE / 4) + x as usize) as i32 }
+    }
+
     /// The raw block table and fill map (for the speed test's memory probes).
     pub fn raw_tables(&self) -> (&[u8], &[u8]) {
         (&self.blocks, &self.filled)

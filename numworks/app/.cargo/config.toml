@@ -11,7 +11,17 @@ target = "thumbv7em-none-eabihf"
 # pipeline. The N0110's FPU only does single precision: the game uses f32
 # only, and `build_nwa.sh` refuses any binary containing a double-precision
 # instruction, so this stays safe on every model.
-rustflags = ["-C", "link-arg=--relocatable", "-C", "link-arg=-no-gc-sections", "-C", "target-cpu=cortex-m7"]
+#
+# `+execute-only` stops the compiler from storing constants (float numbers,
+# addresses) in "literal pools" next to the code. The code runs from the
+# calculator's external flash; reading data there costs about 46 ns per
+# read even when it is the same few bytes (measured by the built-in speed
+# test), and the 3D view loaded about 100 such constants. With the flag,
+# constants are built into registers by instructions instead (`movw`/`movt`),
+# which come through the instruction cache. Rust reports the flag as
+# "unknown and unstable": it is LLVM's standard ARM option for this and only
+# changes how constants are loaded (same relocation types as before).
+rustflags = ["-C", "link-arg=--relocatable", "-C", "link-arg=-no-gc-sections", "-C", "target-cpu=cortex-m7", "-C", "target-feature=+execute-only"]
 # `cargo run --release` installs on a calculator plugged in over USB
 # (needs Node.js; the calculator must show "Calculator is connected").
 runner = "npx --yes -- nwlink@1.0.0 install-nwa"
