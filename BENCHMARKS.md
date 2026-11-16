@@ -170,7 +170,17 @@ memory reads for arithmetic). Which matters more on the calculator (cache
 misses on the 48 KB world vs raw instruction count) can only be told by the
 *Show timings* figures from a real calculator.
 
-Rough guess for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
+### First real-calculator result (director, N0120, 2026-11-16)
+
+Installs and runs well. *Show timings*: `3D63 G0 B0 P2 V12` — 63 ms per
+frame drawing the 3D view (≈ 16 FPS), game logic and bottom bar under 1 ms,
+automatic quality kept pixel size 2 and view 12. The 3D view is the whole
+cost. 63 ms ≈ 35 M cycles at 550 MHz for ≈ 13 M (x86) instructions: about
+2.7 cycles per instruction, so memory waits (code, textures and tables in
+the external QSPI flash; the 48 KB world vs the CPU's data cache) probably
+matter as much as the arithmetic.
+
+Rough guess made before the test for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
 settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
 about 3–4 times faster.
 Seed 12345 within 4 km of spawn: 70 surface ruins, 8 desert halls, 38 sunken

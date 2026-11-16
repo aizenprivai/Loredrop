@@ -67,10 +67,9 @@ Read this first. It replaces the memory of earlier conversations.
   plants, wall-sidestepping creatures). **NW5 max-speed pass done**
   (integer compares, incremental index, sky skipping, creature sphere
   culling, M7 tuning, auto view distance) — **NW4 and NW5 approved**
-  (2026-11-16); the director will test on the real calculator that evening;
-  still **no real-calculator test** (install via my.numworks.com/apps,
-  `numworks/loredrop.nwa`). Ask the director for *Show timings* numbers
-  from the real calculator before more speed work.
+  (2026-11-16). **First real test (director's N0120): works very well,
+  `3D63 G0 B0 P2 V12`** (≈ 16 FPS; only the 3D view costs anything).
+  Release `numworks-v0.5` on GitHub holds the .nwa.
   Phase 8 of the PC game is paused, not abandoned. See `numworks/README.md`.
   **NumWorks work lives on the GitHub branch `numworks`** (created at the
   director's request, 2026-11-16); `main` still holds the PC game only.

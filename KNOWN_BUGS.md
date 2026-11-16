@@ -38,7 +38,7 @@
 
 | ID | Severity | Status | Description |
 |---|---|---|---|
-| NW-001 | High | Open | Never run on a real calculator or the official simulator yet. Unknown: whether the calculator gives the app enough RAM (it needs ~67 KB; NumWorks doesn't publish the limit), real FPS, and how the controls feel. |
+| NW-001 | — | Closed (2026-11-16) | ~~Never run on a real calculator~~ — director: installs and runs well on an N0120 (≈ 16 FPS, pixel size 2, view 12). Not yet tried on an N0110/N0115. Old text: Unknown: whether the calculator gives the app enough RAM (it needs ~67 KB; NumWorks doesn't publish the limit), real FPS, and how the controls feel. |
 | NW-002 | Info | By design | No saving: calculator apps have no access to storage. Settings also reset at each launch. |
 | NW-003 | Low | By design | Only 1024 changed blocks are remembered; past that, changes far from the player are forgotten when their area reloads (a message warns). |
 | NW-004 | Low | Partly fixed (NW4) | ~~No plants, no torches~~ (added in NW4). Still: no falling sand/gravel, water doesn't flow. |
