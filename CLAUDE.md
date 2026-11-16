@@ -72,6 +72,8 @@ Read this first. It replaces the memory of earlier conversations.
   `numworks/loredrop.nwa`). Ask the director for *Show timings* numbers
   from the real calculator before more speed work.
   Phase 8 of the PC game is paused, not abandoned. See `numworks/README.md`.
+  **NumWorks work lives on the GitHub branch `numworks`** (created at the
+  director's request, 2026-11-16); `main` still holds the PC game only.
   Cloud sessions can't build/run the official NumWorks simulator (the
   sandbox blocked building downloaded code); test with `ld_nw_desktop`.
 - Open design items (ask the director when relevant): final lore names,
