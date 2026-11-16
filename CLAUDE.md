@@ -66,7 +66,8 @@ Read this first. It replaces the memory of earlier conversations.
   size 2/3/4, *Show timings*, layer-major world, torches + block light,
   plants, wall-sidestepping creatures). **NW5 max-speed pass done**
   (integer compares, incremental index, sky skipping, creature sphere
-  culling, M7 tuning, auto view distance) — waiting for report approval;
+  culling, M7 tuning, auto view distance) — **NW4 and NW5 approved**
+  (2026-11-16); the director will test on the real calculator that evening;
   still **no real-calculator test** (install via my.numworks.com/apps,
   `numworks/loredrop.nwa`). Ask the director for *Show timings* numbers
   from the real calculator before more speed work.

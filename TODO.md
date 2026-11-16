@@ -191,7 +191,7 @@
 - [x] Torches with block light; no monster spawns in torch light
 - [x] Plants (cross-shaped blocks) in world generation
 - [x] Creatures walk around walls
-- [ ] NW4 report approval
+- [x] NW4 report approval (and NW5 max-speed pass approved)
 - [ ] Real-calculator test (still pending since NW1) → tune defaults from real timings
 
 ## Deferred / next for the NumWorks edition
