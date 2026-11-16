@@ -1,0 +1,15 @@
+# Build for the calculator's CPU (ARM Cortex-M with hardware floats).
+# The output is a relocatable ELF object: NumWorks' `nwlink` tool links it
+# into the calculator's app area when installing (same set-up as NumWorks'
+# official Rust sample app).
+[build]
+target = "thumbv7em-none-eabihf"
+
+[target.thumbv7em-none-eabihf]
+# No `target-cpu`: the generic Cortex-M4/M7 instruction set with
+# single-precision floats runs on every model (the N0110's CPU has no
+# double-precision unit).
+rustflags = ["-C", "link-arg=--relocatable", "-C", "link-arg=-no-gc-sections"]
+# `cargo run --release` installs on a calculator plugged in over USB
+# (needs Node.js; the calculator must show "Calculator is connected").
+runner = "npx --yes -- nwlink@1.0.0 install-nwa"

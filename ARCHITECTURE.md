@@ -387,6 +387,34 @@ measured on the director's hardware. CPU-side systems are measured here.
   by `World::light_at`; without data it falls back to a sky-visibility scan.
 - **Entities** get light through the top byte of `EntityVertex::color`.
 
+### NumWorks edition (`numworks/`, added 2026-11-16)
+
+A separate Cargo workspace, so the PC workspace (`crates/*`) is untouched and
+`cargo test --workspace` at the root doesn't build it.
+
+- **`ld_nw_core`** — the whole calculator game, `#![no_std]` with no heap:
+  every buffer has a fixed size, and the ~67 KB `Game` struct lives in a
+  `static` (`const fn new()`), never on the calculator's small stack. It talks
+  to hardware only through the `Platform` trait (push/fill rectangles, draw
+  text, keyboard bits, milliseconds, random, sleep).
+  - `world`: a 32x32-column ring buffer (x mod 32, z mod 32) of 48-block
+    columns, regenerated from the seed as the player moves, plus an edit log
+    re-applied on reload. Per-column "highest opaque" (sky light) and
+    "highest block" (lets sky rays stop early).
+  - `worldgen`: pure function of (seed, x, z) → column; trees placed from a
+    6x6 cell grid so a column can draw the parts of neighbouring trees.
+  - `render`: per-pixel Amanatides–Woo voxel traversal at 320/ps x 200/ps,
+    streamed to the screen row by row (no frame buffer).
+  - `player`: Minecraft movement and AABB collision at 20 TPS.
+  - `game`/`hud`: screens, input, mining/placing, bottom bar redrawn only on change.
+- **`gen_blocks.rs`** is generated from the PC game's `blocks.toml` and
+  textures (`numworks/tools/gen_blocks.py`) — one source of truth for blocks.
+- **`ld_nw_desktop`** — PC harness implementing `Platform` with a frame
+  buffer and scripted keys (screenshots, benchmark, maps).
+- **`app`** — `thumbv7em-none-eabihf` binary (its own workspace): EADK FFI,
+  app name/icon/API-level sections, panic screen. Output is a relocatable ELF
+  (`.nwa`) linked by NumWorks' `nwlink` at install time.
+
 ## 13. Decisions approved in Phase 1
 
 1. ✅ Custom engine on wgpu instead of Bevy (§1.1).

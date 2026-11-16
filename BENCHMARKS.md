@@ -123,5 +123,24 @@ distances.
 
 ### Phase 4 part 2 — structures
 Generation with ruins: **1.49 ms per column** (+0.2 ms for structure lookups).
+
+## NumWorks edition — NW phase 1 (2026-11-16, PC only)
+
+No calculator was available, so these numbers are from the PC harness
+(`ld_nw_desktop bench`) and from instruction counts (callgrind). They are
+**estimates** until the director measures FPS on a real calculator (FPS is
+shown in the status line).
+
+| Measure | Value |
+|---|---|
+| Render, default settings (pixel size 2 = 16 000 rays, view 12) | ~11.7 million x86 instructions per frame (callgrind) |
+| Host time per frame, default settings | 2.8 ms (looking up: 3.3 ms, looking down: 1.8 ms) |
+| Host time per frame, pixel size 4 | 0.8 ms |
+| Host time per frame, view 6 / 14 | 2.0 / 3.2 ms |
+| App size | 242 KB file; 96 KB code + 68 KB initialised data (game state) |
+
+Rough guess for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
+settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
+about 3–4 times faster.
 Seed 12345 within 4 km of spawn: 70 surface ruins, 8 desert halls, 38 sunken
 towers, 141 deep vaults (underground).

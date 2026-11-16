@@ -245,6 +245,11 @@ render_distance = 8
 - **Desktop first:** Windows, Linux, macOS.
 - **Mobile later** (Android, then iOS). Prepared for via abstract input, scalable UI,
   rendering quality tiers, no desktop-only dependencies in the core.
+- **NumWorks calculator edition** (side project, started 2026-11-16, director's
+  request; director chose **3D first person**). A separate engine in
+  `numworks/` sharing the PC game's blocks, textures and numbers. Differences
+  forced by the hardware: 48-block-tall world, 6–14 block view distance, no
+  saving, simpler lighting. See `numworks/README.md`.
 
 ## 12. Performance targets
 

@@ -155,6 +155,27 @@
 - [ ] Wall torches (torches only stand on the ground for now)
 - [ ] Sub-block geometry in the chunk vertex format (needed for real torch models, slabs, stairs)
 
+## NumWorks edition — NW phase 1 (`numworks/`)
+- [x] Separate workspace: `core` (no_std game), `desktop` (PC harness), `app` (calculator)
+- [x] Blocks + textures generated from the PC game's data
+- [x] World generation (biomes, caves, ores, trees), 32x32 ring window + edit log
+- [x] Ray-casting renderer, sky, day/night, dark caves, water, fog, outline, cracks
+- [x] Physics (Minecraft numbers), survival mining, creative mode, hotbar
+- [x] Title / pause / settings / controls screens
+- [x] `.nwa` build + check with NumWorks' `nwlink`
+- [ ] **Director's test on a real calculator** (does it install? FPS? controls?)
+- [ ] Test on the official NumWorks simulator (building it was blocked in the cloud session)
+- [ ] NW phase 1 approval
+
+## Deferred / next for the NumWorks edition
+- [ ] Health, hunger, fall damage, breath (NW2)
+- [ ] Full inventory, crafting, tools and tool tiers, item drops (NW2)
+- [ ] Plants (grass, flowers) — need cross-shaped sprites in the ray caster
+- [ ] Falling sand/gravel, flowing water
+- [ ] Torches and block light
+- [ ] Creatures, the Hollow, ruins with lore tablets (NW3)
+- [ ] Speed: tune after the first real FPS numbers (NW4)
+
 ## Infrastructure
 - [x] Local git repository with history
 - [x] Pushed to GitHub: https://github.com/aizenprivai/Loredrop (2026-11-14)

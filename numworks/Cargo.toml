@@ -1,0 +1,20 @@
+# Loredrop — NumWorks calculator edition.
+#
+# A separate Cargo workspace (not part of the PC game's workspace) holding:
+#   core/     the whole game, `no_std`, shared by the calculator and the PC tools
+#   desktop/  a PC test harness: renders frames to PNG, runs benchmarks
+#   app/      the calculator app itself (built for ARM; has its own workspace
+#             because it targets `thumbv7em-none-eabihf`, see app/README)
+[workspace]
+resolver = "2"
+members = ["core", "desktop"]
+exclude = ["app"]
+
+[workspace.package]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+version = "0.1.0"
+
+[profile.release]
+opt-level = 3
+debug = false

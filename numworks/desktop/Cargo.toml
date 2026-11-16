@@ -1,0 +1,10 @@
+[package]
+name = "ld_nw_desktop"
+description = "PC test harness for the Loredrop NumWorks edition (screenshots, benchmarks)."
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+ld_nw_core = { path = "../core" }
+png = "0.18"

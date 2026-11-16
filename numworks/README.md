@@ -1,0 +1,112 @@
+# Loredrop — NumWorks edition
+
+A 3D version of Loredrop that runs on a NumWorks graphing calculator
+(models N0110, N0115, N0120). It isn't the PC game shrunk down: it's a
+separate engine written for a machine with no graphics chip and a few
+hundred KB of memory. It shares the PC game's blocks, textures, mining
+numbers and physics.
+
+> Status: **NW phase 1** (exploration and building). Built and tested on PC
+> through a test harness. It has **not run on a real calculator yet**: the
+> director's test on a real calculator is the first real check.
+
+## What's in it
+
+- An endless 3D world in first person, drawn by ray casting (one ray per
+  pixel; no GPU needed), with the PC game's 16x16 textures.
+- World generation: continents and oceans, hills, mountains with snow
+  caps, 7 biomes (ocean, beach, plains, forest, desert, snowy plains,
+  mountains), worm caves and caverns, lava at the bottom, ore veins
+  (coal, iron, copper, gold, lapis, diamond, with deepslate variants),
+  granite/diorite/andesite pockets, oak, birch and spruce trees, cacti.
+- Minecraft physics at 20 ticks per second (walking 4.3 m/s, sprinting,
+  jumping 1.25 blocks, swimming, sneaking, optional auto-jump).
+- Survival mode: mining by hand at the PC game's speeds (stone takes 7.5 s
+  and drops nothing without a pickaxe, as on PC), with mining cracks and
+  drops collected into the hotbar. Creative mode: every block, instant
+  breaking, flying.
+- Day and night (20-minute day), square sun and moon, stars, sunrise
+  glow, dark caves and shadows under overhangs, water you can see into,
+  distance fog.
+- Title screen, pause menu (with position, biome, seed), settings
+  (view distance, pixel size, field of view, turn speed, auto-jump, FPS
+  display, brightness, each with a description), controls screen.
+
+## Controls
+
+| Key | Action |
+|---|---|
+| Arrows | Look around |
+| 8 / 5 / 4 / 6 | Walk forward / back / left / right |
+| 0 | Jump, swim up, fly up |
+| 1 | Sneak, fly down |
+| 3 | Sprint (until you stop walking) |
+| OK (hold) | Mine the block you look at |
+| EXE | Place the selected block |
+| 7 / 9 | Previous / next hotbar slot |
+| ( / ) | Creative: change the block in the slot |
+| Toolbox | Creative: fly on / off |
+| Back | Pause menu |
+| Home | Quit |
+
+## Installing on a calculator
+
+1. Get `loredrop.nwa` (in this folder, or build it, see below).
+2. Make sure the calculator runs an up-to-date official NumWorks software
+   (version 16 or later supports apps like this).
+3. On a computer, in Chrome or Edge, open <https://my.numworks.com/apps>,
+   plug in the calculator, and send `loredrop.nwa` with NumWorks' installer.
+4. On the calculator, Loredrop appears at the end of the Home screen.
+
+**Warning:** NumWorks' installer replaces the apps already installed this
+way (games from other sites included). Exam mode hides and usually removes
+these apps. The calculator also gives apps no storage, so **the world is not
+saved when you quit**.
+
+## Building
+
+```sh
+rustup target add thumbv7em-none-eabihf
+./build_nwa.sh            # writes loredrop.nwa (and checks it with nwlink if Node.js is installed)
+cd app && cargo run --release   # builds and installs over USB (needs Node.js)
+```
+
+## Testing on PC
+
+The game code (`core/`) is plain Rust with no calculator dependency, so it
+is tested on PC:
+
+```sh
+cargo test                                   # unit tests (world, physics, rendering...)
+cargo run --release -p ld_nw_desktop -- shot --seed 1 --time 6000 --look 200 5 --out shot.png
+cargo run --release -p ld_nw_desktop -- shot --seed 1 --script "8:40,Ok:30" --out walk.png
+cargo run --release -p ld_nw_desktop -- bench --seed 1
+cargo run --release -p ld_nw_desktop -- map --seed 1 --out map.png
+```
+
+See the header of `desktop/src/main.rs` for every option.
+
+## Layout
+
+```text
+numworks/
+  core/        the game (no_std, no heap): world, worldgen, render, player, hud, game
+  desktop/     PC test harness (fake screen and keyboard, PNG screenshots, benchmark)
+  app/         the calculator app: EADK bindings, icon, .cargo config for ARM
+  tools/       Python generators: blocks+textures from the PC game's data, icon, PC font
+  build_nwa.sh builds app/ and writes loredrop.nwa
+```
+
+`core/src/gen_blocks.rs` is generated from `../assets/data/blocks.toml` and
+`../assets/textures/block/*.png` by `tools/gen_blocks.py`; re-run it when
+the PC game's blocks change.
+
+## Limits (by design, for the calculator)
+
+- The world is 48 blocks tall (sea at 20); the PC game uses 384.
+- Only 32 x 32 columns are in memory around the player (48 KB); the rest
+  is regenerated from the seed when you come back. The player's changes are
+  remembered (up to 1024 changed blocks; beyond that, changes far away are
+  forgotten).
+- View distance 6 to 14 blocks.
+- No saving (calculator apps have no storage access).

@@ -1,0 +1,33 @@
+# The Loredrop app for NumWorks calculators (N0110, N0115, N0120).
+#
+# Its own workspace because it is always built for the calculator's ARM CPU
+# (target set in .cargo/config.toml). Build: `cargo build --release` here,
+# then see README.md for how to install the result.
+[workspace]
+
+[package]
+name = "ld_nw_app"
+description = "Loredrop for NumWorks calculators (external app, .nwa)."
+edition = "2024"
+license = "MIT OR Apache-2.0"
+version = "0.1.0"
+
+[[bin]]
+name = "loredrop"
+path = "src/main.rs"
+test = false
+bench = false
+
+[dependencies]
+ld_nw_core = { path = "../core" }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+debug = false
+
+[profile.dev]
+panic = "abort"
+opt-level = 1

@@ -298,3 +298,25 @@
   1 damage per second, put out by water; flickering orange while burning.
 - `calm_in_light` (spider): ignores the player in light level 12+ unless hurt.
 - `WorldTime::sky_darkening` (0 by day, 11 at night). 3 new tests.
+
+### 2026-11-16 — NumWorks edition, NW phase 1 (side project, director's request)
+- New `numworks/` folder (its own Cargo workspace; the PC game is untouched):
+  a 3D Loredrop for NumWorks calculators (N0110/N0115/N0120), as an external
+  app (`numworks/loredrop.nwa`, 242 KB).
+- `ld_nw_core` (`no_std`, no heap): voxel ray-casting renderer (one ray per
+  pixel, 160x100 upscaled, textures, face shading, sky light / dark caves,
+  see-through leaves and glass, water tint with surface texture, fog, block
+  outline and mining cracks, crosshair); endless world in a 32x32-column ring
+  (48 KB) regenerated from the seed, with an edit log (1024 changes);
+  generation with 7 biomes, mountains, oceans, caves, lava, ores + deepslate
+  variants, stone pockets, oak/birch/spruce trees, cacti; Minecraft physics
+  at 20 TPS; survival mining by hand (PC hardness numbers) and creative mode;
+  day/night sky; title, pause, settings (7 options with descriptions) and
+  controls screens.
+- Blocks and textures are generated from the PC game's `blocks.toml` and
+  PNGs (`numworks/tools/gen_blocks.py`), so both editions stay in step.
+- `ld_nw_desktop`: PC harness (PNG screenshots with scripted keys, `--pos`,
+  `--look`, `--time`, benchmark, biome map, spot finder). 20 unit tests.
+- Checked with NumWorks' own linker (`nwlink nwa-elf`): links, no missing
+  symbols, no double-precision instructions. **Not yet run on a real
+  calculator or the official simulator.**

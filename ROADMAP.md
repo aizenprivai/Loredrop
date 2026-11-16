@@ -18,6 +18,19 @@ Each phase ends with a report and requires director approval before the next beg
 | 11 | Polish & release candidate | ⏳ |
 | Later | Fire realm, final realm & boss, ruins/lore expansion, WASM/native mods, resource-pack sounds, multiplayer, mobile | ⏳ |
 
+### NumWorks edition (side project, `numworks/`)
+
+A 3D Loredrop for NumWorks calculators, started 2026-11-16 at the director's
+request. Separate engine, shared data. Same rule: each phase ends with a
+report and needs approval.
+
+| Phase | Name | Status |
+|---|---|---|
+| NW1 | 3D engine, world generation, exploration & building | ✅ Done on PC — waiting for the director's real-calculator test |
+| NW2 | Survival: health, hunger, fall damage, inventory, crafting, tools | ⏳ |
+| NW3 | Creatures (animals, zombies, skeletons, the Hollow), ruins with lore | ⏳ |
+| NW4 | Speed & polish (based on real-calculator results) | ⏳ |
+
 Notes:
 - The settings system (with descriptions for every option) and the performance
   overlay start in Phase 2 and grow with every phase.

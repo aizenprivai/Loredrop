@@ -1,0 +1,9 @@
+[package]
+name = "ld_nw_core"
+description = "Loredrop NumWorks edition: the platform-independent game (no_std)."
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+
+[dependencies]
+libm = "0.2"

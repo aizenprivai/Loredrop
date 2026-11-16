@@ -55,6 +55,14 @@ Read this first. It replaces the memory of earlier conversations.
   (anger, block moving, provocation, carried-block rendering, natural
   spawning, readable lore fragments). Director decision: attacking one
   Hollow angers only that one.
+- **NumWorks calculator edition** (side project in `numworks/`, started
+  2026-11-16 at the director's request; director chose **3D**). NW phase 1
+  done on PC (engine, worldgen, survival mining, creative, menus), checked
+  with NumWorks' `nwlink`; **waiting for the director's test on a real
+  calculator** (install via my.numworks.com/apps, `numworks/loredrop.nwa`).
+  Phase 8 of the PC game is paused, not abandoned. See `numworks/README.md`.
+  Cloud sessions can't build/run the official NumWorks simulator (the
+  sandbox blocked building downloaded code); test with `ld_nw_desktop`.
 - Open design items (ask the director when relevant): final lore names,
   fire realm / final realm / boss, top tool tier, redstone equivalent,
   XP/enchanting, multiplayer.
@@ -68,6 +76,10 @@ Read this first. It replaces the memory of earlier conversations.
 - `cargo test --workspace` (≈138 tests, no GPU needed),
   `cargo clippy --workspace --all-targets` (keep at zero warnings),
   `cargo fmt --all`, `cargo bench -p ld_mesh|ld_world|ld_worldgen`.
+- NumWorks edition: `cd numworks && cargo test && cargo clippy --all-targets`;
+  `./numworks/build_nwa.sh` builds `loredrop.nwa` (needs
+  `rustup target add thumbv7em-none-eabihf`); screenshots with
+  `cargo run --release -p ld_nw_desktop -- shot ...`.
 - Useful run options: `--seed`, `--pos x y z`, `--look yaw pitch`, `--fly`,
   `--summon a,b`, `--map <blocks> <file.png>`, `--bench-world <rd>`,
   `--screenshot-after <frames> --screenshot-path <file>`, `--exit-after <s>`.

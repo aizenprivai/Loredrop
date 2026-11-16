@@ -33,3 +33,15 @@
 | KB-030 | Info | By design | Light is computed in boxes reaching 15 blocks around the sections being rebuilt; light that would leave the box and come back in is missed. Only possible more than ~15 blocks from its source, so effects are tiny. |
 | KB-031 | Low | Open | Torches can only stand on the ground (no wall torches yet) and look like a thin cross, not a 3D stick. |
 | KB-029 | Info | By design (director, 2026-11-14) | Attacking one Hollow angers only that Hollow; breaking a Hollow-placed block angers all Hollows within 16 blocks. |
+
+## NumWorks edition (`numworks/`)
+
+| ID | Severity | Status | Description |
+|---|---|---|---|
+| NW-001 | High | Open | Never run on a real calculator or the official simulator yet. Unknown: whether the calculator gives the app enough RAM (it needs ~67 KB; NumWorks doesn't publish the limit), real FPS, and how the controls feel. |
+| NW-002 | Info | By design | No saving: calculator apps have no access to storage. Settings also reset at each launch. |
+| NW-003 | Low | By design | Only 1024 changed blocks are remembered; past that, changes far from the player are forgotten when their area reloads (a message warns). |
+| NW-004 | Low | Open | No plants (grass, flowers), no falling sand/gravel, water doesn't flow, no torches. |
+| NW-005 | Low | Open | Dark/lit areas use a simple "sees the sky straight up" rule: hard light edges at cave mouths and under overhangs (no smooth light). |
+| NW-006 | Low | Open | Item drops (coal, sticks...) aren't supported yet: only blocks go into the hotbar. |
+| NW-007 | Info | Open | Installing with NumWorks' web installer replaces other apps installed that way; exam mode removes them. |

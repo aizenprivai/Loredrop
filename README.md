@@ -56,6 +56,12 @@ explained by a comment. Run `loredrop --help` for command-line options.
 | F2 | screenshot (saved to `screenshots/`) |
 | F11 | fullscreen |
 
+## NumWorks calculator edition
+
+`numworks/` holds a 3D Loredrop for NumWorks graphing calculators (separate
+engine, same blocks and textures). Install `numworks/loredrop.nwa` through
+<https://my.numworks.com/apps>. See `numworks/README.md`.
+
 ## Development
 
 ```bash
