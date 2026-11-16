@@ -186,6 +186,14 @@ creatures aren't helped by the fill map). Callgrind: render 381 M → 399 M
 instructions (the fill-map test adds instructions but removes most
 block-array reads). Real-calculator split: Settings → *Run speed test*.
 
+### Speed test on the N0120 (director, after NW6)
+
+Pixel 3, view 12: screen only **4.6 ms**, 3D maths only **37.3 ms**, 3D
+complete **42.2 ms** (≈ 23 FPS). Sending pixels is ~11 %; the ray casting
+is ~89 %. 37.3 ms for 7 100 rays ≈ 5 µs ≈ 2 900 cycles per ray for roughly
+800 instructions: the CPU mostly waits on memory. The speed test now also
+probes memory (arithmetic, 6 KB RAM, 48 KB RAM, flash reads) to find which.
+
 Rough guess made before the test for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
 settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
 about 3–4 times faster.

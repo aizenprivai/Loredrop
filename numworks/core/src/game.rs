@@ -143,6 +143,9 @@ pub struct Game {
     pub timings: [u32; 3],
     /// Last speed test: screen, 3D compute, 3D complete (ms x10), pixel size, view.
     pub speed_results: [u32; 5],
+    /// Last memory probes (tenths of ns per operation): arithmetic, small
+    /// RAM, big RAM, flash.
+    pub probe_results: [u32; 4],
     /// World time in ticks since the world was created.
     pub time: u32,
     /// Where the player (re)spawns.
@@ -199,6 +202,7 @@ impl Game {
             time_sums: [0; 3],
             timings: [0; 3],
             speed_results: [0; 5],
+            probe_results: [0; 4],
             time: 0,
             spawn: [0.0; 3],
             rng: Rng(0x1234_5678),
@@ -663,6 +667,8 @@ impl Game {
         let full = (p.millis() - t2) * 10 / RUNS;
 
         self.speed_results = [display as u32, compute as u32, full as u32, pixel as u32, view as u32];
+        // 4. Memory probes: which memory makes the processor wait.
+        self.probe_results = crate::probe::run(p, &self.world);
         self.screen = Screen::SpeedTest;
         self.menu_dirty = true;
     }
@@ -688,8 +694,16 @@ impl Game {
             let mut t: Text<44> = Text::new();
             let fps = 10_000u32.checked_div(full).unwrap_or(0);
             let _ = write!(t, "Pixel {}  View {}  ->  about {} FPS", pixel, view, fps);
-            hud::centered_small(p, t.as_str(), 150, hud::GOLD);
-            hud::centered_small(p, "Please send these numbers. Back: return", 210, hud::DIM);
+            hud::centered_small(p, t.as_str(), 136, hud::GOLD);
+            // Memory probes, in nanoseconds per operation.
+            let [alu, small, big, flash] = self.probe_results;
+            let mut m: Text<48> = Text::new();
+            let _ = write!(m, "ns: calc {}.{}  ram6k {}.{}", alu / 10, alu % 10, small / 10, small % 10);
+            hud::centered_small(p, m.as_str(), 164, hud::TEXT);
+            m.clear();
+            let _ = write!(m, "ram48k {}.{}  flash {}.{}", big / 10, big % 10, flash / 10, flash % 10);
+            hud::centered_small(p, m.as_str(), 182, hud::TEXT);
+            hud::centered_small(p, "Please send these numbers. Back: return", 214, hud::DIM);
         } else {
             p.sleep(20);
         }

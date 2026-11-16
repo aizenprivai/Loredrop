@@ -48,6 +48,7 @@ pub mod mobs;
 pub mod models;
 pub mod noise;
 pub mod player;
+pub mod probe;
 pub mod render;
 pub mod settings;
 pub mod sky;

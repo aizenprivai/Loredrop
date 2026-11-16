@@ -141,6 +141,11 @@ impl World {
         (idx, add, mask)
     }
 
+    /// The raw block table and fill map (for the speed test's memory probes).
+    pub fn raw_tables(&self) -> (&[u8], &[u8]) {
+        (&self.blocks, &self.filled)
+    }
+
     /// Reads storage index `i` from `index_stepper`. The caller must have
     /// checked that the cell's y is inside `0..HEIGHT`.
     #[inline(always)]

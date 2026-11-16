@@ -451,3 +451,7 @@
 - Fixed a crash in the settings list when the cursor wrapped onto the new
   last line (found by the PC harness).
 - Game state 80 → 92 KB RAM (row buffer + fill map).
+- Director's speed test on the N0120 (pixel 3, view 12): screen 4.6 ms, 3D
+  maths 37.3 ms, total 42.2 ms (≈ 23 FPS). The speed test now adds memory
+  probes (ns per operation for arithmetic, small/large RAM reads and flash
+  reads) to find where the CPU waits.
