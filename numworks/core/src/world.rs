@@ -17,6 +17,8 @@ use crate::worldgen::{HEIGHT, generate_column};
 pub const SIZE: usize = 32;
 const MASK: i32 = SIZE as i32 - 1;
 const SHIFT: u32 = SIZE.trailing_zeros();
+/// Number of 4x4-column groups in the window.
+const GROUPS: usize = (SIZE / 4) * (SIZE / 4);
 /// How many changed blocks the world remembers. Past this, new changes still
 /// show but are forgotten once the player walks away and comes back.
 pub const MAX_EDITS: usize = 1024;
@@ -44,6 +46,8 @@ pub struct World {
     top: [u8; SIZE * SIZE],
     /// Height of the highest non-air block of each slot.
     high: [u8; SIZE * SIZE],
+    /// Highest block in each 4x4 group of slots (for skipping sky).
+    group_high: [u8; GROUPS],
     /// Highest non-air block in the whole window: a ray above this height
     /// going up can only meet the sky (a big saving for the renderer).
     ceiling: i32,
@@ -62,6 +66,7 @@ impl World {
             owner: [EMPTY; SIZE * SIZE],
             top: [0; SIZE * SIZE],
             high: [0; SIZE * SIZE],
+            group_high: [0; GROUPS],
             ceiling: HEIGHT as i32,
             edits: [Edit { x: 0, z: 0, y: 0, block: AIR }; MAX_EDITS],
             edit_count: 0,
@@ -73,6 +78,7 @@ impl World {
     pub fn reset(&mut self, seed: u32) {
         self.owner = [EMPTY; SIZE * SIZE];
         self.high = [0; SIZE * SIZE];
+        self.group_high = [0; GROUPS];
         self.ceiling = 0;
         self.edit_count = 0;
         self.seed = seed;
@@ -116,6 +122,29 @@ impl World {
         (y << (2 * SHIFT)) | slot
     }
 
+    /// For walking a ray through storage: the index of `cell` (computed
+    /// with wrapping arithmetic, so it stays right even while y is outside
+    /// the world) and, per axis, what to add and which bits to keep when
+    /// stepping by `step`. Use as
+    /// `idx = (idx & !mask[a]) | (idx.wrapping_add(add[a]) & mask[a])`.
+    #[inline]
+    pub fn index_stepper(cell: [i32; 3], step: [i32; 3]) -> (u32, [u32; 3], [u32; 3]) {
+        let s = SHIFT;
+        let idx = ((cell[1] as u32) << (2 * s)) | (((cell[2] & MASK) as u32) << s) | (cell[0] & MASK) as u32;
+        let add = [step[0] as u32, (step[1] as u32) << (2 * s), (step[2] as u32) << s];
+        let mask = [MASK as u32, u32::MAX << (2 * s), (MASK as u32) << s];
+        (idx, add, mask)
+    }
+
+    /// Reads storage index `i` from `index_stepper`. The caller must have
+    /// checked that the cell's y is inside `0..HEIGHT`.
+    #[inline(always)]
+    pub fn get_index(&self, i: u32) -> Block {
+        debug_assert!((i as usize) < self.blocks.len());
+        // SAFETY: with y in 0..HEIGHT the index is below SIZE*SIZE*HEIGHT.
+        unsafe { *self.blocks.get_unchecked(i as usize) }
+    }
+
     /// Fast read for the renderer: no check that the column is loaded, and
     /// `y` must be inside `0..HEIGHT`. Rays never leave the window, so this
     /// is safe in practice and saves time in the hottest loop of the game.
@@ -126,6 +155,12 @@ impl World {
         // SAFETY: the masks keep the slot below SIZE*SIZE and callers keep y
         // in 0..HEIGHT, so `i` < SIZE*SIZE*HEIGHT = blocks.len().
         unsafe { *self.blocks.get_unchecked(i) }
+    }
+
+    /// Writes one block of a loaded column.
+    #[inline]
+    fn write(&mut self, x: i32, y: usize, z: i32, block: Block) {
+        self.blocks[Self::index(Self::slot(x, z), y)] = block;
     }
 
     /// Whether the sky is visible straight up from `(x, y, z)` (no opaque
@@ -142,9 +177,8 @@ impl World {
         if !(0..HEIGHT as i32).contains(&y) || !self.is_loaded(x, z) {
             return false;
         }
-        let slot = Self::slot(x, z);
-        self.blocks[Self::index(slot, y as usize)] = block;
-        self.update_top(slot);
+        self.write(x, y as usize, z, block);
+        self.update_top(Self::slot(x, z));
         self.remember(x, y as u8, z, block)
     }
 
@@ -182,7 +216,23 @@ impl World {
         self.top[slot] = (0..HEIGHT).rev().find(|&y| is_opaque(at(y))).unwrap_or(0) as u8;
         let high = (0..HEIGHT).rev().find(|&y| at(y) != AIR).unwrap_or(0) as u8;
         self.high[slot] = high;
+        // Refresh the 4x4 group's highest block.
+        let (gx, gz) = ((slot % SIZE) & !3, (slot / SIZE) & !3);
+        let mut gh = 0;
+        for z in gz..gz + 4 {
+            for x in gx..gx + 4 {
+                gh = gh.max(self.high[z * SIZE + x]);
+            }
+        }
+        self.group_high[(gz / 4) * (SIZE / 4) + gx / 4] = gh;
         self.ceiling = self.ceiling.max(high as i32);
+    }
+
+    /// Highest block of the 4x4 group of window slots holding column
+    /// `(x, z)`: a ray going up from above it can't hit anything there.
+    #[inline(always)]
+    pub fn group_high(&self, x: i32, z: i32) -> i32 {
+        self.group_high[(((z & MASK) >> 2) as usize) * (SIZE / 4) + ((x & MASK) >> 2) as usize] as i32
     }
 
     /// Height of the highest non-air block in the loaded window.
@@ -207,7 +257,7 @@ impl World {
             }
         }
         for (y, &b) in col.iter().enumerate() {
-            self.blocks[Self::index(slot, y)] = b;
+            self.write(x, y, z, b);
         }
         self.owner[slot] = Self::tag(x, z);
         self.update_top(slot);

@@ -38,8 +38,11 @@ const PLACE_REPEAT: u32 = 4;
 const CREATIVE_BREAK_REPEAT: u32 = 6;
 /// Ticks to eat one food item (PC: 32 = 1.6 s).
 const EAT_TICKS: u32 = 32;
-/// Columns generated per frame while playing (more = faster loading, slower frames).
-const LOAD_PER_FRAME: usize = 24;
+/// Columns generated per frame while playing (more = faster loading, slower
+/// frames). Nearest columns come first; 12 per frame keeps up with walking
+/// and sprinting at calculator frame rates (flying fast may show the edge
+/// of the loaded area for a moment).
+const LOAD_PER_FRAME: usize = 12;
 /// Items a creative player starts with in the hotbar.
 const CREATIVE_HOTBAR: [Item; 9] = [
     GRASS_BLOCK as Item,
@@ -126,6 +129,9 @@ pub struct Game {
     attack_ticks: u32,
     /// Pixel size chosen by the automatic setting (2–4).
     pub auto_pixel: u8,
+    /// Longest view distance automatic quality allows (lowered only when
+    /// pixel size 4 is still too slow).
+    pub auto_view: u8,
     /// Milliseconds spent this second in the 3D view, the game logic and
     /// the bottom bar (summed over frames), and the averages last shown.
     time_sums: [u64; 3],
@@ -182,6 +188,7 @@ impl Game {
             lore_back: Screen::Playing,
             attack_ticks: 100,
             auto_pixel: 2,
+            auto_view: 14,
             time_sums: [0; 3],
             timings: [0; 3],
             time: 0,
@@ -816,22 +823,18 @@ impl Game {
         let sky = Sky::at(self.time);
         let cam = Camera { eye: self.player.eye(), yaw: self.player.yaw, pitch: self.player.pitch };
         let (sun, cave) = render::light_levels(&sky, &self.settings);
-        models::build(
-            &mut self.scene,
-            &self.entities,
-            &self.world,
-            cam.eye,
-            self.settings.view_distance as f32,
-            sun,
-            cave,
-        );
+        let view = self.view_distance() as f32;
+        models::build(&mut self.scene, &self.entities, &self.world, cam.eye, view, sun, cave);
         let t_render = p.millis();
         let pixel = if self.settings.pixel_size == crate::settings::PIXEL_AUTO {
             self.auto_pixel
         } else {
             self.settings.pixel_size
         };
-        render::render(p, &self.world, &sky, cam, &self.settings, target, &mut self.scene, pixel as usize);
+        // Automatic quality may shorten the view distance.
+        let mut view_settings = self.settings;
+        view_settings.view_distance = self.view_distance();
+        render::render(p, &self.world, &sky, cam, &view_settings, target, &mut self.scene, pixel as usize);
         let t_bar = p.millis();
         if self.vitals.since_hurt < 4 || self.vitals.fire > 0 {
             // Red (hurt) or orange (burning) frame around the view.
@@ -875,14 +878,36 @@ impl Game {
             return;
         }
         let ps = self.auto_pixel as u32;
-        if self.fps < 12 && ps < 4 {
-            self.auto_pixel += 1;
+        let view = self.view_distance() as u32;
+        if self.fps < 12 {
+            // Too slow: bigger pixels first, then a shorter view (down to 8).
+            if ps < 4 {
+                self.auto_pixel += 1;
+            } else if view > 8 {
+                self.auto_view = (view - 2) as u8;
+            }
+        } else if view < self.settings.view_distance as u32 {
+            // Fast enough again: give back the view distance first (the
+            // cost grows about in step with the distance).
+            if self.fps * view / (view + 2) >= 15 {
+                self.auto_view = (view + 2) as u8;
+            }
         } else if ps > 2 {
             let sharper = ps - 1;
             let predicted = self.fps * sharper * sharper / (ps * ps);
             if predicted >= 15 {
                 self.auto_pixel -= 1;
             }
+        }
+    }
+
+    /// View distance in use: the setting, shortened by automatic quality
+    /// if even the biggest pixels were too slow.
+    pub fn view_distance(&self) -> u8 {
+        if self.settings.pixel_size == crate::settings::PIXEL_AUTO {
+            self.settings.view_distance.min(self.auto_view)
+        } else {
+            self.settings.view_distance
         }
     }
 
@@ -1259,10 +1284,11 @@ impl Game {
         }
         let mut right: Text<40> = Text::new();
         if self.settings.show_timings {
-            // ms per frame: 3D view, game logic, bottom bar; then pixel size.
+            // ms per frame: 3D view, game logic, bottom bar; then the pixel
+            // size and view distance in use.
             let [v, g, b] = self.timings;
             let ps = if self.settings.pixel_size == 0 { self.auto_pixel } else { self.settings.pixel_size };
-            let _ = write!(right, "3D{} G{} B{} P{}  ", v / 10, g / 10, b / 10, ps);
+            let _ = write!(right, "3D{} G{} B{} P{} V{} ", v / 10, g / 10, b / 10, ps, self.view_distance());
         } else {
             let armor = self.inventory.armor_points().0 as u32;
             if armor > 0 && self.mode == Mode::Survival {
@@ -1459,10 +1485,25 @@ mod tests {
         g.adapt_pixel_size();
         assert_eq!(g.auto_pixel, 3, "fast enough: sharper again");
         // A fixed setting is never changed.
+        // Still too slow at size 4: the view gets shorter, down to 8.
+        g.auto_pixel = 4;
+        g.fps = 5;
+        for _ in 0..5 {
+            g.adapt_pixel_size();
+        }
+        assert_eq!(g.auto_pixel, 4);
+        assert_eq!(g.view_distance(), 8);
+        // Faster again: the view distance comes back first.
+        g.fps = 30;
+        g.adapt_pixel_size();
+        assert_eq!(g.view_distance(), 10);
+        assert_eq!(g.auto_pixel, 4);
+        // A fixed setting is never changed.
         g.settings.pixel_size = 2;
         g.fps = 3;
         g.adapt_pixel_size();
-        assert_eq!(g.auto_pixel, 3);
+        assert_eq!(g.auto_pixel, 4);
+        assert_eq!(g.view_distance(), g.settings.view_distance);
     }
 
     #[test]

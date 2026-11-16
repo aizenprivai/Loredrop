@@ -284,20 +284,34 @@ impl Scene<'_> {
         } else {
             None
         };
+        // Every step moves `t` forward by at least the smallest `t_delta`,
+        // so the `max_dist` test below always ends the loop.
+        //
+        // Speed trick: all `t` values here are >= 0, and for non-negative
+        // floats the bit patterns sort in the same order as the numbers. So
+        // they are compared as integers: on the calculator's ARM CPU this
+        // avoids moving each float comparison result from the FPU to the
+        // main core (a slow step) in the hottest loop of the game.
+        let max_bits = self.max_dist.to_bits();
+        let (mut idx, idx_add, idx_mask) = World::index_stepper(cell, step);
         loop {
-            let axis = if t_max[0] < t_max[1] {
-                if t_max[0] < t_max[2] { 0 } else { 2 }
-            } else if t_max[1] < t_max[2] {
+            let (b0, b1, b2) = (t_max[0].to_bits(), t_max[1].to_bits(), t_max[2].to_bits());
+            let axis = if b0 < b1 {
+                if b0 < b2 { 0 } else { 2 }
+            } else if b1 < b2 {
                 1
             } else {
                 2
             };
             let t = t_max[axis];
-            if t > self.max_dist {
+            if t.to_bits() > max_bits {
                 return (self.finish(self.sky.fog, self.max_dist, water_from, true, d), f32::INFINITY);
             }
             cell[axis] += step[axis];
             t_max[axis] += t_delta[axis];
+            // Move the storage index one cell along `axis` (wrapping x and z
+            // inside the window), instead of rebuilding it from x, y, z.
+            idx = (idx & !idx_mask[axis]) | (idx.wrapping_add(idx_add[axis]) & idx_mask[axis]);
             let y = cell[1];
             // Above every block of the window: a ray that isn't going down
             // can only reach the sky.
@@ -307,8 +321,51 @@ impl Scene<'_> {
                 }
                 continue;
             }
-            let b = if y < 0 { BEDROCK } else { self.world.get_fast(cell[0], y, cell[2]) };
+            let b = if y < 0 { BEDROCK } else { self.world.get_index(idx) };
             if b == AIR {
+                // Sky skipping: a ray that isn't going down, and is already
+                // above every block of this 4x4 group of columns, can't hit
+                // anything until it leaves the group, so jump to its edge.
+                if step[1] >= 0 && y > self.world.group_high(cell[0], cell[2]) {
+                    let (mut te, mut ea) = (f32::INFINITY, 0);
+                    for a in [0, 2] {
+                        if step[a] != 0 {
+                            let bound = if step[a] > 0 { (cell[a] | 3) + 1 } else { cell[a] & !3 };
+                            let ta = (bound as f32 - o[a]) * step[a] as f32 * t_delta[a];
+                            if ta < te {
+                                te = ta;
+                                ea = a;
+                            }
+                        }
+                    }
+                    if te.to_bits() > max_bits {
+                        return (
+                            self.finish(self.sky.fog, self.max_dist, water_from, true, d),
+                            f32::INFINITY,
+                        );
+                    }
+                    // Only worth it when the jump skips more than a cell.
+                    if te > t + 1.0 {
+                        for a in 0..3 {
+                            let c = if a == ea {
+                                if step[a] > 0 { cell[a] | 3 } else { cell[a] & !3 }
+                            } else {
+                                ifloor(o[a] + d[a] * te)
+                            };
+                            // Never move back against the ray (rounding at corners).
+                            cell[a] = match step[a] {
+                                1 => c.max(cell[a]),
+                                -1 => c.min(cell[a]),
+                                _ => cell[a],
+                            };
+                            if step[a] != 0 {
+                                let next = if step[a] > 0 { cell[a] + 1 } else { cell[a] };
+                                t_max[a] = (next as f32 - o[a]) * step[a] as f32 * t_delta[a];
+                            }
+                        }
+                        (idx, _, _) = World::index_stepper(cell, step);
+                    }
+                }
                 continue;
             }
             let bd = def(b);
