@@ -455,3 +455,8 @@
   maths 37.3 ms, total 42.2 ms (≈ 23 FPS). The speed test now adds memory
   probes (ns per operation for arithmetic, small/large RAM reads and flash
   reads) to find where the CPU waits.
+- Probes on the N0120: flash random read **730 ns** vs RAM ~30 ns. So the
+  renderer now reads the **block table from a RAM copy** and textures
+  through a **32-texture RAM cache** (`ramcache`, 16 KB; a texture is copied
+  in once when first needed). Pictures identical. A "hot flash" probe was
+  added to the speed test. Game state ≈ 110 KB RAM.

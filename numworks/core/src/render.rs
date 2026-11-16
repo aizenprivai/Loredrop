@@ -22,6 +22,7 @@ use crate::blocks::*;
 use crate::color::{mix, scale};
 use crate::math::{abs, cos, ifloor, sin, sqrt, tan};
 use crate::models::{EntityScene, MAX_VIEWS};
+use crate::ramcache::RamTables;
 use crate::settings::Settings;
 use crate::sky::Sky;
 use crate::world::World;
@@ -79,6 +80,8 @@ struct Scene<'a> {
     ceiling: i32,
     /// Torches close enough to light what is visible.
     torches: Torches,
+    /// RAM copies of the block table and textures.
+    ram: &'a RamTables,
 }
 
 /// Most torches taken into account in one frame (the nearest ones).
@@ -157,6 +160,7 @@ pub fn render(
     ents: &mut EntityScene,
     pixel_size: usize,
     lines: &mut [u16; SCREEN_W * BATCH_ROWS],
+    ram: &RamTables,
 ) {
     // One ray per `ps` x `ps` screen pixels. 320x200 isn't always a
     // multiple of `ps` (3), so the last column/row is cut off.
@@ -197,6 +201,7 @@ pub fn render(
         pixel_angle: 2.0 * half_h / sh,
         ceiling: world.ceiling().min(HEIGHT as i32 - 1),
         torches: Torches::near(world, cam.eye, max_dist as i32 + 14),
+        ram,
     };
 
     ents.place(cam.eye, fwd, right, up, half_w, half_h, rw, rh);
@@ -229,7 +234,7 @@ pub fn render(
                     if (i as i32) < r[0] || (i as i32) > r[2] {
                         continue;
                     }
-                    if let Some((te, ce)) = ents.hit(k, i as i32, j as i32, cam.eye, d, best) {
+                    if let Some((te, ce)) = ents.hit(k, i as i32, j as i32, cam.eye, d, best, ram) {
                         best = te;
                         c = scene.finish(ce, te, None, false, d);
                     }
@@ -387,7 +392,7 @@ impl Scene<'_> {
                 }
                 continue;
             }
-            let bd = def(b);
+            let bd = self.ram.def(b);
             if bd.layer == Layer::Water {
                 if water_from.is_none() {
                     // Surface colour from the water texture, for ripples.
@@ -399,7 +404,7 @@ impl Scene<'_> {
                     };
                     let tu = ((fu * 16.0) as i32).clamp(0, 15) as usize;
                     let tv = ((fv * 16.0) as i32).clamp(0, 15) as usize;
-                    let texel = TEXTURES[bd.tex[0] as usize][tv * 16 + tu];
+                    let texel = self.ram.texel(bd.tex[0], tv * 16 + tu);
                     let lit = y + 1 >= HEIGHT as i32 || self.world.sees_sky(cell[0], y + 1, cell[2]);
                     let light = if lit { self.sun_light } else { self.cave_light * 2 };
                     water_from = Some((t, scale(texel, light)));
@@ -426,7 +431,7 @@ impl Scene<'_> {
                     }
                     let tu = ((px * 16.0) as usize).min(15);
                     let tv = (15 - (py * 16.0) as i32).clamp(0, 15) as usize;
-                    let texel = TEXTURES[bd.tex[1] as usize][tv * 16 + tu];
+                    let texel = self.ram.texel(bd.tex[1], tv * 16 + tu);
                     if texel != TRANSPARENT {
                         best = Some((tp, texel));
                     }
@@ -461,7 +466,7 @@ impl Scene<'_> {
             } else {
                 (15 - (fv * 16.0) as i32).clamp(0, 15) as usize
             };
-            let mut c = TEXTURES[bd.tex[face] as usize][tv * 16 + tu];
+            let mut c = self.ram.texel(bd.tex[face], tv * 16 + tu);
             if c == TRANSPARENT {
                 continue; // see-through texel of leaves or glass
             }

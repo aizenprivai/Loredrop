@@ -49,6 +49,7 @@ pub mod models;
 pub mod noise;
 pub mod player;
 pub mod probe;
+pub mod ramcache;
 pub mod render;
 pub mod settings;
 pub mod sky;

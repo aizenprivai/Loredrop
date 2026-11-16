@@ -194,6 +194,14 @@ is ~89 %. 37.3 ms for 7 100 rays ≈ 5 µs ≈ 2 900 cycles per ray for roughly
 800 instructions: the CPU mostly waits on memory. The speed test now also
 probes memory (arithmetic, 6 KB RAM, 48 KB RAM, flash reads) to find which.
 
+Memory probes on the N0120 (director): arithmetic 0.5 ns, random reads in
+RAM ~30 ns (6 KB and 48 KB alike), **random reads in flash 730 ns** (~25x
+RAM, ~400 cycles). The renderer read the block table and a texture from
+flash for every pixel; NW6 now reads both from RAM (block table copied
+into the game state, 32-texture RAM cache). A "hot" probe (same 64 bytes
+of flash again and again) tells whether constants stored next to the code
+are cached.
+
 Rough guess made before the test for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
 settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
 about 3–4 times faster.

@@ -8,12 +8,13 @@
 //! with the boxes ([`EntityScene::hit`]); if a box is closer than the
 //! terrain, its textured face is shown instead.
 
-use crate::blocks::{TEXTURES, TRANSPARENT};
+use crate::blocks::TRANSPARENT;
 use crate::color::{hex, mix, scale};
 use crate::entities::Entities;
 use crate::items::{ARROW, block_of, item_def};
 use crate::math::{cos, ifloor, sin, sqrt};
 use crate::mobs::{Role, mob_def};
+use crate::ramcache::RamTables;
 use crate::world::World;
 
 /// Most entities drawn in one frame (the nearest ones).
@@ -138,6 +139,7 @@ impl EntityScene {
         o: [f32; 3],
         d: [f32; 3],
         max_t: f32,
+        ram: &RamTables,
     ) -> Option<(f32, u16)> {
         let v = &self.views[vi];
         // Quick reject with the bounding sphere: the ray misses it, or the
@@ -201,7 +203,7 @@ impl EntityScene {
                 1 => (norm(0), norm(2)),
                 _ => (norm(0), 1.0 - norm(1)),
             };
-            let texel = TEXTURES[b.tex[face] as usize][((w * 16.0) as usize) * 16 + (u * 16.0) as usize];
+            let texel = ram.texel(b.tex[face], ((w * 16.0) as usize) * 16 + (u * 16.0) as usize);
             if texel == TRANSPARENT {
                 continue;
             }

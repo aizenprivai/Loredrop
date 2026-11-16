@@ -122,6 +122,8 @@ pub struct Game {
     pub entities: Entities,
     /// Entities prepared for drawing (scratch space, rebuilt every frame).
     scene: EntityScene,
+    /// RAM copies of the block table and textures for the renderer.
+    ram: crate::ramcache::RamTables,
     /// Screen rows being prepared before they are sent to the display.
     lines: [u16; crate::SCREEN_W * render::BATCH_ROWS],
     /// Lore fragments found (bit i = `LORE[i]`).
@@ -144,8 +146,8 @@ pub struct Game {
     /// Last speed test: screen, 3D compute, 3D complete (ms x10), pixel size, view.
     pub speed_results: [u32; 5],
     /// Last memory probes (tenths of ns per operation): arithmetic, small
-    /// RAM, big RAM, flash.
-    pub probe_results: [u32; 4],
+    /// RAM, big RAM, random flash, repeated flash.
+    pub probe_results: [u32; 5],
     /// World time in ticks since the world was created.
     pub time: u32,
     /// Where the player (re)spawns.
@@ -193,6 +195,7 @@ impl Game {
             entities: Entities::new(),
             scene: EntityScene::new(),
             lines: [0; crate::SCREEN_W * render::BATCH_ROWS],
+            ram: crate::ramcache::RamTables::new(),
             lore_found: 0,
             lore_shown: 0,
             lore_back: Screen::Playing,
@@ -202,7 +205,7 @@ impl Game {
             time_sums: [0; 3],
             timings: [0; 3],
             speed_results: [0; 5],
-            probe_results: [0; 4],
+            probe_results: [0; 5],
             time: 0,
             spawn: [0.0; 3],
             rng: Rng(0x1234_5678),
@@ -644,6 +647,7 @@ impl Game {
                 &mut self.scene,
                 pixel,
                 &mut self.lines,
+                &self.ram,
             );
         }
         let compute = (p.millis() - t1) * 10 / RUNS;
@@ -662,6 +666,7 @@ impl Game {
                 &mut self.scene,
                 pixel,
                 &mut self.lines,
+                &self.ram,
             );
         }
         let full = (p.millis() - t2) * 10 / RUNS;
@@ -696,12 +701,21 @@ impl Game {
             let _ = write!(t, "Pixel {}  View {}  ->  about {} FPS", pixel, view, fps);
             hud::centered_small(p, t.as_str(), 136, hud::GOLD);
             // Memory probes, in nanoseconds per operation.
-            let [alu, small, big, flash] = self.probe_results;
+            let [alu, small, big, flash, hot] = self.probe_results;
             let mut m: Text<48> = Text::new();
             let _ = write!(m, "ns: calc {}.{}  ram6k {}.{}", alu / 10, alu % 10, small / 10, small % 10);
             hud::centered_small(p, m.as_str(), 164, hud::TEXT);
             m.clear();
-            let _ = write!(m, "ram48k {}.{}  flash {}.{}", big / 10, big % 10, flash / 10, flash % 10);
+            let _ = write!(
+                m,
+                "ram48k {}.{}  flash {}.{}  hot {}.{}",
+                big / 10,
+                big % 10,
+                flash / 10,
+                flash % 10,
+                hot / 10,
+                hot % 10
+            );
             hud::centered_small(p, m.as_str(), 182, hud::TEXT);
             hud::centered_small(p, "Please send these numbers. Back: return", 214, hud::DIM);
         } else {
@@ -981,6 +995,7 @@ impl Game {
             &mut self.scene,
             pixel as usize,
             &mut self.lines,
+            &self.ram,
         );
         let t_bar = p.millis();
         if self.vitals.since_hurt < 4 || self.vitals.fire > 0 {

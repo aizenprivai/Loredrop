@@ -8,7 +8,9 @@
 //! * plain arithmetic (no memory) — the CPU's own speed,
 //! * random reads in a small RAM table (the 6 KB fill map),
 //! * random reads in the big RAM table (the 48 KB world),
-//! * random reads in the textures, which live in the app's flash memory.
+//! * random reads in the textures, which live in the app's flash memory,
+//! * reads that keep hitting the same 64 bytes of flash (does the CPU's
+//!   cache keep recently read flash, e.g. constants stored next to code?).
 //!
 //! Comparing them tells which memory is slow, and so what to optimise next.
 
@@ -34,8 +36,8 @@ fn time(p: &mut dyn Platform, ops: u32, f: impl FnOnce() -> u32) -> u32 {
 }
 
 /// Results in tenths of a nanosecond per operation: arithmetic, small-RAM
-/// read, big-RAM read, flash (texture) read.
-pub fn run(p: &mut dyn Platform, world: &World) -> [u32; 4] {
+/// read, big-RAM read, random flash read, repeated flash read.
+pub fn run(p: &mut dyn Platform, world: &World) -> [u32; 5] {
     const N: u32 = 2_000_000;
     let (blocks, filled) = world.raw_tables();
     let alu = time(p, N, || {
@@ -69,8 +71,24 @@ pub fn run(p: &mut dyn Platform, world: &World) -> [u32; 4] {
         }
         acc
     });
+    let flash_hot = time(p, N, || {
+        let mut x = black_box(5u32);
+        let mut acc = 0u32;
+        for _ in 0..N {
+            x = lcg(x);
+            // Always within the first 32 texels (64 bytes) of one texture.
+            acc = acc.wrapping_add(TEXTURES[black_box(1)][((x >> 8) & 31) as usize] as u32);
+        }
+        acc
+    });
     // The read loops also do the arithmetic: report the extra cost of the read.
-    [alu, small.saturating_sub(alu), big.saturating_sub(alu), flash.saturating_sub(alu)]
+    [
+        alu,
+        small.saturating_sub(alu),
+        big.saturating_sub(alu),
+        flash.saturating_sub(alu),
+        flash_hot.saturating_sub(alu),
+    ]
 }
 
 #[cfg(test)]
@@ -103,7 +121,14 @@ mod tests {
         w.reset(1);
         w.update(0, 0, usize::MAX);
         let r = run(&mut Clock(std::time::Instant::now()), &w);
-        std::println!("probes (ns/op): calc {} small {} big {} flash {}", r[0], r[1], r[2], r[3]);
+        std::println!(
+            "probes (0.1 ns/op): calc {} small {} big {} flash {} hot {}",
+            r[0],
+            r[1],
+            r[2],
+            r[3],
+            r[4]
+        );
         assert!(r.iter().all(|&v| v < 1_000_000));
     }
 }
