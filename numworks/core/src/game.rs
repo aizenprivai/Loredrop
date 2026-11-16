@@ -88,6 +88,8 @@ pub enum Screen {
     Lore,
     /// List of the lore fragments found so far.
     Journal,
+    /// Results of the built-in speed test.
+    SpeedTest,
 }
 
 /// The whole game state. Large (the world is ~66 KB): keep it in a `static`.
@@ -120,6 +122,8 @@ pub struct Game {
     pub entities: Entities,
     /// Entities prepared for drawing (scratch space, rebuilt every frame).
     scene: EntityScene,
+    /// Screen rows being prepared before they are sent to the display.
+    lines: [u16; crate::SCREEN_W * render::BATCH_ROWS],
     /// Lore fragments found (bit i = `LORE[i]`).
     pub lore_found: u16,
     /// Fragment being read, and where to go back to.
@@ -127,7 +131,7 @@ pub struct Game {
     lore_back: Screen,
     /// Ticks since the last attack (for the attack cooldown).
     attack_ticks: u32,
-    /// Pixel size chosen by the automatic setting (2–4).
+    /// Pixel size chosen by the automatic setting (1–4).
     pub auto_pixel: u8,
     /// Longest view distance automatic quality allows (lowered only when
     /// pixel size 4 is still too slow).
@@ -137,6 +141,8 @@ pub struct Game {
     time_sums: [u64; 3],
     /// Average ms per frame of the last second (3D view, game, bar), x10.
     pub timings: [u32; 3],
+    /// Last speed test: screen, 3D compute, 3D complete (ms x10), pixel size, view.
+    pub speed_results: [u32; 5],
     /// World time in ticks since the world was created.
     pub time: u32,
     /// Where the player (re)spawns.
@@ -183,6 +189,7 @@ impl Game {
             furnaces: [Furnace::EMPTY; MAX_FURNACES],
             entities: Entities::new(),
             scene: EntityScene::new(),
+            lines: [0; crate::SCREEN_W * render::BATCH_ROWS],
             lore_found: 0,
             lore_shown: 0,
             lore_back: Screen::Playing,
@@ -191,6 +198,7 @@ impl Game {
             auto_view: 14,
             time_sums: [0; 3],
             timings: [0; 3],
+            speed_results: [0; 5],
             time: 0,
             spawn: [0.0; 3],
             rng: Rng(0x1234_5678),
@@ -280,6 +288,7 @@ impl Game {
             Screen::Dead => self.dead(p),
             Screen::Lore => self.lore_screen(p),
             Screen::Journal => self.journal(p),
+            Screen::SpeedTest => self.speed_results_screen(p),
         }
     }
 
@@ -527,13 +536,20 @@ impl Game {
     }
 
     fn settings_screen(&mut self, p: &mut dyn Platform) -> bool {
-        let n = Settings::COUNT;
-        self.menu_nav(n);
-        if self.input.pressed(Key::Right) || self.input.pressed(Key::Ok) {
+        // The options, then one more line that runs the speed test.
+        let n = Settings::COUNT + 1;
+        let ok = self.menu_nav(n);
+        // (Checked after moving the cursor: it can wrap onto this line.)
+        let on_test = self.menu_index == Settings::COUNT;
+        if on_test && ok {
+            self.speed_test(p);
+            return true;
+        }
+        if !on_test && (self.input.pressed(Key::Right) || self.input.pressed(Key::Ok)) {
             self.settings.change(self.menu_index, 1);
             self.menu_dirty = true;
         }
-        if self.input.pressed(Key::Left) {
+        if !on_test && self.input.pressed(Key::Left) {
             self.settings.change(self.menu_index, -1);
             self.menu_dirty = true;
         }
@@ -548,25 +564,132 @@ impl Game {
             self.menu_dirty = false;
             hud::menu_frame(p, "SETTINGS");
             for i in 0..n {
-                let y = 42 + i as u16 * 18;
+                let y = 40 + i as u16 * 17;
                 let sel = i == self.menu_index;
                 let fg = if sel { hud::GOLD } else { hud::TEXT };
                 let mut t: Text<40> = Text::new();
-                let _ = write!(t, "{} {}", if sel { ">" } else { " " }, Settings::name(i));
+                let name = if i == Settings::COUNT { "Run speed test" } else { Settings::name(i) };
+                let _ = write!(t, "{} {}", if sel { ">" } else { " " }, name);
                 hud::text_padded(p, t.as_str(), 20, y, 22, false, fg, hud::MENU_BG);
-                hud::text_padded(p, self.settings.value(i).as_str(), 200, y, 14, false, fg, hud::MENU_BG);
+                let value = if i == Settings::COUNT { Text::new() } else { self.settings.value(i) };
+                hud::text_padded(p, value.as_str(), 200, y, 14, false, fg, hud::MENU_BG);
             }
-            hud::text_padded(
-                p,
-                Settings::description(self.menu_index),
-                20,
-                196,
-                42,
-                false,
-                hud::DIM,
-                hud::MENU_BG,
+            let desc = if on_test {
+                "Measures screen and 3D speed (OK)."
+            } else {
+                Settings::description(self.menu_index)
+            };
+            hud::text_padded(p, desc, 20, 200, 42, false, hud::DIM, hud::MENU_BG);
+            hud::centered_small(p, "Left/Right: change   Back: done", 220, hud::DIM);
+        } else {
+            p.sleep(20);
+        }
+        true
+    }
+
+    /// Built-in speed test (Settings → Run speed test): times, on this
+    /// calculator, sending full screens to the display, computing the 3D
+    /// view without sending it, and the complete 3D view, with the current
+    /// pixel size and view distance. The results screen stays until Back,
+    /// so they can be reported.
+    fn speed_test(&mut self, p: &mut dyn Platform) {
+        const RUNS: u64 = 8;
+        hud::menu_frame(p, "SPEED TEST");
+        hud::centered_small(p, "Testing, please wait...", 110, hud::TEXT);
+        let pixel = if self.settings.pixel_size == crate::settings::PIXEL_AUTO {
+            self.auto_pixel
+        } else {
+            self.settings.pixel_size
+        } as usize;
+        let mut view_settings = self.settings;
+        view_settings.view_distance = self.view_distance();
+        let sky = Sky::at(self.time);
+        let cam = Camera { eye: self.player.eye(), yaw: self.player.yaw, pitch: self.player.pitch };
+        let (sun, cave) = render::light_levels(&sky, &self.settings);
+        let view = self.view_distance() as f32;
+
+        // 1. Display only: full 3D-view-sized screens, 8 rows per send.
+        let t0 = p.millis();
+        for k in 0..RUNS {
+            self.lines.fill(if k % 2 == 0 { 0x0000 } else { 0x4208 });
+            for row in (0..render::VIEW_H).step_by(render::BATCH_ROWS) {
+                let h = render::BATCH_ROWS.min(render::VIEW_H - row);
+                p.push_rect(
+                    0,
+                    row as u16,
+                    crate::SCREEN_W as u16,
+                    h as u16,
+                    &self.lines[..crate::SCREEN_W * h],
+                );
+            }
+        }
+        let display = (p.millis() - t0) * 10 / RUNS;
+
+        // 2. 3D computed but not sent to the display.
+        let t1 = p.millis();
+        for _ in 0..RUNS {
+            models::build(&mut self.scene, &self.entities, &self.world, cam.eye, view, sun, cave);
+            let mut quiet = NoDisplay(&mut *p);
+            render::render(
+                &mut quiet,
+                &self.world,
+                &sky,
+                cam,
+                &view_settings,
+                None,
+                &mut self.scene,
+                pixel,
+                &mut self.lines,
             );
-            hud::centered_small(p, "Left/Right: change   Back: done", 218, hud::DIM);
+        }
+        let compute = (p.millis() - t1) * 10 / RUNS;
+
+        // 3. The complete 3D view.
+        let t2 = p.millis();
+        for _ in 0..RUNS {
+            models::build(&mut self.scene, &self.entities, &self.world, cam.eye, view, sun, cave);
+            render::render(
+                p,
+                &self.world,
+                &sky,
+                cam,
+                &view_settings,
+                None,
+                &mut self.scene,
+                pixel,
+                &mut self.lines,
+            );
+        }
+        let full = (p.millis() - t2) * 10 / RUNS;
+
+        self.speed_results = [display as u32, compute as u32, full as u32, pixel as u32, view as u32];
+        self.screen = Screen::SpeedTest;
+        self.menu_dirty = true;
+    }
+
+    /// Shows the speed test results until Back is pressed.
+    fn speed_results_screen(&mut self, p: &mut dyn Platform) -> bool {
+        if self.input.pressed(Key::Back) || self.input.pressed(Key::Ok) {
+            self.screen = Screen::Settings;
+            self.menu_dirty = true;
+            return true;
+        }
+        if self.menu_dirty {
+            self.menu_dirty = false;
+            let [display, compute, full, pixel, view] = self.speed_results;
+            hud::menu_frame(p, "SPEED TEST");
+            let rows: [(&str, u32); 3] =
+                [("Screen only", display), ("3D compute only", compute), ("3D complete", full)];
+            for (i, (name, v)) in rows.iter().enumerate() {
+                let mut t: Text<40> = Text::new();
+                let _ = write!(t, "{:<16}{:>4}.{} ms", name, v / 10, v % 10);
+                p.draw_string(t.as_str(), 40, 60 + i as u16 * 24, false, hud::TEXT, hud::MENU_BG);
+            }
+            let mut t: Text<44> = Text::new();
+            let fps = 10_000u32.checked_div(full).unwrap_or(0);
+            let _ = write!(t, "Pixel {}  View {}  ->  about {} FPS", pixel, view, fps);
+            hud::centered_small(p, t.as_str(), 150, hud::GOLD);
+            hud::centered_small(p, "Please send these numbers. Back: return", 210, hud::DIM);
         } else {
             p.sleep(20);
         }
@@ -834,7 +957,17 @@ impl Game {
         // Automatic quality may shorten the view distance.
         let mut view_settings = self.settings;
         view_settings.view_distance = self.view_distance();
-        render::render(p, &self.world, &sky, cam, &view_settings, target, &mut self.scene, pixel as usize);
+        render::render(
+            p,
+            &self.world,
+            &sky,
+            cam,
+            &view_settings,
+            target,
+            &mut self.scene,
+            pixel as usize,
+            &mut self.lines,
+        );
         let t_bar = p.millis();
         if self.vitals.since_hurt < 4 || self.vitals.fire > 0 {
             // Red (hurt) or orange (burning) frame around the view.
@@ -892,7 +1025,9 @@ impl Game {
             if self.fps * view / (view + 2) >= 15 {
                 self.auto_view = (view + 2) as u8;
             }
-        } else if ps > 2 {
+        } else if ps > 1 {
+            // (Full resolution, size 1, is only chosen when it should still
+            // run at 15 FPS or more.)
             let sharper = ps - 1;
             let predicted = self.fps * sharper * sharper / (ps * ps);
             if predicted >= 15 {
@@ -1337,6 +1472,27 @@ impl Game {
             self.last_panel = shown;
         }
         self.hud_dirty = false;
+    }
+}
+
+/// Wraps a platform so nothing is drawn (used to time the 3D maths alone).
+struct NoDisplay<'a>(&'a mut dyn Platform);
+
+impl Platform for NoDisplay<'_> {
+    fn push_rect(&mut self, _: u16, _: u16, _: u16, _: u16, _: &[u16]) {}
+    fn fill_rect(&mut self, _: u16, _: u16, _: u16, _: u16, _: u16) {}
+    fn draw_string(&mut self, _: &str, _: u16, _: u16, _: bool, _: u16, _: u16) {}
+    fn keyboard(&mut self) -> u64 {
+        self.0.keyboard()
+    }
+    fn millis(&mut self) -> u64 {
+        self.0.millis()
+    }
+    fn random(&mut self) -> u32 {
+        self.0.random()
+    }
+    fn sleep(&mut self, ms: u32) {
+        self.0.sleep(ms)
     }
 }
 

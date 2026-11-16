@@ -433,3 +433,21 @@
 - Terrain columns generated per frame while walking: 24 → 12 (nearest first).
 - Tried and rejected after measuring: skipping empty 4x4x4 regions in all
   directions (+23 % instructions — each jump cost more than the cells it saved).
+
+### 2026-11-16 — NumWorks edition, NW6: memory-focused speed work (director approved)
+- First real-calculator figures (director's N0120): `3D63 G0 B0 P2 V12`
+  (≈ 16 FPS) — the 3D view is the whole cost, about twice what the
+  instruction count predicts, so memory waits are the suspect.
+- **1-bit fill map** (6 KB, one bit per block, kept with the block array):
+  rays test it to cross air instead of reading the 48 KB block array.
+  Picture identical; host −14 to −20 % (≈ 1.7–1.9 ms/frame).
+- **Display batching**: 8 screen rows per `push_rect` (each one is a call
+  into the calculator's system): 25 calls per frame instead of 100 at pixel
+  size 2, from a 5 KB row buffer kept in the game state.
+- **Pixel size 1** (full resolution, 320x200 rays) for the best picture;
+  *Auto* may pick it when it would still run at 15 FPS.
+- **Built-in speed test** (Settings → Run speed test): times screen sending,
+  3D maths alone and the complete 3D view on the calculator itself.
+- Fixed a crash in the settings list when the cursor wrapped onto the new
+  last line (found by the PC harness).
+- Game state 80 → 92 KB RAM (row buffer + fill map).

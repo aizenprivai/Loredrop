@@ -30,7 +30,8 @@ report and needs approval.
 | NW2 | Survival: health, hunger, fall damage, inventory, crafting, tools, furnace | ✅ Done on PC — waiting for report approval and a real-calculator test |
 | NW3 | Creatures (animals, zombies, skeletons, spiders, the Hollow), combat, armour, dropped items, ruins with lore | ✅ Done on PC — waiting for report approval and a real-calculator test |
 | NW4 | Speed & polish: automatic quality, timing display, torches + light, plants, smarter creatures | ✅ Done on PC |
-| NW5 | Maximum-speed pass (ray loop, sky skipping, creature culling, M7 tuning, auto view distance) | ✅ Done on PC, approved — real-calculator timings needed for the next step |
+| NW5 | Maximum-speed pass (ray loop, sky skipping, creature culling, M7 tuning, auto view distance) | ✅ Done, approved; first real test: N0120 ≈ 16 FPS |
+| NW6 | Memory-focused speed: 1-bit fill map, display batching, pixel size 1, built-in speed test | ✅ Done on PC — waiting for the director's speed-test numbers |
 
 Notes:
 - The settings system (with descriptions for every option) and the performance

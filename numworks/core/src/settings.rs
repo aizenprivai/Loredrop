@@ -15,7 +15,8 @@ pub const PIXEL_AUTO: u8 = 0;
 pub struct Settings {
     /// How far you can see, in blocks. Lower is faster.
     pub view_distance: u8,
-    /// Size of one rendered pixel on screen: 2 is sharp, 3 in between, 4 is
+    /// Size of one rendered pixel on screen: 1 is full resolution (best
+    /// picture, about four times slower than 2), 2 sharp, 3 in between, 4
     /// blocky but about four times faster than 2. `PIXEL_AUTO` picks one
     /// while playing to keep the game smooth.
     pub pixel_size: u8,
@@ -67,7 +68,7 @@ impl Settings {
     pub fn description(i: usize) -> &'static str {
         [
             "How far you see. Lower = faster.",
-            "Auto keeps it smooth. 2 sharp, 4 fast.",
+            "Auto keeps it smooth. 1 best, 4 fastest.",
             "Width of the view, in degrees.",
             "Arrow-key turning speed (deg/s).",
             "Jump up one-block steps by itself.",
@@ -101,10 +102,10 @@ impl Settings {
         match i {
             0 => self.view_distance = step(self.view_distance as i32, 2, 6, 14) as u8,
             1 => {
-                // Auto, 2, 3, 4 in a row.
-                const ORDER: [u8; 4] = [PIXEL_AUTO, 2, 3, 4];
+                // Auto, 1, 2, 3, 4 in a row.
+                const ORDER: [u8; 5] = [PIXEL_AUTO, 1, 2, 3, 4];
                 let k = ORDER.iter().position(|&v| v == self.pixel_size).unwrap_or(0) as i32;
-                self.pixel_size = ORDER[(k + dir).clamp(0, 3) as usize];
+                self.pixel_size = ORDER[(k + dir).clamp(0, 4) as usize];
             }
             2 => self.fov = step(self.fov as i32, 5, 50, 100) as u8,
             3 => self.turn_speed = step(self.turn_speed as i32, 30, 60, 360) as u16,

@@ -180,6 +180,12 @@ cost. 63 ms ≈ 35 M cycles at 550 MHz for ≈ 13 M (x86) instructions: about
 the external QSPI flash; the 48 KB world vs the CPU's data cache) probably
 matter as much as the arithmetic.
 
+NW6 (host, pixel 2, view 12): seed 1 2.19 → 1.87 ms, seed 3 2.31 → 1.77.
+Five creatures close by: 3.3–3.6 ms (unchanged within run-to-run noise;
+creatures aren't helped by the fill map). Callgrind: render 381 M → 399 M
+instructions (the fill-map test adds instructions but removes most
+block-array reads). Real-calculator split: Settings → *Run speed test*.
+
 Rough guess made before the test for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
 settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
 about 3–4 times faster.

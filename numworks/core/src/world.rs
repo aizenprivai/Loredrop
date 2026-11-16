@@ -39,6 +39,10 @@ struct Edit {
 /// The loaded part of the world and the player's changes.
 pub struct World {
     blocks: [Block; SIZE * SIZE * HEIGHT],
+    /// One bit per block, set when it isn't air (same order as `blocks`).
+    /// Rays mostly cross air: testing these 6 KB instead of the 48 KB of
+    /// blocks keeps their memory reads in the CPU's small fast cache.
+    filled: [u8; SIZE * SIZE * HEIGHT / 8],
     /// Which column each slot holds, as `(x >> SHIFT, z >> SHIFT)`.
     owner: [(i16, i16); SIZE * SIZE],
     /// Height of the highest opaque block of each slot (light from the sky
@@ -63,6 +67,7 @@ impl World {
     pub const fn new() -> Self {
         Self {
             blocks: [AIR; SIZE * SIZE * HEIGHT],
+            filled: [0; SIZE * SIZE * HEIGHT / 8],
             owner: [EMPTY; SIZE * SIZE],
             top: [0; SIZE * SIZE],
             high: [0; SIZE * SIZE],
@@ -160,7 +165,22 @@ impl World {
     /// Writes one block of a loaded column.
     #[inline]
     fn write(&mut self, x: i32, y: usize, z: i32, block: Block) {
-        self.blocks[Self::index(Self::slot(x, z), y)] = block;
+        let i = Self::index(Self::slot(x, z), y);
+        self.blocks[i] = block;
+        let bit = 1u8 << (i & 7);
+        if block == AIR {
+            self.filled[i >> 3] &= !bit;
+        } else {
+            self.filled[i >> 3] |= bit;
+        }
+    }
+
+    /// Whether storage index `i` (from `index_stepper`, y in range) holds
+    /// anything but air — read from the 1-bit-per-block map.
+    #[inline(always)]
+    pub fn is_filled(&self, i: u32) -> bool {
+        // SAFETY: as for `get_index`, i < blocks.len(), so i / 8 < filled.len().
+        unsafe { (*self.filled.get_unchecked((i >> 3) as usize) >> (i & 7)) & 1 == 1 }
     }
 
     /// Whether the sky is visible straight up from `(x, y, z)` (no opaque

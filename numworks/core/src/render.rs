@@ -32,6 +32,9 @@ use crate::{Platform, SCREEN_W};
 pub const VIEW_H: usize = 200;
 /// Largest supported pixel size.
 const MAX_PIXEL: usize = 4;
+/// Screen rows sent to the display in one go. Each send is a call into the
+/// calculator's system (with a fixed cost), so rows are batched.
+pub const BATCH_ROWS: usize = 8;
 /// Colour of water seen from above or below.
 const WATER_COLOR: u16 = crate::color::hex(0x2F5FC8);
 /// Outline colour of the targeted block.
@@ -153,6 +156,7 @@ pub fn render(
     target: Option<Target>,
     ents: &mut EntityScene,
     pixel_size: usize,
+    lines: &mut [u16; SCREEN_W * BATCH_ROWS],
 ) {
     // One ray per `ps` x `ps` screen pixels. 320x200 isn't always a
     // multiple of `ps` (3), so the last column/row is cut off.
@@ -197,7 +201,8 @@ pub fn render(
 
     ents.place(cam.eye, fwd, right, up, half_w, half_h, rw, rh);
 
-    let mut buf = [0u16; SCREEN_W * MAX_PIXEL];
+    // Rows waiting in `lines` and the screen row where they start.
+    let (mut filled, mut first_row) = (0usize, 0usize);
     let center_y = VIEW_H / 2;
     for j in 0..rh {
         let v = (1.0 - 2.0 * (j as f32 + 0.5) / sh) * half_h;
@@ -230,19 +235,21 @@ pub fn render(
                     }
                 }
             }
+            let base = filled * SCREEN_W + i * ps;
             for k in 0..ps.min(SCREEN_W - i * ps) {
-                buf[i * ps + k] = c;
+                lines[base + k] = c;
             }
         }
         // Repeat the row `ps` times (fewer for a cut-off last row), then
         // add the crosshair.
         let rows = ps.min(VIEW_H - j * ps);
+        let row0 = filled * SCREEN_W;
         for r in 1..rows {
-            buf.copy_within(0..SCREEN_W, r * SCREEN_W);
+            lines.copy_within(row0..row0 + SCREEN_W, row0 + r * SCREEN_W);
         }
         for r in 0..rows {
             let y = j * ps + r;
-            let line = &mut buf[r * SCREEN_W..(r + 1) * SCREEN_W];
+            let line = &mut lines[row0 + r * SCREEN_W..row0 + (r + 1) * SCREEN_W];
             let cx = SCREEN_W / 2;
             if y == center_y {
                 for px in &mut line[cx - 5..=cx + 5] {
@@ -252,7 +259,13 @@ pub fn render(
                 line[cx] = !line[cx];
             }
         }
-        p.push_rect(0, (j * ps) as u16, SCREEN_W as u16, rows as u16, &buf[..SCREEN_W * rows]);
+        filled += rows;
+        // Send when the batch is full (or this was the last row).
+        if filled + ps > BATCH_ROWS || j + 1 == rh {
+            p.push_rect(0, first_row as u16, SCREEN_W as u16, filled as u16, &lines[..SCREEN_W * filled]);
+            first_row += filled;
+            filled = 0;
+        }
     }
 }
 
@@ -321,7 +334,13 @@ impl Scene<'_> {
                 }
                 continue;
             }
-            let b = if y < 0 { BEDROCK } else { self.world.get_index(idx) };
+            let b = if y < 0 {
+                BEDROCK
+            } else if self.world.is_filled(idx) {
+                self.world.get_index(idx)
+            } else {
+                AIR
+            };
             if b == AIR {
                 // Sky skipping: a ray that isn't going down, and is already
                 // above every block of this 4x4 group of columns, can't hit

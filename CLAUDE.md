@@ -69,7 +69,9 @@ Read this first. It replaces the memory of earlier conversations.
   culling, M7 tuning, auto view distance) — **NW4 and NW5 approved**
   (2026-11-16). **First real test (director's N0120): works very well,
   `3D63 G0 B0 P2 V12`** (≈ 16 FPS; only the 3D view costs anything).
-  Release `numworks-v0.5` on GitHub holds the .nwa.
+  Release `numworks-v0.5` on GitHub holds the .nwa. **NW6 done** (1-bit
+  fill map, 8-row display batches, pixel size 1, Settings → *Run speed
+  test*) — waiting for approval and the speed-test numbers from the N0120.
   Phase 8 of the PC game is paused, not abandoned. See `numworks/README.md`.
   **NumWorks work lives on the GitHub branch `numworks`** (created at the
   director's request, 2026-11-16); `main` still holds the PC game only.
