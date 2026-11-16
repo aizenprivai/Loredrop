@@ -681,7 +681,12 @@ impl Game {
         }
         let mut right: Text<12> = Text::new();
         if self.settings.show_fps {
-            let _ = write!(right, "{} FPS", self.fps);
+            // The counter needs one full second of play before it has a value.
+            if self.fps == 0 {
+                let _ = write!(right, "-- FPS");
+            } else {
+                let _ = write!(right, "{} FPS", self.fps);
+            }
         }
         let mut both: Text<64> = Text::new();
         let _ = write!(both, "{}|{}", status.as_str(), right.as_str());
