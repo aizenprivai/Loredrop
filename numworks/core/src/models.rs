@@ -140,6 +140,14 @@ impl EntityScene {
         max_t: f32,
     ) -> Option<(f32, u16)> {
         let v = &self.views[vi];
+        // Quick reject with the bounding sphere: the ray misses it, or the
+        // terrain already hit is in front of it.
+        let rel = [v.center[0] - o[0], v.center[1] - o[1], v.center[2] - o[2]];
+        let tc = dot(rel, d);
+        let r2 = v.radius * v.radius;
+        if dot(rel, rel) - tc * tc > r2 || tc - v.radius > max_t {
+            return None;
+        }
         let mut best: Option<(f32, u16)> = None;
         let (px, py) = (px as i16, py as i16);
         for b in &v.parts[..v.count] {

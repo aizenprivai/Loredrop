@@ -425,6 +425,12 @@ A separate Cargo workspace, so the PC workspace (`crates/*`) is untouched and
     from FPS); `Layer::Cross` blocks are intersected as two diagonal
     planes; block light comes from a per-frame `Torches` list (nearest 16
     player-placed torches, found in the edit list) using Manhattan distance.
+  - NW5: the ray loop compares `t` values by their bit patterns and steps
+    the storage index with per-axis add/mask (`World::index_stepper`);
+    `World::group_high` (highest block per 4x4 group of slots) lets upward
+    rays jump to the group edge; entity views reject pixels with a bounding
+    sphere first. The app is built with `target-cpu=cortex-m7`, guarded by
+    a no-f64 check in `build_nwa.sh`.
 - **`gen_blocks.rs` / `gen_items.rs`** are generated from the PC game's
   `blocks.toml`, `items.toml`, `recipes.toml` and textures
   (`numworks/tools/gen_blocks.py`) — one source of truth for both editions.

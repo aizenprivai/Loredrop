@@ -413,3 +413,23 @@
   gets shorter; FPS counting restarts when play resumes.
 - 50 unit tests (3 new: torches, automatic pixel size, walking round a wall).
 - `loredrop.nwa`: 245 KB code + textures, 80 KB game state; nwlink check passed.
+
+### 2026-11-16 — NumWorks edition, NW5: maximum-speed pass (director's request)
+- **Sky skipping**: a ray going up, above every block of its 4x4 group of
+  columns, jumps to the group's edge (per-group highest block kept by the
+  world). Picture identical to the pixel; host time −23 % (2.73 → ~2.1–2.3
+  ms/frame); instruction count +2 % vs NW4 (fewer memory reads, more maths).
+- **Ray loop**: distances compared as integers (non-negative float bits;
+  avoids FPU→core flag transfers on ARM); storage index stepped
+  incrementally instead of rebuilt (−7 % instructions in the ray loop).
+- **Creatures**: bounding-sphere reject before testing body parts
+  (−31 % frame time with five creatures close by).
+- **Cortex-M7 tuning** (`target-cpu=cortex-m7`, every app-capable model is
+  an M7); `build_nwa.sh` now refuses any double-precision instruction (the
+  N0110's FPU is single precision).
+- **Automatic quality** also shortens the view distance (down to 8) when
+  pixel size 4 is still too slow, and gives it back first when fast again;
+  timing display shows the view distance in use (`V..`).
+- Terrain columns generated per frame while walking: 24 → 12 (nearest first).
+- Tried and rejected after measuring: skipping empty 4x4x4 regions in all
+  directions (+23 % instructions — each jump cost more than the cells it saved).

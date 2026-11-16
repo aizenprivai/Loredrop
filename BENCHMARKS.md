@@ -156,6 +156,20 @@ checks are what went). Pixel size 3: 1.44 ms vs 2.85 (size 2) and 0.82
 present (seed 3 plains: 3.17 ms). *Auto* pixel size now picks 2–4 at run
 time, and *Show timings* displays the real split on the calculator.
 
+NW5 (max-speed pass), host ms/frame, pixel size 2, view 12, turning:
+
+| Scene | NW4 | NW5 |
+|---|---|---|
+| Seed 1 | 2.86 | 2.19 |
+| Seed 3 (plains with plants) | 3.17 | 2.31 |
+| Five creatures 4.5 blocks away | 4.73 | 3.28 |
+
+Callgrind (seed 1, 30 frames): render 388 M → 381 M instructions (the
+ray-loop savings of −7 % are spent again by sky skipping, which trades
+memory reads for arithmetic). Which matters more on the calculator (cache
+misses on the 48 KB world vs raw instruction count) can only be told by the
+*Show timings* figures from a real calculator.
+
 Rough guess for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
 settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
 about 3–4 times faster.
