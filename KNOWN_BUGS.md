@@ -41,12 +41,14 @@
 | NW-001 | High | Open | Never run on a real calculator or the official simulator yet. Unknown: whether the calculator gives the app enough RAM (it needs ~67 KB; NumWorks doesn't publish the limit), real FPS, and how the controls feel. |
 | NW-002 | Info | By design | No saving: calculator apps have no access to storage. Settings also reset at each launch. |
 | NW-003 | Low | By design | Only 1024 changed blocks are remembered; past that, changes far from the player are forgotten when their area reloads (a message warns). |
-| NW-004 | Low | Open | No plants (grass, flowers), no falling sand/gravel, water doesn't flow, no torches. |
+| NW-004 | Low | Partly fixed (NW4) | ~~No plants, no torches~~ (added in NW4). Still: no falling sand/gravel, water doesn't flow. |
 | NW-005 | Low | Open | Dark/lit areas use a simple "sees the sky straight up" rule: hard light edges at cave mouths and under overhangs (no smooth light). |
 | NW-006 | — | Fixed (NW2) | ~~Item drops (coal, sticks...) aren't supported yet~~ — items, tools and drops added. |
 | NW-008 | — | Fixed (NW3) | ~~No item entities~~ — items now drop on the ground; death drops the inventory. Only 24 dropped stacks can exist: the oldest vanishes when a new one needs room. |
 | NW-009 | — | Fixed (NW3) | ~~Apples are the only food~~ — animals drop meat (cook it in a furnace). |
-| NW-012 | Low | Open | Creatures steer straight at their goal (no path-finding): they get stuck behind walls more often than on PC. |
+| NW-012 | Low | Improved (NW4) | Creatures steer straight at their goal (no path-finding); since NW4 they walk sideways around walls, but mazes and pits still beat them. |
+| NW-015 | Low | Open | Torch light ignores walls (it shines through them), only the 16 torches nearest the camera count, and torches only stand on the ground. |
+| NW-016 | Info | Open | With pixel size 3 the image is 107x67 rays, so the rightmost and bottom rays are only partly shown (cut at the screen edge). |
 | NW-013 | Info | By design | Creatures only exist inside the 32x32 loaded area and disappear when it moves away from them (animals included); monsters appear 12–15 blocks away (PC: 24–128) so they are rarer to compensate. |
 | NW-014 | Low | Open | Several big creatures right in front of the camera cost a lot of rendering time (about +70 % with five at 4 blocks); expect lower FPS in fights. |
 | NW-010 | Info | By design | At most 8 furnaces per world; they keep smelting while far away (PC furnaces only work in loaded chunks). |

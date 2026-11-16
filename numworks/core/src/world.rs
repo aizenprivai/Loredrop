@@ -104,7 +104,16 @@ impl World {
         if y >= HEIGHT as i32 || !self.is_loaded(x, z) {
             return AIR;
         }
-        self.blocks[Self::slot(x, z) * HEIGHT + y as usize]
+        self.blocks[Self::index(Self::slot(x, z), y as usize)]
+    }
+
+    /// Where block `y` of window slot `slot` is stored. The world is stored
+    /// layer by layer (all of y = 0, then y = 1...), so the index is built
+    /// with shifts only — the renderer computes it for every block a ray
+    /// crosses.
+    #[inline(always)]
+    fn index(slot: usize, y: usize) -> usize {
+        (y << (2 * SHIFT)) | slot
     }
 
     /// Fast read for the renderer: no check that the column is loaded, and
@@ -112,7 +121,11 @@ impl World {
     /// is safe in practice and saves time in the hottest loop of the game.
     #[inline(always)]
     pub fn get_fast(&self, x: i32, y: i32, z: i32) -> Block {
-        self.blocks[Self::slot(x, z) * HEIGHT + y as usize]
+        debug_assert!((0..HEIGHT as i32).contains(&y));
+        let i = ((y as usize) << (2 * SHIFT)) | (((z & MASK) as usize) << SHIFT) | (x & MASK) as usize;
+        // SAFETY: the masks keep the slot below SIZE*SIZE and callers keep y
+        // in 0..HEIGHT, so `i` < SIZE*SIZE*HEIGHT = blocks.len().
+        unsafe { *self.blocks.get_unchecked(i) }
     }
 
     /// Whether the sky is visible straight up from `(x, y, z)` (no opaque
@@ -130,7 +143,7 @@ impl World {
             return false;
         }
         let slot = Self::slot(x, z);
-        self.blocks[slot * HEIGHT + y as usize] = block;
+        self.blocks[Self::index(slot, y as usize)] = block;
         self.update_top(slot);
         self.remember(x, y as u8, z, block)
     }
@@ -148,15 +161,26 @@ impl World {
         true
     }
 
+    /// Calls `f` with the position of every torch the player placed (they
+    /// are the only light sources besides lava, and every placed block is
+    /// in the change list).
+    pub fn for_each_torch(&self, mut f: impl FnMut([i32; 3])) {
+        for e in &self.edits[..self.edit_count] {
+            if e.block == TORCH {
+                f([e.x, e.y as i32, e.z]);
+            }
+        }
+    }
+
     /// Number of remembered changes.
     pub fn edit_count(&self) -> usize {
         self.edit_count
     }
 
     fn update_top(&mut self, slot: usize) {
-        let col = &self.blocks[slot * HEIGHT..(slot + 1) * HEIGHT];
-        self.top[slot] = col.iter().rposition(|&b| is_opaque(b)).unwrap_or(0) as u8;
-        let high = col.iter().rposition(|&b| b != AIR).unwrap_or(0) as u8;
+        let at = |y: usize| self.blocks[Self::index(slot, y)];
+        self.top[slot] = (0..HEIGHT).rev().find(|&y| is_opaque(at(y))).unwrap_or(0) as u8;
+        let high = (0..HEIGHT).rev().find(|&y| at(y) != AIR).unwrap_or(0) as u8;
         self.high[slot] = high;
         self.ceiling = self.ceiling.max(high as i32);
     }
@@ -175,13 +199,15 @@ impl World {
     /// changes to it.
     fn load_column(&mut self, x: i32, z: i32) {
         let slot = Self::slot(x, z);
-        let col: &mut [Block; HEIGHT] =
-            (&mut self.blocks[slot * HEIGHT..(slot + 1) * HEIGHT]).try_into().unwrap();
-        generate_column(self.seed, x, z, col);
+        let mut col = [AIR; HEIGHT];
+        generate_column(self.seed, x, z, &mut col);
         for e in &self.edits[..self.edit_count] {
             if e.x == x && e.z == z {
                 col[e.y as usize] = e.block;
             }
+        }
+        for (y, &b) in col.iter().enumerate() {
+            self.blocks[Self::index(slot, y)] = b;
         }
         self.owner[slot] = Self::tag(x, z);
         self.update_top(slot);

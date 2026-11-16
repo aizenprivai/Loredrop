@@ -18,8 +18,8 @@ Python. Re-run this script whenever the PC game's data changes:
 
     python3 numworks/tools/gen_blocks.py
 
-Left out on purpose (not in the calculator edition yet): cross-shaped
-blocks (plants, torches), armour, and recipes that use anything left out.
+Cross-shaped blocks (plants, torches) become `Layer::Cross` and are walked
+through. Recipes that use anything missing from the data are left out.
 """
 
 import pathlib
@@ -140,7 +140,7 @@ def main():
     items_toml = tomllib.loads((DATA / "items.toml").read_text())
     recipes_toml = tomllib.loads((DATA / "recipes.toml").read_text())
 
-    blocks = [b for b in blocks_toml["block"] if b.get("shape", "cube") == "cube" and b.get("layer") != "invisible"]
+    blocks = [b for b in blocks_toml["block"] if b.get("layer") != "invisible"]
     items = list(items_toml["item"])
     mobs_toml = tomllib.loads((DATA / "mobs.toml").read_text())
     lore_toml = tomllib.loads((DATA / "lore.toml").read_text())
@@ -187,18 +187,24 @@ def main():
     lines.append("pub static BLOCKS: [BlockDef; BLOCK_COUNT] = [")
     lines.append(
         '    BlockDef { name: "Air", layer: Layer::Air, solid: false, tex: [0, 0, 0], hardness: 0.0, '
-        "tool: Tool::None, harvest_level: -1, light: 0 },"
+        "tool: Tool::None, harvest_level: -1, light: 0, replaceable: true },"
     )
     for b, faces in block_rows:
         layer = {"opaque": "Opaque", "cutout": "Cutout", "translucent": "Water"}[b.get("layer", "opaque")]
+        cross = b.get("shape", "cube") == "cross"
         if b["name"] == "lava":
             layer = "Lava"
+        if cross:
+            layer = "Cross"
+        # Plants and torches are walked through.
+        solid = False if cross else b.get("solid", True)
         tool = (b.get("tool") or "none").capitalize()
         lines.append(
             f'    BlockDef {{ name: "{rust_name(b.get("display", b["name"]))}", layer: Layer::{layer}, '
-            f"solid: {str(b.get('solid', True)).lower()}, tex: [{faces[0]}, {faces[1]}, {faces[2]}], "
+            f"solid: {str(solid).lower()}, tex: [{faces[0]}, {faces[1]}, {faces[2]}], "
             f"hardness: {float(b.get('hardness', 0.0))!r}, tool: Tool::{tool}, "
-            f"harvest_level: {b.get('harvest_level', -1)}, light: {int(b.get('light', 0))} }},"
+            f"harvest_level: {b.get('harvest_level', -1)}, light: {int(b.get('light', 0))}, "
+            f"replaceable: {str(b.get('replaceable', False)).lower()} }},"
         )
     lines.append("];")
 

@@ -74,6 +74,61 @@ struct Scene<'a> {
     pixel_angle: f32,
     /// Highest non-air block in the window (see `World::ceiling`).
     ceiling: i32,
+    /// Torches close enough to light what is visible.
+    torches: Torches,
+}
+
+/// Most torches taken into account in one frame (the nearest ones).
+pub const MAX_TORCHES: usize = 16;
+
+/// Torches near the camera, for block light.
+#[derive(Clone, Copy)]
+pub struct Torches {
+    /// Positions.
+    pub pos: [[i32; 3]; MAX_TORCHES],
+    /// How many are used.
+    pub count: usize,
+}
+
+impl Torches {
+    /// The torches within `radius` blocks of `c` (nearest first if there
+    /// are too many).
+    pub fn near(world: &World, c: [f32; 3], radius: i32) -> Torches {
+        let mut t = Torches { pos: [[0; 3]; MAX_TORCHES], count: 0 };
+        let (cx, cy, cz) = (ifloor(c[0]), ifloor(c[1]), ifloor(c[2]));
+        world.for_each_torch(|p| {
+            let d = (p[0] - cx).abs() + (p[1] - cy).abs() + (p[2] - cz).abs();
+            if d <= radius && t.count < MAX_TORCHES {
+                t.pos[t.count] = p;
+                t.count += 1;
+            }
+        });
+        t
+    }
+
+    /// Torch light at a cell (x256): Minecraft's block light falls by one
+    /// level per block from 14 at the torch (walls are ignored here).
+    #[inline]
+    pub fn light(&self, x: i32, y: i32, z: i32) -> u32 {
+        let mut level = 0;
+        for p in &self.pos[..self.count] {
+            let d = (p[0] - x).abs() + (p[1] - y).abs() + (p[2] - z).abs();
+            level = level.max(14 - d);
+        }
+        if level <= 0 {
+            return 0;
+        }
+        // Brightness curve: dim light falls off quickly, like on PC.
+        let l = level as u32;
+        l * l * 256 / 196
+    }
+}
+
+impl Scene<'_> {
+    #[inline]
+    fn torch_light(&self, x: i32, y: i32, z: i32) -> u32 {
+        if self.torches.count == 0 { 0 } else { self.torches.light(x, y, z) }
+    }
 }
 
 /// Brightness (x256) of places that see the sky and of places that don't
@@ -86,7 +141,9 @@ pub fn light_levels(sky: &Sky, settings: &Settings) -> (u32, u32) {
     (sun_light, cave_light)
 }
 
-/// Draws the 3D view (screen rows `0..VIEW_H`).
+/// Draws the 3D view (screen rows `0..VIEW_H`), one ray per
+/// `pixel_size` x `pixel_size` screen pixels.
+#[allow(clippy::too_many_arguments)]
 pub fn render(
     p: &mut dyn Platform,
     world: &World,
@@ -95,9 +152,13 @@ pub fn render(
     settings: &Settings,
     target: Option<Target>,
     ents: &mut EntityScene,
+    pixel_size: usize,
 ) {
-    let ps = (settings.pixel_size as usize).clamp(1, MAX_PIXEL);
-    let (rw, rh) = (SCREEN_W / ps, VIEW_H / ps);
+    // One ray per `ps` x `ps` screen pixels. 320x200 isn't always a
+    // multiple of `ps` (3), so the last column/row is cut off.
+    let ps = pixel_size.clamp(1, MAX_PIXEL);
+    let (rw, rh) = (SCREEN_W.div_ceil(ps), VIEW_H.div_ceil(ps));
+    let (sw, sh) = (SCREEN_W as f32 / ps as f32, VIEW_H as f32 / ps as f32);
 
     // Camera basis: forward, right and up.
     let (cy, sy, cp, sp) = (cos(cam.yaw), sin(cam.yaw), cos(cam.pitch), sin(cam.pitch));
@@ -109,7 +170,7 @@ pub fn render(
         right[0] * fwd[1] - right[1] * fwd[0],
     ];
     let half_h = tan(settings.fov as f32 * (core::f32::consts::PI / 360.0));
-    let half_w = half_h * rw as f32 / rh as f32;
+    let half_w = half_h * SCREEN_W as f32 / VIEW_H as f32;
 
     let eye_cell = world.get(ifloor(cam.eye[0]), ifloor(cam.eye[1]), ifloor(cam.eye[2]));
     let eye_in_water = def(eye_cell).layer == Layer::Water;
@@ -129,8 +190,9 @@ pub fn render(
         cave_light,
         target,
         eye_in_water,
-        pixel_angle: 2.0 * half_h / rh as f32,
+        pixel_angle: 2.0 * half_h / sh,
         ceiling: world.ceiling().min(HEIGHT as i32 - 1),
+        torches: Torches::near(world, cam.eye, max_dist as i32 + 14),
     };
 
     ents.place(cam.eye, fwd, right, up, half_w, half_h, rw, rh);
@@ -138,7 +200,7 @@ pub fn render(
     let mut buf = [0u16; SCREEN_W * MAX_PIXEL];
     let center_y = VIEW_H / 2;
     for j in 0..rh {
-        let v = (1.0 - 2.0 * (j as f32 + 0.5) / rh as f32) * half_h;
+        let v = (1.0 - 2.0 * (j as f32 + 0.5) / sh) * half_h;
         let row = [fwd[0] + up[0] * v, fwd[1] + up[1] * v, fwd[2] + up[2] * v];
         // Entities whose screen rectangle covers this row.
         let mut active = [0usize; MAX_VIEWS];
@@ -150,7 +212,7 @@ pub fn render(
             }
         }
         for i in 0..rw {
-            let u = (2.0 * (i as f32 + 0.5) / rw as f32 - 1.0) * half_w;
+            let u = (2.0 * (i as f32 + 0.5) / sw - 1.0) * half_w;
             let d = [row[0] + right[0] * u, row[1] + right[1] * u, row[2] + right[2] * u];
             let inv = 1.0 / sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
             let d = [d[0] * inv, d[1] * inv, d[2] * inv];
@@ -168,15 +230,17 @@ pub fn render(
                     }
                 }
             }
-            for k in 0..ps {
+            for k in 0..ps.min(SCREEN_W - i * ps) {
                 buf[i * ps + k] = c;
             }
         }
-        // Repeat the row `ps` times, then add the crosshair.
-        for r in 1..ps {
+        // Repeat the row `ps` times (fewer for a cut-off last row), then
+        // add the crosshair.
+        let rows = ps.min(VIEW_H - j * ps);
+        for r in 1..rows {
             buf.copy_within(0..SCREEN_W, r * SCREEN_W);
         }
-        for r in 0..ps {
+        for r in 0..rows {
             let y = j * ps + r;
             let line = &mut buf[r * SCREEN_W..(r + 1) * SCREEN_W];
             let cx = SCREEN_W / 2;
@@ -188,7 +252,7 @@ pub fn render(
                 line[cx] = !line[cx];
             }
         }
-        p.push_rect(0, (j * ps) as u16, SCREEN_W as u16, ps as u16, &buf[..SCREEN_W * ps]);
+        p.push_rect(0, (j * ps) as u16, SCREEN_W as u16, rows as u16, &buf[..SCREEN_W * rows]);
     }
 }
 
@@ -266,6 +330,48 @@ impl Scene<'_> {
                 }
                 continue;
             }
+            if bd.layer == Layer::Cross {
+                // Plants and torches: two see-through planes along the
+                // cell's diagonals (local x - z = 0 and x + z = 1).
+                let t_exit = t_max[0].min(t_max[1]).min(t_max[2]);
+                let (lx, lz) = (o[0] - cell[0] as f32, o[2] - cell[2] as f32);
+                let mut best: Option<(f32, u16)> = None;
+                for (den, num) in [(d[0] - d[2], lz - lx), (d[0] + d[2], 1.0 - lx - lz)] {
+                    if den.abs() < 1e-6 {
+                        continue;
+                    }
+                    let tp = num / den;
+                    if tp < t - 1e-4 || tp > t_exit + 1e-4 || best.is_some_and(|(bt, _)| tp >= bt) {
+                        continue;
+                    }
+                    let (px, py) = (lx + d[0] * tp, o[1] + d[1] * tp - y as f32);
+                    if !(0.0..1.0).contains(&px) || !(0.0..1.0).contains(&py) {
+                        continue;
+                    }
+                    let tu = ((px * 16.0) as usize).min(15);
+                    let tv = (15 - (py * 16.0) as i32).clamp(0, 15) as usize;
+                    let texel = TEXTURES[bd.tex[1] as usize][tv * 16 + tu];
+                    if texel != TRANSPARENT {
+                        best = Some((tp, texel));
+                    }
+                }
+                let Some((tp, texel)) = best else { continue };
+                let light = if bd.light > 0 {
+                    256 // torches glow
+                } else {
+                    let base = if self.world.sees_sky(cell[0], y, cell[2]) {
+                        self.sun_light
+                    } else {
+                        self.cave_light
+                    };
+                    base.max(self.torch_light(cell[0], y, cell[2]))
+                };
+                let mut c = scale(texel, (light * 230) >> 8);
+                if self.target.is_some_and(|tg| tg.cell == [cell[0], y, cell[2]]) {
+                    c = mix(c, 0xFFFF, 60); // targeted plant: slightly brighter
+                }
+                return (self.finish(c, tp, water_from, false, d), tp);
+            }
             // Exact hit point and the texel under it.
             let hit = [o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t];
             let (fu, fv, face) = match axis {
@@ -301,7 +407,8 @@ impl Scene<'_> {
                     cell[2] - if axis == 2 { step[2] } else { 0 },
                 );
                 let lit = ny >= HEIGHT as i32 || (ny >= 0 && self.world.sees_sky(nx, ny, nz));
-                ((if lit { self.sun_light } else { self.cave_light }) * shade) >> 8
+                let base = if lit { self.sun_light } else { self.cave_light };
+                (base.max(self.torch_light(nx, ny, nz)) * shade) >> 8
             };
             c = scale(c, light);
 

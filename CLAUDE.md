@@ -61,11 +61,13 @@ Read this first. It replaces the memory of earlier conversations.
   director couldn't test on the calculator yet and approved starting NW2.
   **NW2 done and approved** (items/tools/drops, inventory, crafting +
   recipe book, furnace, health/hunger/fall/drowning/lava, death).
-  **NW3 done** (8 creatures incl. the Hollow, combat, armour, dropped
-  items, ruins + lore tablets + journal) — waiting for report approval;
+  **NW3 done and approved** (8 creatures incl. the Hollow, combat, armour,
+  dropped items, ruins + lore tablets + journal). **NW4 done** (auto pixel
+  size 2/3/4, *Show timings*, layer-major world, torches + block light,
+  plants, wall-sidestepping creatures) — waiting for report approval;
   still **no real-calculator test** (install via my.numworks.com/apps,
-  `numworks/loredrop.nwa`). Next proposed: NW4 (speed and polish once real
-  FPS numbers exist; torches/plants).
+  `numworks/loredrop.nwa`). Ask the director for *Show timings* numbers
+  from the real calculator before more speed work.
   Phase 8 of the PC game is paused, not abandoned. See `numworks/README.md`.
   Cloud sessions can't build/run the official NumWorks simulator (the
   sandbox blocked building downloaded code); test with `ld_nw_desktop`.

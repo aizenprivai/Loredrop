@@ -149,6 +149,13 @@ blocks away (worst case): terrain 14.3 M + creatures 8.6 M instructions per
 frame (creatures were 23 M before per-box screen rectangles). With no
 creature in view the cost is the same as before.
 
+NW4: layer-major world storage — host time 2.95 → 2.49 ms/frame (seed 1,
+same scene), ~3 % fewer instructions (the multiplications and bounds
+checks are what went). Pixel size 3: 1.44 ms vs 2.85 (size 2) and 0.82
+(size 4) on the host. Plants and torch light add a few percent where
+present (seed 3 plains: 3.17 ms). *Auto* pixel size now picks 2–4 at run
+time, and *Show timings* displays the real split on the calculator.
+
 Rough guess for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
 settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
 about 3–4 times faster.

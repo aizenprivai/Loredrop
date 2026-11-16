@@ -124,6 +124,13 @@ pub struct Game {
     lore_back: Screen,
     /// Ticks since the last attack (for the attack cooldown).
     attack_ticks: u32,
+    /// Pixel size chosen by the automatic setting (2–4).
+    pub auto_pixel: u8,
+    /// Milliseconds spent this second in the 3D view, the game logic and
+    /// the bottom bar (summed over frames), and the averages last shown.
+    time_sums: [u64; 3],
+    /// Average ms per frame of the last second (3D view, game, bar), x10.
+    pub timings: [u32; 3],
     /// World time in ticks since the world was created.
     pub time: u32,
     /// Where the player (re)spawns.
@@ -174,6 +181,9 @@ impl Game {
             lore_shown: 0,
             lore_back: Screen::Playing,
             attack_ticks: 100,
+            auto_pixel: 2,
+            time_sums: [0; 3],
+            timings: [0; 3],
             time: 0,
             spawn: [0.0; 3],
             rng: Rng(0x1234_5678),
@@ -294,6 +304,10 @@ impl Game {
     fn resume(&mut self) {
         self.screen = Screen::Playing;
         self.hud_dirty = true;
+        // Time spent in menus or loading must not count in the FPS figure.
+        self.fps_frames = 0;
+        self.fps_since = self.last_ms;
+        self.time_sums = [0; 3];
     }
 
     fn title(&mut self, p: &mut dyn Platform) -> bool {
@@ -527,7 +541,7 @@ impl Game {
             self.menu_dirty = false;
             hud::menu_frame(p, "SETTINGS");
             for i in 0..n {
-                let y = 46 + i as u16 * 20;
+                let y = 42 + i as u16 * 18;
                 let sel = i == self.menu_index;
                 let fg = if sel { hud::GOLD } else { hud::TEXT };
                 let mut t: Text<40> = Text::new();
@@ -811,7 +825,14 @@ impl Game {
             sun,
             cave,
         );
-        render::render(p, &self.world, &sky, cam, &self.settings, target, &mut self.scene);
+        let t_render = p.millis();
+        let pixel = if self.settings.pixel_size == crate::settings::PIXEL_AUTO {
+            self.auto_pixel
+        } else {
+            self.settings.pixel_size
+        };
+        render::render(p, &self.world, &sky, cam, &self.settings, target, &mut self.scene, pixel as usize);
+        let t_bar = p.millis();
         if self.vitals.since_hurt < 4 || self.vitals.fire > 0 {
             // Red (hurt) or orange (burning) frame around the view.
             let c = if self.vitals.since_hurt < 4 {
@@ -825,14 +846,44 @@ impl Game {
             p.fill_rect(317, 0, 3, render::VIEW_H as u16, c);
         }
         self.draw_bar(p);
+        let t_end = p.millis();
+        self.time_sums[0] += t_bar - t_render;
+        self.time_sums[1] += t_render - now;
+        self.time_sums[2] += t_end - t_bar;
 
         self.fps_frames += 1;
         if now - self.fps_since >= 1000 {
-            self.fps = (self.fps_frames as u64 * 1000 / (now - self.fps_since)) as u32;
+            let frames = self.fps_frames.max(1) as u64;
+            self.fps = (frames * 1000 / (now - self.fps_since)) as u32;
+            for k in 0..3 {
+                self.timings[k] = (self.time_sums[k] * 10 / frames) as u32;
+            }
+            self.time_sums = [0; 3];
             self.fps_frames = 0;
             self.fps_since = now;
+            self.adapt_pixel_size();
         }
         true
+    }
+
+    /// Automatic pixel size: bigger pixels when the game runs below 12
+    /// frames per second, smaller ones again when the estimate for the
+    /// sharper size (cost grows with the square of 1 / pixel size) stays
+    /// above 15. The gap between the two thresholds stops it flickering.
+    fn adapt_pixel_size(&mut self) {
+        if self.settings.pixel_size != crate::settings::PIXEL_AUTO || self.fps == 0 {
+            return;
+        }
+        let ps = self.auto_pixel as u32;
+        if self.fps < 12 && ps < 4 {
+            self.auto_pixel += 1;
+        } else if ps > 2 {
+            let sharper = ps - 1;
+            let predicted = self.fps * sharper * sharper / (ps * ps);
+            if predicted >= 15 {
+                self.auto_pixel -= 1;
+            }
+        }
     }
 
     /// The targeted block and the face's outward offset (none when a
@@ -1098,6 +1149,19 @@ impl Game {
         if !self.world.set(cell[0], cell[1], cell[2], AIR) {
             self.say("Too many changes: far ones get forgotten");
         }
+        // A torch or plant standing on this block falls off too.
+        let above = self.world.get(cell[0], cell[1] + 1, cell[2]);
+        if def(above).layer == Layer::Cross && b != AIR {
+            let held = self.held().item;
+            self.world.set(cell[0], cell[1] + 1, cell[2], AIR);
+            if self.mode == Mode::Survival {
+                let at = [cell[0] as f32 + 0.5, cell[1] as f32 + 1.25, cell[2] as f32 + 0.5];
+                let mut rng = self.rng;
+                let ents = &mut self.entities;
+                roll_drops(above, held, &mut rng, |item, n| ents.drop_item(Stack::new(item, n), at, 10));
+                self.rng = rng;
+            }
+        }
         // Drops land on the ground at the block, as on PC.
         let at = [cell[0] as f32 + 0.5, cell[1] as f32 + 0.25, cell[2] as f32 + 0.5];
         if let Some(fi) = self.furnace_index(cell) {
@@ -1137,11 +1201,21 @@ impl Game {
     fn place(&mut self, cell: [i32; 3], normal: [i32; 3]) {
         let slot = self.held();
         let Some(block) = block_of(slot.item).filter(|_| !slot.is_empty()) else { return };
-        let at = [cell[0] + normal[0], cell[1] + normal[1], cell[2] + normal[2]];
+        // Aiming at short grass replaces it instead of placing next to it.
+        let aimed = self.world.get(cell[0], cell[1], cell[2]);
+        let at = if def(aimed).replaceable && def(aimed).layer == Layer::Cross {
+            cell
+        } else {
+            [cell[0] + normal[0], cell[1] + normal[1], cell[2] + normal[2]]
+        };
         if !(0..HEIGHT as i32).contains(&at[1]) {
             return;
         }
         if !is_replaceable(self.world.get(at[0], at[1], at[2])) {
+            return;
+        }
+        // Torches and plants stand on top of a solid block (no wall torches yet).
+        if def(block).layer == Layer::Cross && !def(self.world.get(at[0], at[1] - 1, at[2])).solid {
             return;
         }
         if def(block).solid && self.player.overlaps_block(at[0], at[1], at[2]) {
@@ -1183,10 +1257,17 @@ impl Game {
                 let _ = write!(status, "{} x{}", item_def(held.item).name, held.count);
             }
         }
-        let mut right: Text<20> = Text::new();
-        let armor = self.inventory.armor_points().0 as u32;
-        if armor > 0 && self.mode == Mode::Survival {
-            let _ = write!(right, "Armor {}  ", armor);
+        let mut right: Text<40> = Text::new();
+        if self.settings.show_timings {
+            // ms per frame: 3D view, game logic, bottom bar; then pixel size.
+            let [v, g, b] = self.timings;
+            let ps = if self.settings.pixel_size == 0 { self.auto_pixel } else { self.settings.pixel_size };
+            let _ = write!(right, "3D{} G{} B{} P{}  ", v / 10, g / 10, b / 10, ps);
+        } else {
+            let armor = self.inventory.armor_points().0 as u32;
+            if armor > 0 && self.mode == Mode::Survival {
+                let _ = write!(right, "Armor {}  ", armor);
+            }
         }
         if self.settings.show_fps {
             // The counter needs one full second of play before it has a value.
@@ -1337,6 +1418,54 @@ mod tests {
     }
 
     #[test]
+    fn torches_light_and_fall_with_their_block() {
+        let mut g = game();
+        let floor = flatten(&mut g); // first air layer above the stone floor
+        let p = g.player.pos;
+        let c = [ifloor(p[0]) + 2, floor, ifloor(p[2])];
+        g.inventory.slots[0] = Stack::new(TORCH as Item, 2);
+        // Torches can't hang in the air...
+        g.place([c[0], c[1] + 2, c[2]], [1, 0, 0]);
+        assert_eq!(g.inventory.slots[0].count, 2);
+        // ...but stand on the ground.
+        g.place([c[0], c[1] - 1, c[2]], [0, 1, 0]);
+        assert_eq!(g.world.get(c[0], c[1], c[2]), TORCH);
+        let t = crate::render::Torches::near(&g.world, g.player.pos, 20);
+        assert_eq!(t.count, 1);
+        assert_eq!(t.light(c[0], c[1], c[2]), 256);
+        assert!(t.light(c[0] + 5, c[1], c[2]) > 0);
+        assert_eq!(t.light(c[0] + 14, c[1], c[2]), 0);
+        // Breaking the block under it drops the torch.
+        g.break_block([c[0], c[1] - 1, c[2]], STONE);
+        assert_eq!(g.world.get(c[0], c[1], c[2]), AIR);
+        collect(&mut g);
+        assert_eq!(g.inventory.count(TORCH as Item), 2);
+    }
+
+    #[test]
+    fn automatic_pixel_size() {
+        let mut g = game();
+        assert_eq!(g.settings.pixel_size, crate::settings::PIXEL_AUTO);
+        assert_eq!(g.auto_pixel, 2);
+        g.fps = 8;
+        g.adapt_pixel_size();
+        assert_eq!(g.auto_pixel, 3, "too slow: bigger pixels");
+        g.adapt_pixel_size();
+        assert_eq!(g.auto_pixel, 4);
+        g.fps = 20;
+        g.adapt_pixel_size();
+        assert_eq!(g.auto_pixel, 4, "20 FPS at 4 would be ~11 at 3: stay");
+        g.fps = 40;
+        g.adapt_pixel_size();
+        assert_eq!(g.auto_pixel, 3, "fast enough: sharper again");
+        // A fixed setting is never changed.
+        g.settings.pixel_size = 2;
+        g.fps = 3;
+        g.adapt_pixel_size();
+        assert_eq!(g.auto_pixel, 3);
+    }
+
+    #[test]
     fn death_drops_the_inventory() {
         let mut g = game();
         g.inventory.slots[0] = Stack::new(DIAMOND, 5);
@@ -1408,6 +1537,7 @@ mod tests {
     #[test]
     fn furnace_contents_come_back_when_broken() {
         let mut g = game();
+        flatten(&mut g); // no grass tuft in the way
         let c = spot(&g);
         g.inventory.slots[0] = Stack::new(FURNACE as Item, 1);
         // Place it against the block below the spot.

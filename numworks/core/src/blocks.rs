@@ -26,6 +26,8 @@ pub enum Layer {
     Water,
     /// Lava: opaque and always fully lit.
     Lava,
+    /// Two crossed see-through planes (plants, torches); walked through.
+    Cross,
 }
 
 /// The kind of tool that mines a block fast.
@@ -65,6 +67,8 @@ pub struct BlockDef {
     pub harvest_level: i8,
     /// Light the block gives off, 0–15.
     pub light: u8,
+    /// Placing a block here replaces it (air, liquids, short grass, ferns).
+    pub replaceable: bool,
 }
 
 /// Properties of block `b`.
@@ -82,7 +86,7 @@ pub fn is_opaque(b: Block) -> bool {
 /// Whether a player can place another block into a cell holding `b`.
 #[inline]
 pub fn is_replaceable(b: Block) -> bool {
-    matches!(def(b).layer, Layer::Air | Layer::Water | Layer::Lava)
+    def(b).replaceable || matches!(def(b).layer, Layer::Air | Layer::Water | Layer::Lava)
 }
 
 /// Whether `b` is a liquid (water or lava).

@@ -420,6 +420,11 @@ A separate Cargo workspace, so the PC workspace (`crates/*`) is untouched and
     game state; the renderer's `cast` now returns hit distance so boxes
     can be depth-tested per pixel inside their screen rectangles),
     `structures` (ruins as a pure function of seed and column, like trees).
+  - NW4: the world array is layer-major (`index = y << 10 | z << 5 | x`);
+    `render` takes an explicit pixel size (game chooses it; *Auto* adapts
+    from FPS); `Layer::Cross` blocks are intersected as two diagonal
+    planes; block light comes from a per-frame `Torches` list (nearest 16
+    player-placed torches, found in the edit list) using Manhattan distance.
 - **`gen_blocks.rs` / `gen_items.rs`** are generated from the PC game's
   `blocks.toml`, `items.toml`, `recipes.toml` and textures
   (`numworks/tools/gen_blocks.py`) — one source of truth for both editions.

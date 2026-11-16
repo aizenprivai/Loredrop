@@ -310,13 +310,15 @@ pub fn build(
         }
     }
     cand[..n].sort_unstable_by(|a, b| a.2.total_cmp(&b.2));
+    let torches = crate::render::Torches::near(world, eye, max_dist as i32 + 14);
     let light_at = |p: [f32; 3]| {
         let (x, y, z) = (ifloor(p[0]), ifloor(p[1] + 0.5), ifloor(p[2]));
-        if y >= crate::worldgen::HEIGHT as i32 || world.sees_sky(x, y, z) {
+        let base = if y >= crate::worldgen::HEIGHT as i32 || world.sees_sky(x, y, z) {
             sun_light
         } else {
             cave_light * 2
-        }
+        };
+        base.max(torches.light(x, y, z))
     };
     for &(what, i, _) in &cand[..n] {
         let Some(v) = scene.push() else { break };

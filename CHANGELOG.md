@@ -387,3 +387,29 @@
   Hollow, skeleton arrows, ruins with tablets, sword kills, cooldown,
   death drops, armour formula, tablet reading).
 - `loredrop.nwa`: 449 KB (234 KB code + textures, 80 KB game state), nwlink check passed.
+
+### 2026-11-16 — NumWorks edition, NW phase 4: speed and polish (director approved)
+- **Automatic quality**: new pixel size 3 (renders 107x67, last column/row
+  cut) and an *Auto* setting (now the default) that picks 2/3/4 from the
+  measured frame rate (bigger below 12 FPS, sharper when the estimate for
+  the smaller size stays above 15).
+- **Timing display**: *Show timings* setting shows ms per frame for the 3D
+  view, the game logic and the bottom bar, plus the pixel size in use — so
+  real-calculator speed can be reported precisely.
+- **Faster world reads**: blocks stored layer by layer, so a ray's block
+  index uses shifts only, and the hot read skips bounds checks (~15 %
+  faster on PC; fewer multiplications on the calculator).
+- **Torches**: placeable on the ground, 4 per coal/charcoal + stick; block
+  light 14 falling by 1 per block (Manhattan distance, walls ignored) with
+  a brightness curve; the 16 nearest torches count; creatures are lit too;
+  monsters can't spawn in torch light.
+- **Plants**: cross-shaped blocks (short grass, fern, dandelion, poppy,
+  cornflower, dead bush, torch) drawn as two diagonal see-through planes;
+  generated per biome; walked through; short grass is replaced when built
+  on; plants and torches drop when the block under them breaks.
+- **Creatures** walk sideways around walls they can't jump (keeping the
+  same side between tries).
+- Status line no longer leaves stale characters when the right-hand text
+  gets shorter; FPS counting restarts when play resumes.
+- 50 unit tests (3 new: torches, automatic pixel size, walking round a wall).
+- `loredrop.nwa`: 245 KB code + textures, 80 KB game state; nwlink check passed.

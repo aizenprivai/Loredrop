@@ -84,6 +84,11 @@ pub struct Mob {
     /// Block carried by a Hollow (`AIR` = none).
     pub carried: Block,
     action: u16,
+    /// Ticks spent pushing against something without moving.
+    stuck: u8,
+    /// Ticks left walking sideways around an obstacle, and which way.
+    detour: u8,
+    detour_dir: [f32; 2],
 }
 
 impl Mob {
@@ -110,6 +115,9 @@ impl Mob {
         walk_amount: 0.0,
         carried: AIR,
         action: 200,
+        stuck: 0,
+        detour: 0,
+        detour_dir: [0.0; 2],
     };
 }
 
@@ -533,6 +541,35 @@ impl Entities {
             wish = [0.0, 0.0];
             m.has_goal = false;
         }
+        // Simple obstacle avoidance (there is no path-finding): after half a
+        // second pushing against a wall that jumping didn't clear, walk
+        // sideways for a second, then try again.
+        if m.detour > 0 {
+            m.detour -= 1;
+            if wish != [0.0, 0.0] {
+                wish = m.detour_dir;
+                m.yaw = yaw_of(wish);
+            }
+        } else if wish != [0.0, 0.0] && m.hit_wall {
+            m.stuck = m.stuck.saturating_add(1);
+            if m.stuck > 10 {
+                // Keep going round the same side as last time (switching
+                // sides at random would just pace back and forth).
+                let prev = m.detour_dir;
+                let side = if prev == [0.0, 0.0] {
+                    if self.rng.next_u32() & 1 == 0 { 1.0 } else { -1.0 }
+                } else if wish[0] * prev[1] - wish[1] * prev[0] > 0.0 {
+                    1.0
+                } else {
+                    -1.0
+                };
+                m.detour_dir = [-wish[1] * side, wish[0] * side];
+                m.detour = 30;
+                m.stuck = 0;
+            }
+        } else {
+            m.stuck = 0;
+        }
         if m.hit_wall && wish != [0.0, 0.0] {
             jump = true;
         }
@@ -730,7 +767,8 @@ impl Entities {
                 let ok = world.get(x, y, z) == AIR
                     && world.get(x, y + 1, z) == AIR
                     && blocks::is_opaque(world.get(x, y - 1, z))
-                    && (!world.sees_sky(x, y, z) || daylight < 0.3);
+                    && (!world.sees_sky(x, y, z) || daylight < 0.3)
+                    && !torch_lit(world, x, y, z);
                 if ok {
                     if let Some(k) = self.pick_kind(|d| d.dark) {
                         self.spawn_group(world, k, x, y, z, HOSTILE_CAP - hostile);
@@ -788,6 +826,14 @@ impl Entities {
             }
         }
     }
+}
+
+/// Whether any torch light reaches `(x, y, z)` (monsters only appear where
+/// block light is 0, as on PC — torches keep an area safe).
+fn torch_lit(world: &World, x: i32, y: i32, z: i32) -> bool {
+    let mut lit = false;
+    world.for_each_torch(|p| lit |= (p[0] - x).abs() + (p[1] - y).abs() + (p[2] - z).abs() < 14);
+    lit
 }
 
 /// The first air cell above the highest solid block of a column.
@@ -962,6 +1008,25 @@ mod tests {
         assert!(!e.mobs[a].angry);
         e.hurt(a, 1.0, Some([10.5, 11.0, 0.5]));
         assert!(e.mobs[a].angry && !e.mobs[b].angry);
+    }
+
+    #[test]
+    fn zombie_walks_around_a_wall() {
+        let mut w = flat();
+        // A 2-high wall (too tall to jump) with a gap, between zombie and player.
+        for z in -6..=6 {
+            if z != 5 {
+                w.set(3, 11, z, STONE);
+                w.set(3, 12, z, STONE);
+            }
+        }
+        let mut e = Box::new(Entities::new());
+        let i = e.spawn(ZOMBIE, [0.5, 11.0, 0.5]).unwrap();
+        for t in 0..600 {
+            e.timer = t * 40 + 1;
+            e.tick(&mut w, player_at(8.5, 0.5), 0.0);
+        }
+        assert!(e.mobs[i].pos[0] > 4.0, "zombie got past the wall: {:?}", e.mobs[i].pos);
     }
 
     #[test]

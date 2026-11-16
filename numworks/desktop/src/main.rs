@@ -356,7 +356,10 @@ fn main() {
             let per = t0.elapsed().as_secs_f64() * 1000.0 / o.frames as f64;
             println!(
                 "{} frames, {:.2} ms per frame on this PC (pixel size {}, view {})",
-                o.frames, per, g.settings.pixel_size, g.settings.view_distance
+                o.frames,
+                per,
+                if g.settings.pixel_size == 0 { g.auto_pixel } else { g.settings.pixel_size },
+                g.settings.view_distance
             );
         }
         "find" => {

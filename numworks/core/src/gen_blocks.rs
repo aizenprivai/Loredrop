@@ -91,99 +91,120 @@ pub const SPRUCE_PLANKS: Block = 41;
 pub const SPRUCE_LEAVES: Block = 42;
 /// Cactus.
 pub const CACTUS: Block = 43;
+/// Short Grass.
+pub const SHORT_GRASS: Block = 44;
+/// Fern.
+pub const FERN: Block = 45;
+/// Dead Bush.
+pub const DEAD_BUSH: Block = 46;
+/// Dandelion.
+pub const DANDELION: Block = 47;
+/// Poppy.
+pub const POPPY: Block = 48;
+/// Cornflower.
+pub const CORNFLOWER: Block = 49;
 /// Stone Bricks.
-pub const STONE_BRICKS: Block = 44;
+pub const STONE_BRICKS: Block = 50;
 /// Cracked Stone Bricks.
-pub const CRACKED_STONE_BRICKS: Block = 45;
+pub const CRACKED_STONE_BRICKS: Block = 51;
 /// Mossy Stone Bricks.
-pub const MOSSY_STONE_BRICKS: Block = 46;
+pub const MOSSY_STONE_BRICKS: Block = 52;
 /// Chiseled Stone Bricks.
-pub const CHISELED_STONE_BRICKS: Block = 47;
+pub const CHISELED_STONE_BRICKS: Block = 53;
 /// Deepslate Bricks.
-pub const DEEPSLATE_BRICKS: Block = 48;
+pub const DEEPSLATE_BRICKS: Block = 54;
 /// Cracked Deepslate Bricks.
-pub const CRACKED_DEEPSLATE_BRICKS: Block = 49;
+pub const CRACKED_DEEPSLATE_BRICKS: Block = 55;
 /// Cut Sandstone.
-pub const CUT_SANDSTONE: Block = 50;
+pub const CUT_SANDSTONE: Block = 56;
 /// Chiseled Sandstone.
-pub const CHISELED_SANDSTONE: Block = 51;
+pub const CHISELED_SANDSTONE: Block = 57;
 /// Lore Tablet.
-pub const LORE_TABLET: Block = 52;
+pub const LORE_TABLET: Block = 58;
 /// Crafting Table.
-pub const CRAFTING_TABLE: Block = 53;
+pub const CRAFTING_TABLE: Block = 59;
 /// Furnace.
-pub const FURNACE: Block = 54;
+pub const FURNACE: Block = 60;
 /// Furnace.
-pub const LIT_FURNACE: Block = 55;
+pub const LIT_FURNACE: Block = 61;
 /// White Wool.
-pub const WHITE_WOOL: Block = 56;
+pub const WHITE_WOOL: Block = 62;
+/// Torch.
+pub const TORCH: Block = 63;
 
 /// Number of block types, air included.
-pub const BLOCK_COUNT: usize = 57;
+pub const BLOCK_COUNT: usize = 64;
 
 /// Properties of every block, indexed by block id.
 pub static BLOCKS: [BlockDef; BLOCK_COUNT] = [
-    BlockDef { name: "Air", layer: Layer::Air, solid: false, tex: [0, 0, 0], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0 },
-    BlockDef { name: "Stone", layer: Layer::Opaque, solid: true, tex: [0, 0, 0], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Cobblestone", layer: Layer::Opaque, solid: true, tex: [1, 1, 1], hardness: 2.0, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Dirt", layer: Layer::Opaque, solid: true, tex: [2, 2, 2], hardness: 0.5, tool: Tool::Shovel, harvest_level: -1, light: 0 },
-    BlockDef { name: "Grass Block", layer: Layer::Opaque, solid: true, tex: [3, 4, 2], hardness: 0.6, tool: Tool::Shovel, harvest_level: -1, light: 0 },
-    BlockDef { name: "Sand", layer: Layer::Opaque, solid: true, tex: [5, 5, 5], hardness: 0.5, tool: Tool::Shovel, harvest_level: -1, light: 0 },
-    BlockDef { name: "Gravel", layer: Layer::Opaque, solid: true, tex: [6, 6, 6], hardness: 0.6, tool: Tool::Shovel, harvest_level: -1, light: 0 },
-    BlockDef { name: "Bedrock", layer: Layer::Opaque, solid: true, tex: [7, 7, 7], hardness: -1.0, tool: Tool::None, harvest_level: -1, light: 0 },
-    BlockDef { name: "Oak Log", layer: Layer::Opaque, solid: true, tex: [8, 9, 8], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Oak Planks", layer: Layer::Opaque, solid: true, tex: [10, 10, 10], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Oak Leaves", layer: Layer::Cutout, solid: true, tex: [11, 11, 11], hardness: 0.2, tool: Tool::Hoe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Glass", layer: Layer::Cutout, solid: true, tex: [12, 12, 12], hardness: 0.3, tool: Tool::None, harvest_level: -1, light: 0 },
-    BlockDef { name: "Deepslate", layer: Layer::Opaque, solid: true, tex: [13, 14, 13], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Granite", layer: Layer::Opaque, solid: true, tex: [15, 15, 15], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Diorite", layer: Layer::Opaque, solid: true, tex: [16, 16, 16], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Andesite", layer: Layer::Opaque, solid: true, tex: [17, 17, 17], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Sandstone", layer: Layer::Opaque, solid: true, tex: [18, 19, 20], hardness: 0.8, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Clay", layer: Layer::Opaque, solid: true, tex: [21, 21, 21], hardness: 0.6, tool: Tool::Shovel, harvest_level: -1, light: 0 },
-    BlockDef { name: "Ice", layer: Layer::Opaque, solid: true, tex: [22, 22, 22], hardness: 0.5, tool: Tool::Pickaxe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Snow Block", layer: Layer::Opaque, solid: true, tex: [23, 23, 23], hardness: 0.2, tool: Tool::Shovel, harvest_level: 0, light: 0 },
-    BlockDef { name: "Snowy Grass Block", layer: Layer::Opaque, solid: true, tex: [23, 24, 2], hardness: 0.6, tool: Tool::Shovel, harvest_level: -1, light: 0 },
-    BlockDef { name: "Water", layer: Layer::Water, solid: false, tex: [25, 25, 25], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0 },
-    BlockDef { name: "Lava", layer: Layer::Lava, solid: false, tex: [26, 26, 26], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 15 },
-    BlockDef { name: "Coal Ore", layer: Layer::Opaque, solid: true, tex: [27, 27, 27], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Deepslate Coal Ore", layer: Layer::Opaque, solid: true, tex: [28, 28, 28], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Iron Ore", layer: Layer::Opaque, solid: true, tex: [29, 29, 29], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 1, light: 0 },
-    BlockDef { name: "Deepslate Iron Ore", layer: Layer::Opaque, solid: true, tex: [30, 30, 30], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 1, light: 0 },
-    BlockDef { name: "Copper Ore", layer: Layer::Opaque, solid: true, tex: [31, 31, 31], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 1, light: 0 },
-    BlockDef { name: "Deepslate Copper Ore", layer: Layer::Opaque, solid: true, tex: [32, 32, 32], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 1, light: 0 },
-    BlockDef { name: "Gold Ore", layer: Layer::Opaque, solid: true, tex: [33, 33, 33], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 2, light: 0 },
-    BlockDef { name: "Deepslate Gold Ore", layer: Layer::Opaque, solid: true, tex: [34, 34, 34], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 2, light: 0 },
-    BlockDef { name: "Diamond Ore", layer: Layer::Opaque, solid: true, tex: [35, 35, 35], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 2, light: 0 },
-    BlockDef { name: "Deepslate Diamond Ore", layer: Layer::Opaque, solid: true, tex: [36, 36, 36], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 2, light: 0 },
-    BlockDef { name: "Lapis Lazuli Ore", layer: Layer::Opaque, solid: true, tex: [37, 37, 37], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 1, light: 0 },
-    BlockDef { name: "Deepslate Lapis Lazuli Ore", layer: Layer::Opaque, solid: true, tex: [38, 38, 38], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 1, light: 0 },
-    BlockDef { name: "Emerald Ore", layer: Layer::Opaque, solid: true, tex: [39, 39, 39], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 2, light: 0 },
-    BlockDef { name: "Deepslate Emerald Ore", layer: Layer::Opaque, solid: true, tex: [40, 40, 40], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 2, light: 0 },
-    BlockDef { name: "Birch Log", layer: Layer::Opaque, solid: true, tex: [41, 42, 41], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Birch Planks", layer: Layer::Opaque, solid: true, tex: [43, 43, 43], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Birch Leaves", layer: Layer::Cutout, solid: true, tex: [44, 44, 44], hardness: 0.2, tool: Tool::Hoe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Spruce Log", layer: Layer::Opaque, solid: true, tex: [45, 46, 45], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Spruce Planks", layer: Layer::Opaque, solid: true, tex: [47, 47, 47], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Spruce Leaves", layer: Layer::Cutout, solid: true, tex: [48, 48, 48], hardness: 0.2, tool: Tool::Hoe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Cactus", layer: Layer::Cutout, solid: true, tex: [49, 50, 51], hardness: 0.4, tool: Tool::None, harvest_level: -1, light: 0 },
-    BlockDef { name: "Stone Bricks", layer: Layer::Opaque, solid: true, tex: [52, 52, 52], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Cracked Stone Bricks", layer: Layer::Opaque, solid: true, tex: [53, 53, 53], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Mossy Stone Bricks", layer: Layer::Opaque, solid: true, tex: [54, 54, 54], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Chiseled Stone Bricks", layer: Layer::Opaque, solid: true, tex: [55, 55, 55], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Deepslate Bricks", layer: Layer::Opaque, solid: true, tex: [56, 56, 56], hardness: 3.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Cracked Deepslate Bricks", layer: Layer::Opaque, solid: true, tex: [57, 57, 57], hardness: 3.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Cut Sandstone", layer: Layer::Opaque, solid: true, tex: [18, 58, 18], hardness: 0.8, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Chiseled Sandstone", layer: Layer::Opaque, solid: true, tex: [18, 59, 18], hardness: 0.8, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Lore Tablet", layer: Layer::Opaque, solid: true, tex: [60, 61, 60], hardness: -1.0, tool: Tool::None, harvest_level: -1, light: 0 },
-    BlockDef { name: "Crafting Table", layer: Layer::Opaque, solid: true, tex: [62, 63, 10], hardness: 2.5, tool: Tool::Axe, harvest_level: -1, light: 0 },
-    BlockDef { name: "Furnace", layer: Layer::Opaque, solid: true, tex: [64, 65, 64], hardness: 3.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0 },
-    BlockDef { name: "Furnace", layer: Layer::Opaque, solid: true, tex: [64, 66, 64], hardness: 3.5, tool: Tool::Pickaxe, harvest_level: 0, light: 13 },
-    BlockDef { name: "White Wool", layer: Layer::Opaque, solid: true, tex: [67, 67, 67], hardness: 0.8, tool: Tool::None, harvest_level: -1, light: 0 },
+    BlockDef { name: "Air", layer: Layer::Air, solid: false, tex: [0, 0, 0], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: true },
+    BlockDef { name: "Stone", layer: Layer::Opaque, solid: true, tex: [0, 0, 0], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Cobblestone", layer: Layer::Opaque, solid: true, tex: [1, 1, 1], hardness: 2.0, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Dirt", layer: Layer::Opaque, solid: true, tex: [2, 2, 2], hardness: 0.5, tool: Tool::Shovel, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Grass Block", layer: Layer::Opaque, solid: true, tex: [3, 4, 2], hardness: 0.6, tool: Tool::Shovel, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Sand", layer: Layer::Opaque, solid: true, tex: [5, 5, 5], hardness: 0.5, tool: Tool::Shovel, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Gravel", layer: Layer::Opaque, solid: true, tex: [6, 6, 6], hardness: 0.6, tool: Tool::Shovel, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Bedrock", layer: Layer::Opaque, solid: true, tex: [7, 7, 7], hardness: -1.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Oak Log", layer: Layer::Opaque, solid: true, tex: [8, 9, 8], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Oak Planks", layer: Layer::Opaque, solid: true, tex: [10, 10, 10], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Oak Leaves", layer: Layer::Cutout, solid: true, tex: [11, 11, 11], hardness: 0.2, tool: Tool::Hoe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Glass", layer: Layer::Cutout, solid: true, tex: [12, 12, 12], hardness: 0.3, tool: Tool::None, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Deepslate", layer: Layer::Opaque, solid: true, tex: [13, 14, 13], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Granite", layer: Layer::Opaque, solid: true, tex: [15, 15, 15], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Diorite", layer: Layer::Opaque, solid: true, tex: [16, 16, 16], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Andesite", layer: Layer::Opaque, solid: true, tex: [17, 17, 17], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Sandstone", layer: Layer::Opaque, solid: true, tex: [18, 19, 20], hardness: 0.8, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Clay", layer: Layer::Opaque, solid: true, tex: [21, 21, 21], hardness: 0.6, tool: Tool::Shovel, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Ice", layer: Layer::Opaque, solid: true, tex: [22, 22, 22], hardness: 0.5, tool: Tool::Pickaxe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Snow Block", layer: Layer::Opaque, solid: true, tex: [23, 23, 23], hardness: 0.2, tool: Tool::Shovel, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Snowy Grass Block", layer: Layer::Opaque, solid: true, tex: [23, 24, 2], hardness: 0.6, tool: Tool::Shovel, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Water", layer: Layer::Water, solid: false, tex: [25, 25, 25], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: true },
+    BlockDef { name: "Lava", layer: Layer::Lava, solid: false, tex: [26, 26, 26], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 15, replaceable: true },
+    BlockDef { name: "Coal Ore", layer: Layer::Opaque, solid: true, tex: [27, 27, 27], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Deepslate Coal Ore", layer: Layer::Opaque, solid: true, tex: [28, 28, 28], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Iron Ore", layer: Layer::Opaque, solid: true, tex: [29, 29, 29], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 1, light: 0, replaceable: false },
+    BlockDef { name: "Deepslate Iron Ore", layer: Layer::Opaque, solid: true, tex: [30, 30, 30], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 1, light: 0, replaceable: false },
+    BlockDef { name: "Copper Ore", layer: Layer::Opaque, solid: true, tex: [31, 31, 31], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 1, light: 0, replaceable: false },
+    BlockDef { name: "Deepslate Copper Ore", layer: Layer::Opaque, solid: true, tex: [32, 32, 32], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 1, light: 0, replaceable: false },
+    BlockDef { name: "Gold Ore", layer: Layer::Opaque, solid: true, tex: [33, 33, 33], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 2, light: 0, replaceable: false },
+    BlockDef { name: "Deepslate Gold Ore", layer: Layer::Opaque, solid: true, tex: [34, 34, 34], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 2, light: 0, replaceable: false },
+    BlockDef { name: "Diamond Ore", layer: Layer::Opaque, solid: true, tex: [35, 35, 35], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 2, light: 0, replaceable: false },
+    BlockDef { name: "Deepslate Diamond Ore", layer: Layer::Opaque, solid: true, tex: [36, 36, 36], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 2, light: 0, replaceable: false },
+    BlockDef { name: "Lapis Lazuli Ore", layer: Layer::Opaque, solid: true, tex: [37, 37, 37], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 1, light: 0, replaceable: false },
+    BlockDef { name: "Deepslate Lapis Lazuli Ore", layer: Layer::Opaque, solid: true, tex: [38, 38, 38], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 1, light: 0, replaceable: false },
+    BlockDef { name: "Emerald Ore", layer: Layer::Opaque, solid: true, tex: [39, 39, 39], hardness: 3.0, tool: Tool::Pickaxe, harvest_level: 2, light: 0, replaceable: false },
+    BlockDef { name: "Deepslate Emerald Ore", layer: Layer::Opaque, solid: true, tex: [40, 40, 40], hardness: 4.5, tool: Tool::Pickaxe, harvest_level: 2, light: 0, replaceable: false },
+    BlockDef { name: "Birch Log", layer: Layer::Opaque, solid: true, tex: [41, 42, 41], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Birch Planks", layer: Layer::Opaque, solid: true, tex: [43, 43, 43], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Birch Leaves", layer: Layer::Cutout, solid: true, tex: [44, 44, 44], hardness: 0.2, tool: Tool::Hoe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Spruce Log", layer: Layer::Opaque, solid: true, tex: [45, 46, 45], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Spruce Planks", layer: Layer::Opaque, solid: true, tex: [47, 47, 47], hardness: 2.0, tool: Tool::Axe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Spruce Leaves", layer: Layer::Cutout, solid: true, tex: [48, 48, 48], hardness: 0.2, tool: Tool::Hoe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Cactus", layer: Layer::Cutout, solid: true, tex: [49, 50, 51], hardness: 0.4, tool: Tool::None, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Short Grass", layer: Layer::Cross, solid: false, tex: [52, 52, 52], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: true },
+    BlockDef { name: "Fern", layer: Layer::Cross, solid: false, tex: [53, 53, 53], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: true },
+    BlockDef { name: "Dead Bush", layer: Layer::Cross, solid: false, tex: [54, 54, 54], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: true },
+    BlockDef { name: "Dandelion", layer: Layer::Cross, solid: false, tex: [55, 55, 55], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Poppy", layer: Layer::Cross, solid: false, tex: [56, 56, 56], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Cornflower", layer: Layer::Cross, solid: false, tex: [57, 57, 57], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Stone Bricks", layer: Layer::Opaque, solid: true, tex: [58, 58, 58], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Cracked Stone Bricks", layer: Layer::Opaque, solid: true, tex: [59, 59, 59], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Mossy Stone Bricks", layer: Layer::Opaque, solid: true, tex: [60, 60, 60], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Chiseled Stone Bricks", layer: Layer::Opaque, solid: true, tex: [61, 61, 61], hardness: 1.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Deepslate Bricks", layer: Layer::Opaque, solid: true, tex: [62, 62, 62], hardness: 3.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Cracked Deepslate Bricks", layer: Layer::Opaque, solid: true, tex: [63, 63, 63], hardness: 3.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Cut Sandstone", layer: Layer::Opaque, solid: true, tex: [18, 64, 18], hardness: 0.8, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Chiseled Sandstone", layer: Layer::Opaque, solid: true, tex: [18, 65, 18], hardness: 0.8, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Lore Tablet", layer: Layer::Opaque, solid: true, tex: [66, 67, 66], hardness: -1.0, tool: Tool::None, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Crafting Table", layer: Layer::Opaque, solid: true, tex: [68, 69, 10], hardness: 2.5, tool: Tool::Axe, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Furnace", layer: Layer::Opaque, solid: true, tex: [70, 71, 70], hardness: 3.5, tool: Tool::Pickaxe, harvest_level: 0, light: 0, replaceable: false },
+    BlockDef { name: "Furnace", layer: Layer::Opaque, solid: true, tex: [70, 72, 70], hardness: 3.5, tool: Tool::Pickaxe, harvest_level: 0, light: 13, replaceable: false },
+    BlockDef { name: "White Wool", layer: Layer::Opaque, solid: true, tex: [73, 73, 73], hardness: 0.8, tool: Tool::None, harvest_level: -1, light: 0, replaceable: false },
+    BlockDef { name: "Torch", layer: Layer::Cross, solid: false, tex: [74, 74, 74], hardness: 0.0, tool: Tool::None, harvest_level: -1, light: 14, replaceable: false },
 ];
 
 /// Number of textures.
-pub const TEXTURE_COUNT: usize = 167;
+pub const TEXTURE_COUNT: usize = 174;
 
 /// 16x16 RGB565 textures (blocks, then items), row by row. See `blocks::TRANSPARENT`.
 pub static TEXTURES: [[u16; 256]; TEXTURE_COUNT] = [
@@ -1175,6 +1196,120 @@ pub static TEXTURES: [[u16; 256]; TEXTURE_COUNT] = [
         0xF81F, 0x5D08, 0x54A7, 0x4C87, 0x54C7, 0x4466, 0x54E8, 0x54C8, 0x4446, 0x54A7, 0x4CA7, 0x54C8, 0x4CA7, 0x4466, 0x4446, 0xF81F,
         0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
     ],
+    // short_grass (grass tint)
+    [
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x42C5, 0x3A44, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x4284, 0x3A44, 0xF81F, 0xF81F, 0x42A5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x5346, 0x5B86, 0xF81F, 0xF81F, 0x3224, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3A64, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x42C5, 0x3224, 0xF81F, 0x5B86, 0x42A5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x42A5, 0xF81F,
+        0xF81F, 0x4B05, 0xF81F, 0xF81F, 0xF81F, 0x3224, 0x4B25, 0xF81F, 0x5346, 0x42C5, 0xF81F, 0xF81F, 0x5346, 0xF81F, 0x3224, 0xF81F,
+        0xF81F, 0x3A84, 0xF81F, 0xF81F, 0xF81F, 0x42E5, 0xF81F, 0x3203, 0x3A84, 0xF81F, 0xF81F, 0xF81F, 0x3224, 0xF81F, 0x42C5, 0xF81F,
+        0xF81F, 0x42A5, 0xF81F, 0xF81F, 0xF81F, 0x3203, 0xF81F, 0x5366, 0x5346, 0x4AE5, 0xF81F, 0xF81F, 0x4B05, 0x4284, 0xF81F, 0xF81F,
+        0xF81F, 0x42C5, 0xF81F, 0xF81F, 0xF81F, 0x3224, 0xF81F, 0x5346, 0x3A44, 0x5BA6, 0xF81F, 0x3A84, 0xF81F, 0x3244, 0xF81F, 0xF81F,
+        0xF81F, 0x4AE5, 0xF81F, 0xF81F, 0xF81F, 0x5B86, 0xF81F, 0x3A64, 0x5366, 0x3A84, 0xF81F, 0x5366, 0xF81F, 0x5366, 0xF81F, 0xF81F,
+        0xF81F, 0x4284, 0xF81F, 0xF81F, 0xF81F, 0x5386, 0xF81F, 0x4B05, 0x42C5, 0x5366, 0xF81F, 0x42C5, 0xF81F, 0x3224, 0xF81F, 0xF81F,
+        0xF81F, 0x3224, 0xF81F, 0xF81F, 0xF81F, 0x5366, 0xF81F, 0x3A84, 0x3203, 0x5346, 0xF81F, 0x5346, 0xF81F, 0x4AE5, 0xF81F, 0xF81F,
+    ],
+    // fern (grass tint)
+    [
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3A84, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x5366, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x4B26, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x42C5, 0x4B26, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x42E5, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x5366, 0x42C5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3A44, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3A44, 0x42E5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3A64, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x5BA6, 0x42C5, 0xF81F, 0xF81F, 0xF81F, 0x3A44, 0xF81F, 0xF81F, 0x42A5, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x42A5, 0x3A64, 0x4B05, 0xF81F, 0xF81F, 0x42A4, 0xF81F, 0xF81F, 0x5346, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x4B05, 0x4B05, 0x3224, 0xF81F, 0xF81F, 0x4B05, 0xF81F, 0xF81F, 0x42A5, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3A44, 0x3203, 0x3A64, 0xF81F, 0xF81F, 0xF81F, 0x4AE5, 0xF81F, 0x42C5, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x5386, 0xF81F, 0x5346, 0xF81F, 0xF81F, 0xF81F, 0x5B86, 0xF81F, 0x42A5, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3A84, 0xF81F, 0x4B26, 0xF81F, 0xF81F, 0xF81F, 0x42A5, 0xF81F, 0x3224, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x4B26, 0xF81F, 0x5B86, 0xF81F, 0xF81F, 0xF81F, 0x3A64, 0xF81F, 0x3A84, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3A44, 0xF81F, 0x5366, 0xF81F, 0xF81F, 0xF81F, 0x3224, 0xF81F, 0x42A5, 0xF81F, 0xF81F, 0xF81F,
+    ],
+    // dead_bush
+    [
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x72A4, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x72E5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x6B25, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x6A65, 0x7A44, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x8247, 0xF81F, 0xF81F, 0x6A46, 0xF81F, 0x6AE6, 0x7B27, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0x7A27, 0x82E5, 0xF81F, 0xF81F, 0x7A84, 0xF81F, 0x82C4, 0x7A86, 0xF81F, 0x7267, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0x72A5, 0x8247, 0xF81F, 0xF81F, 0x7A26, 0xF81F, 0xF81F, 0x6A44, 0x6A86, 0x6AA4, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0x7286, 0xF81F, 0x7A85, 0xF81F, 0x6AC4, 0xF81F, 0xF81F, 0xF81F, 0x7AC4, 0x7247, 0xF81F, 0x7B06, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0x72A6, 0xF81F, 0x6A66, 0xF81F, 0x7A67, 0xF81F, 0xF81F, 0xF81F, 0x6AA6, 0x72E7, 0xF81F, 0x7244, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0x7B04, 0xF81F, 0x7A86, 0xF81F, 0x7AC6, 0xF81F, 0xF81F, 0xF81F, 0x8307, 0x82A7, 0xF81F, 0x82C6, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0x7264, 0xF81F, 0x7AA5, 0xF81F, 0x82E7, 0xF81F, 0xF81F, 0xF81F, 0x7AC7, 0x7AE6, 0xF81F, 0x72A5, 0xF81F, 0xF81F,
+    ],
+    // dandelion
+    [
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF6A5, 0xF6A5, 0xE643, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF6C5, 0xFF2F, 0xEE64, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xEE64, 0xE623, 0xEE64, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x4466, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+    ],
+    // poppy
+    [
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xC8A2, 0xD0E3, 0xC8C3, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xC8A2, 0xFF2F, 0xC8C3, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xC8A2, 0xC8C3, 0xD104, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x4466, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+    ],
+    // cornflower
+    [
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x431B, 0x5BDE, 0x4B5C, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x42FA, 0xFF2F, 0x5BDE, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x5BDE, 0x4B3B, 0x539D, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x4466, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x3BC5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+    ],
     // stone_bricks
     [
         0x5ACB, 0x7BCF, 0x8410, 0x7BCF, 0x7BEF, 0x8430, 0x73AE, 0x7BCF, 0x5ACB, 0x73AE, 0x73AE, 0x8410, 0x8430, 0x7BCF, 0x7BCF, 0x8430,
@@ -1478,6 +1613,25 @@ pub static TEXTURES: [[u16; 256]; TEXTURE_COUNT] = [
         0xE73C, 0xEF5C, 0xEF5C, 0xE71B, 0xEF5C, 0xE71B, 0xEF7D, 0xE71B, 0xDEFB, 0xE71B, 0xEF7D, 0xEF7D, 0xF79D, 0xEF5C, 0xE71B, 0xF79D,
         0xDEFB, 0xEF7D, 0xE71B, 0xDEFB, 0xF79D, 0xF79D, 0xE71B, 0xEF7D, 0xEF7D, 0xF79D, 0xF79D, 0xE73C, 0xE73C, 0xEF5C, 0xE71B, 0xEF7D,
         0xE73C, 0xE73C, 0xDEFB, 0xEF7D, 0xEF5C, 0xE73C, 0xF79D, 0xF79D, 0xF79D, 0xE71B, 0xE71B, 0xEF5C, 0xEF7D, 0xEF7D, 0xEF7D, 0xE71B,
+    ],
+    // torch
+    [
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xE3C3, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xFD06, 0xFE4B, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xFEAD, 0xFDEA, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF4A5, 0xFFDB, 0xFF75, 0xF4A5, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x6A44, 0x51C3, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x7AA6, 0x6224, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x7AA6, 0x6224, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x6A44, 0x51C3, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x7AA6, 0x6224, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x7AA6, 0x6224, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x6A44, 0x51C3, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x7AA6, 0x6224, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x7AA6, 0x6224, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
+        0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0x6A44, 0x51C3, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F, 0xF81F,
     ],
     // apple
     [

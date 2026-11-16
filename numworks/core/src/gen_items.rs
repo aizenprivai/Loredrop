@@ -14,148 +14,148 @@ pub static TIERS: [TierDef; 5] = [
 ];
 
 /// Apple.
-pub const APPLE: Item = 57;
+pub const APPLE: Item = 64;
 /// Stick.
-pub const STICK: Item = 58;
+pub const STICK: Item = 65;
 /// Coal.
-pub const COAL: Item = 59;
+pub const COAL: Item = 66;
 /// Charcoal.
-pub const CHARCOAL: Item = 60;
+pub const CHARCOAL: Item = 67;
 /// Flint.
-pub const FLINT: Item = 61;
+pub const FLINT: Item = 68;
 /// Raw Iron.
-pub const RAW_IRON: Item = 62;
+pub const RAW_IRON: Item = 69;
 /// Raw Copper.
-pub const RAW_COPPER: Item = 63;
+pub const RAW_COPPER: Item = 70;
 /// Raw Gold.
-pub const RAW_GOLD: Item = 64;
+pub const RAW_GOLD: Item = 71;
 /// Iron Ingot.
-pub const IRON_INGOT: Item = 65;
+pub const IRON_INGOT: Item = 72;
 /// Copper Ingot.
-pub const COPPER_INGOT: Item = 66;
+pub const COPPER_INGOT: Item = 73;
 /// Gold Ingot.
-pub const GOLD_INGOT: Item = 67;
+pub const GOLD_INGOT: Item = 74;
 /// Diamond.
-pub const DIAMOND: Item = 68;
+pub const DIAMOND: Item = 75;
 /// Emerald.
-pub const EMERALD: Item = 69;
+pub const EMERALD: Item = 76;
 /// Lapis Lazuli.
-pub const LAPIS_LAZULI: Item = 70;
+pub const LAPIS_LAZULI: Item = 77;
 /// Wooden Pickaxe.
-pub const WOODEN_PICKAXE: Item = 71;
+pub const WOODEN_PICKAXE: Item = 78;
 /// Wooden Axe.
-pub const WOODEN_AXE: Item = 72;
+pub const WOODEN_AXE: Item = 79;
 /// Wooden Shovel.
-pub const WOODEN_SHOVEL: Item = 73;
+pub const WOODEN_SHOVEL: Item = 80;
 /// Wooden Hoe.
-pub const WOODEN_HOE: Item = 74;
+pub const WOODEN_HOE: Item = 81;
 /// Wooden Sword.
-pub const WOODEN_SWORD: Item = 75;
+pub const WOODEN_SWORD: Item = 82;
 /// Stone Pickaxe.
-pub const STONE_PICKAXE: Item = 76;
+pub const STONE_PICKAXE: Item = 83;
 /// Stone Axe.
-pub const STONE_AXE: Item = 77;
+pub const STONE_AXE: Item = 84;
 /// Stone Shovel.
-pub const STONE_SHOVEL: Item = 78;
+pub const STONE_SHOVEL: Item = 85;
 /// Stone Hoe.
-pub const STONE_HOE: Item = 79;
+pub const STONE_HOE: Item = 86;
 /// Stone Sword.
-pub const STONE_SWORD: Item = 80;
+pub const STONE_SWORD: Item = 87;
 /// Iron Pickaxe.
-pub const IRON_PICKAXE: Item = 81;
+pub const IRON_PICKAXE: Item = 88;
 /// Iron Axe.
-pub const IRON_AXE: Item = 82;
+pub const IRON_AXE: Item = 89;
 /// Iron Shovel.
-pub const IRON_SHOVEL: Item = 83;
+pub const IRON_SHOVEL: Item = 90;
 /// Iron Hoe.
-pub const IRON_HOE: Item = 84;
+pub const IRON_HOE: Item = 91;
 /// Iron Sword.
-pub const IRON_SWORD: Item = 85;
+pub const IRON_SWORD: Item = 92;
 /// Golden Pickaxe.
-pub const GOLDEN_PICKAXE: Item = 86;
+pub const GOLDEN_PICKAXE: Item = 93;
 /// Golden Axe.
-pub const GOLDEN_AXE: Item = 87;
+pub const GOLDEN_AXE: Item = 94;
 /// Golden Shovel.
-pub const GOLDEN_SHOVEL: Item = 88;
+pub const GOLDEN_SHOVEL: Item = 95;
 /// Golden Hoe.
-pub const GOLDEN_HOE: Item = 89;
+pub const GOLDEN_HOE: Item = 96;
 /// Golden Sword.
-pub const GOLDEN_SWORD: Item = 90;
+pub const GOLDEN_SWORD: Item = 97;
 /// Diamond Pickaxe.
-pub const DIAMOND_PICKAXE: Item = 91;
+pub const DIAMOND_PICKAXE: Item = 98;
 /// Diamond Axe.
-pub const DIAMOND_AXE: Item = 92;
+pub const DIAMOND_AXE: Item = 99;
 /// Diamond Shovel.
-pub const DIAMOND_SHOVEL: Item = 93;
+pub const DIAMOND_SHOVEL: Item = 100;
 /// Diamond Hoe.
-pub const DIAMOND_HOE: Item = 94;
+pub const DIAMOND_HOE: Item = 101;
 /// Diamond Sword.
-pub const DIAMOND_SWORD: Item = 95;
+pub const DIAMOND_SWORD: Item = 102;
 /// Iron Helmet.
-pub const IRON_HELMET: Item = 96;
+pub const IRON_HELMET: Item = 103;
 /// Iron Chestplate.
-pub const IRON_CHESTPLATE: Item = 97;
+pub const IRON_CHESTPLATE: Item = 104;
 /// Iron Leggings.
-pub const IRON_LEGGINGS: Item = 98;
+pub const IRON_LEGGINGS: Item = 105;
 /// Iron Boots.
-pub const IRON_BOOTS: Item = 99;
+pub const IRON_BOOTS: Item = 106;
 /// Golden Helmet.
-pub const GOLDEN_HELMET: Item = 100;
+pub const GOLDEN_HELMET: Item = 107;
 /// Golden Chestplate.
-pub const GOLDEN_CHESTPLATE: Item = 101;
+pub const GOLDEN_CHESTPLATE: Item = 108;
 /// Golden Leggings.
-pub const GOLDEN_LEGGINGS: Item = 102;
+pub const GOLDEN_LEGGINGS: Item = 109;
 /// Golden Boots.
-pub const GOLDEN_BOOTS: Item = 103;
+pub const GOLDEN_BOOTS: Item = 110;
 /// Diamond Helmet.
-pub const DIAMOND_HELMET: Item = 104;
+pub const DIAMOND_HELMET: Item = 111;
 /// Diamond Chestplate.
-pub const DIAMOND_CHESTPLATE: Item = 105;
+pub const DIAMOND_CHESTPLATE: Item = 112;
 /// Diamond Leggings.
-pub const DIAMOND_LEGGINGS: Item = 106;
+pub const DIAMOND_LEGGINGS: Item = 113;
 /// Diamond Boots.
-pub const DIAMOND_BOOTS: Item = 107;
+pub const DIAMOND_BOOTS: Item = 114;
 /// Raw Beef.
-pub const BEEF: Item = 108;
+pub const BEEF: Item = 115;
 /// Steak.
-pub const COOKED_BEEF: Item = 109;
+pub const COOKED_BEEF: Item = 116;
 /// Raw Porkchop.
-pub const PORKCHOP: Item = 110;
+pub const PORKCHOP: Item = 117;
 /// Cooked Porkchop.
-pub const COOKED_PORKCHOP: Item = 111;
+pub const COOKED_PORKCHOP: Item = 118;
 /// Raw Chicken.
-pub const CHICKEN: Item = 112;
+pub const CHICKEN: Item = 119;
 /// Cooked Chicken.
-pub const COOKED_CHICKEN: Item = 113;
+pub const COOKED_CHICKEN: Item = 120;
 /// Raw Mutton.
-pub const MUTTON: Item = 114;
+pub const MUTTON: Item = 121;
 /// Cooked Mutton.
-pub const COOKED_MUTTON: Item = 115;
+pub const COOKED_MUTTON: Item = 122;
 /// Rotten Flesh.
-pub const ROTTEN_FLESH: Item = 116;
+pub const ROTTEN_FLESH: Item = 123;
 /// Leather.
-pub const LEATHER: Item = 117;
+pub const LEATHER: Item = 124;
 /// Feather.
-pub const FEATHER: Item = 118;
+pub const FEATHER: Item = 125;
 /// Bone.
-pub const BONE: Item = 119;
+pub const BONE: Item = 126;
 /// String.
-pub const STRING: Item = 120;
+pub const STRING: Item = 127;
 /// Arrow.
-pub const ARROW: Item = 121;
+pub const ARROW: Item = 128;
 /// Leather Cap.
-pub const LEATHER_HELMET: Item = 122;
+pub const LEATHER_HELMET: Item = 129;
 /// Leather Tunic.
-pub const LEATHER_CHESTPLATE: Item = 123;
+pub const LEATHER_CHESTPLATE: Item = 130;
 /// Leather Pants.
-pub const LEATHER_LEGGINGS: Item = 124;
+pub const LEATHER_LEGGINGS: Item = 131;
 /// Leather Boots.
-pub const LEATHER_BOOTS: Item = 125;
+pub const LEATHER_BOOTS: Item = 132;
 /// Lore Fragment.
-pub const LORE_FRAGMENT: Item = 126;
+pub const LORE_FRAGMENT: Item = 133;
 
 /// Number of item types (blocks included; 0 = nothing).
-pub const ITEM_COUNT: usize = 127;
+pub const ITEM_COUNT: usize = 134;
 
 /// Every item, indexed by item id. Ids below `BLOCK_COUNT` are the blocks.
 pub static ITEMS: [ItemDef; ITEM_COUNT] = [
@@ -203,89 +203,96 @@ pub static ITEMS: [ItemDef; ITEM_COUNT] = [
     ItemDef { name: "Spruce Planks", max_stack: 64, icon: 47, kind: ItemKind::Block, creative: true },
     ItemDef { name: "Spruce Leaves", max_stack: 64, icon: 48, kind: ItemKind::Block, creative: true },
     ItemDef { name: "Cactus", max_stack: 64, icon: 50, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Stone Bricks", max_stack: 64, icon: 52, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Cracked Stone Bricks", max_stack: 64, icon: 53, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Mossy Stone Bricks", max_stack: 64, icon: 54, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Chiseled Stone Bricks", max_stack: 64, icon: 55, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Deepslate Bricks", max_stack: 64, icon: 56, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Cracked Deepslate Bricks", max_stack: 64, icon: 57, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Cut Sandstone", max_stack: 64, icon: 58, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Chiseled Sandstone", max_stack: 64, icon: 59, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Lore Tablet", max_stack: 64, icon: 61, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Crafting Table", max_stack: 64, icon: 63, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Furnace", max_stack: 64, icon: 65, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Furnace", max_stack: 64, icon: 66, kind: ItemKind::Block, creative: false },
-    ItemDef { name: "White Wool", max_stack: 64, icon: 67, kind: ItemKind::Block, creative: true },
-    ItemDef { name: "Apple", max_stack: 64, icon: 68, kind: ItemKind::Food { food: 4, saturation: 0.3 }, creative: true },
-    ItemDef { name: "Stick", max_stack: 64, icon: 69, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Coal", max_stack: 64, icon: 70, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Charcoal", max_stack: 64, icon: 71, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Flint", max_stack: 64, icon: 72, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Raw Iron", max_stack: 64, icon: 73, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Raw Copper", max_stack: 64, icon: 74, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Raw Gold", max_stack: 64, icon: 75, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Iron Ingot", max_stack: 64, icon: 76, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Copper Ingot", max_stack: 64, icon: 77, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Gold Ingot", max_stack: 64, icon: 78, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Diamond", max_stack: 64, icon: 79, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Emerald", max_stack: 64, icon: 80, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Lapis Lazuli", max_stack: 64, icon: 81, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Wooden Pickaxe", max_stack: 1, icon: 82, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 0, damage: 2.0, speed: 1.2 }, creative: true },
-    ItemDef { name: "Wooden Axe", max_stack: 1, icon: 83, kind: ItemKind::Tool { tool: Tool::Axe, tier: 0, damage: 7.0, speed: 0.8 }, creative: true },
-    ItemDef { name: "Wooden Shovel", max_stack: 1, icon: 84, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 0, damage: 2.5, speed: 1.0 }, creative: true },
-    ItemDef { name: "Wooden Hoe", max_stack: 1, icon: 85, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 0, damage: 1.0, speed: 1.0 }, creative: true },
-    ItemDef { name: "Wooden Sword", max_stack: 1, icon: 86, kind: ItemKind::Tool { tool: Tool::Sword, tier: 0, damage: 4.0, speed: 1.6 }, creative: true },
-    ItemDef { name: "Stone Pickaxe", max_stack: 1, icon: 87, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 1, damage: 3.0, speed: 1.2 }, creative: true },
-    ItemDef { name: "Stone Axe", max_stack: 1, icon: 88, kind: ItemKind::Tool { tool: Tool::Axe, tier: 1, damage: 9.0, speed: 0.8 }, creative: true },
-    ItemDef { name: "Stone Shovel", max_stack: 1, icon: 89, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 1, damage: 3.5, speed: 1.0 }, creative: true },
-    ItemDef { name: "Stone Hoe", max_stack: 1, icon: 90, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 1, damage: 1.0, speed: 2.0 }, creative: true },
-    ItemDef { name: "Stone Sword", max_stack: 1, icon: 91, kind: ItemKind::Tool { tool: Tool::Sword, tier: 1, damage: 5.0, speed: 1.6 }, creative: true },
-    ItemDef { name: "Iron Pickaxe", max_stack: 1, icon: 92, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 2, damage: 4.0, speed: 1.2 }, creative: true },
-    ItemDef { name: "Iron Axe", max_stack: 1, icon: 93, kind: ItemKind::Tool { tool: Tool::Axe, tier: 2, damage: 9.0, speed: 0.9 }, creative: true },
-    ItemDef { name: "Iron Shovel", max_stack: 1, icon: 94, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 2, damage: 4.5, speed: 1.0 }, creative: true },
-    ItemDef { name: "Iron Hoe", max_stack: 1, icon: 95, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 2, damage: 1.0, speed: 3.0 }, creative: true },
-    ItemDef { name: "Iron Sword", max_stack: 1, icon: 96, kind: ItemKind::Tool { tool: Tool::Sword, tier: 2, damage: 6.0, speed: 1.6 }, creative: true },
-    ItemDef { name: "Golden Pickaxe", max_stack: 1, icon: 97, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 3, damage: 2.0, speed: 1.2 }, creative: true },
-    ItemDef { name: "Golden Axe", max_stack: 1, icon: 98, kind: ItemKind::Tool { tool: Tool::Axe, tier: 3, damage: 7.0, speed: 1.0 }, creative: true },
-    ItemDef { name: "Golden Shovel", max_stack: 1, icon: 99, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 3, damage: 2.5, speed: 1.0 }, creative: true },
-    ItemDef { name: "Golden Hoe", max_stack: 1, icon: 100, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 3, damage: 1.0, speed: 1.0 }, creative: true },
-    ItemDef { name: "Golden Sword", max_stack: 1, icon: 101, kind: ItemKind::Tool { tool: Tool::Sword, tier: 3, damage: 4.0, speed: 1.6 }, creative: true },
-    ItemDef { name: "Diamond Pickaxe", max_stack: 1, icon: 102, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 4, damage: 5.0, speed: 1.2 }, creative: true },
-    ItemDef { name: "Diamond Axe", max_stack: 1, icon: 103, kind: ItemKind::Tool { tool: Tool::Axe, tier: 4, damage: 9.0, speed: 1.0 }, creative: true },
-    ItemDef { name: "Diamond Shovel", max_stack: 1, icon: 104, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 4, damage: 5.5, speed: 1.0 }, creative: true },
-    ItemDef { name: "Diamond Hoe", max_stack: 1, icon: 105, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 4, damage: 1.0, speed: 4.0 }, creative: true },
-    ItemDef { name: "Diamond Sword", max_stack: 1, icon: 106, kind: ItemKind::Tool { tool: Tool::Sword, tier: 4, damage: 7.0, speed: 1.6 }, creative: true },
-    ItemDef { name: "Iron Helmet", max_stack: 1, icon: 107, kind: ItemKind::Armor { slot: 0, defense: 2, toughness: 0.0, durability: 165 }, creative: true },
-    ItemDef { name: "Iron Chestplate", max_stack: 1, icon: 108, kind: ItemKind::Armor { slot: 1, defense: 6, toughness: 0.0, durability: 240 }, creative: true },
-    ItemDef { name: "Iron Leggings", max_stack: 1, icon: 109, kind: ItemKind::Armor { slot: 2, defense: 5, toughness: 0.0, durability: 225 }, creative: true },
-    ItemDef { name: "Iron Boots", max_stack: 1, icon: 110, kind: ItemKind::Armor { slot: 3, defense: 2, toughness: 0.0, durability: 195 }, creative: true },
-    ItemDef { name: "Golden Helmet", max_stack: 1, icon: 111, kind: ItemKind::Armor { slot: 0, defense: 2, toughness: 0.0, durability: 77 }, creative: true },
-    ItemDef { name: "Golden Chestplate", max_stack: 1, icon: 112, kind: ItemKind::Armor { slot: 1, defense: 5, toughness: 0.0, durability: 112 }, creative: true },
-    ItemDef { name: "Golden Leggings", max_stack: 1, icon: 113, kind: ItemKind::Armor { slot: 2, defense: 3, toughness: 0.0, durability: 105 }, creative: true },
-    ItemDef { name: "Golden Boots", max_stack: 1, icon: 114, kind: ItemKind::Armor { slot: 3, defense: 1, toughness: 0.0, durability: 91 }, creative: true },
-    ItemDef { name: "Diamond Helmet", max_stack: 1, icon: 115, kind: ItemKind::Armor { slot: 0, defense: 3, toughness: 2.0, durability: 363 }, creative: true },
-    ItemDef { name: "Diamond Chestplate", max_stack: 1, icon: 116, kind: ItemKind::Armor { slot: 1, defense: 8, toughness: 2.0, durability: 528 }, creative: true },
-    ItemDef { name: "Diamond Leggings", max_stack: 1, icon: 117, kind: ItemKind::Armor { slot: 2, defense: 6, toughness: 2.0, durability: 495 }, creative: true },
-    ItemDef { name: "Diamond Boots", max_stack: 1, icon: 118, kind: ItemKind::Armor { slot: 3, defense: 3, toughness: 2.0, durability: 429 }, creative: true },
-    ItemDef { name: "Raw Beef", max_stack: 64, icon: 119, kind: ItemKind::Food { food: 3, saturation: 0.3 }, creative: true },
-    ItemDef { name: "Steak", max_stack: 64, icon: 120, kind: ItemKind::Food { food: 8, saturation: 0.8 }, creative: true },
-    ItemDef { name: "Raw Porkchop", max_stack: 64, icon: 121, kind: ItemKind::Food { food: 3, saturation: 0.3 }, creative: true },
-    ItemDef { name: "Cooked Porkchop", max_stack: 64, icon: 122, kind: ItemKind::Food { food: 8, saturation: 0.8 }, creative: true },
-    ItemDef { name: "Raw Chicken", max_stack: 64, icon: 123, kind: ItemKind::Food { food: 2, saturation: 0.3 }, creative: true },
-    ItemDef { name: "Cooked Chicken", max_stack: 64, icon: 124, kind: ItemKind::Food { food: 6, saturation: 0.6 }, creative: true },
-    ItemDef { name: "Raw Mutton", max_stack: 64, icon: 125, kind: ItemKind::Food { food: 2, saturation: 0.3 }, creative: true },
-    ItemDef { name: "Cooked Mutton", max_stack: 64, icon: 126, kind: ItemKind::Food { food: 6, saturation: 0.8 }, creative: true },
-    ItemDef { name: "Rotten Flesh", max_stack: 64, icon: 127, kind: ItemKind::Food { food: 4, saturation: 0.1 }, creative: true },
-    ItemDef { name: "Leather", max_stack: 64, icon: 128, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Feather", max_stack: 64, icon: 129, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Bone", max_stack: 64, icon: 130, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "String", max_stack: 64, icon: 131, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Arrow", max_stack: 64, icon: 132, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Leather Cap", max_stack: 1, icon: 133, kind: ItemKind::Armor { slot: 0, defense: 1, toughness: 0.0, durability: 55 }, creative: true },
-    ItemDef { name: "Leather Tunic", max_stack: 1, icon: 134, kind: ItemKind::Armor { slot: 1, defense: 3, toughness: 0.0, durability: 80 }, creative: true },
-    ItemDef { name: "Leather Pants", max_stack: 1, icon: 135, kind: ItemKind::Armor { slot: 2, defense: 2, toughness: 0.0, durability: 75 }, creative: true },
-    ItemDef { name: "Leather Boots", max_stack: 1, icon: 136, kind: ItemKind::Armor { slot: 3, defense: 1, toughness: 0.0, durability: 65 }, creative: true },
-    ItemDef { name: "Lore Fragment", max_stack: 16, icon: 137, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Short Grass", max_stack: 64, icon: 52, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Fern", max_stack: 64, icon: 53, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Dead Bush", max_stack: 64, icon: 54, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Dandelion", max_stack: 64, icon: 55, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Poppy", max_stack: 64, icon: 56, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Cornflower", max_stack: 64, icon: 57, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Stone Bricks", max_stack: 64, icon: 58, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Cracked Stone Bricks", max_stack: 64, icon: 59, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Mossy Stone Bricks", max_stack: 64, icon: 60, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Chiseled Stone Bricks", max_stack: 64, icon: 61, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Deepslate Bricks", max_stack: 64, icon: 62, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Cracked Deepslate Bricks", max_stack: 64, icon: 63, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Cut Sandstone", max_stack: 64, icon: 64, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Chiseled Sandstone", max_stack: 64, icon: 65, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Lore Tablet", max_stack: 64, icon: 67, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Crafting Table", max_stack: 64, icon: 69, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Furnace", max_stack: 64, icon: 71, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Furnace", max_stack: 64, icon: 72, kind: ItemKind::Block, creative: false },
+    ItemDef { name: "White Wool", max_stack: 64, icon: 73, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Torch", max_stack: 64, icon: 74, kind: ItemKind::Block, creative: true },
+    ItemDef { name: "Apple", max_stack: 64, icon: 75, kind: ItemKind::Food { food: 4, saturation: 0.3 }, creative: true },
+    ItemDef { name: "Stick", max_stack: 64, icon: 76, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Coal", max_stack: 64, icon: 77, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Charcoal", max_stack: 64, icon: 78, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Flint", max_stack: 64, icon: 79, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Raw Iron", max_stack: 64, icon: 80, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Raw Copper", max_stack: 64, icon: 81, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Raw Gold", max_stack: 64, icon: 82, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Iron Ingot", max_stack: 64, icon: 83, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Copper Ingot", max_stack: 64, icon: 84, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Gold Ingot", max_stack: 64, icon: 85, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Diamond", max_stack: 64, icon: 86, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Emerald", max_stack: 64, icon: 87, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Lapis Lazuli", max_stack: 64, icon: 88, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Wooden Pickaxe", max_stack: 1, icon: 89, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 0, damage: 2.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Wooden Axe", max_stack: 1, icon: 90, kind: ItemKind::Tool { tool: Tool::Axe, tier: 0, damage: 7.0, speed: 0.8 }, creative: true },
+    ItemDef { name: "Wooden Shovel", max_stack: 1, icon: 91, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 0, damage: 2.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Wooden Hoe", max_stack: 1, icon: 92, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 0, damage: 1.0, speed: 1.0 }, creative: true },
+    ItemDef { name: "Wooden Sword", max_stack: 1, icon: 93, kind: ItemKind::Tool { tool: Tool::Sword, tier: 0, damage: 4.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Stone Pickaxe", max_stack: 1, icon: 94, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 1, damage: 3.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Stone Axe", max_stack: 1, icon: 95, kind: ItemKind::Tool { tool: Tool::Axe, tier: 1, damage: 9.0, speed: 0.8 }, creative: true },
+    ItemDef { name: "Stone Shovel", max_stack: 1, icon: 96, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 1, damage: 3.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Stone Hoe", max_stack: 1, icon: 97, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 1, damage: 1.0, speed: 2.0 }, creative: true },
+    ItemDef { name: "Stone Sword", max_stack: 1, icon: 98, kind: ItemKind::Tool { tool: Tool::Sword, tier: 1, damage: 5.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Iron Pickaxe", max_stack: 1, icon: 99, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 2, damage: 4.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Iron Axe", max_stack: 1, icon: 100, kind: ItemKind::Tool { tool: Tool::Axe, tier: 2, damage: 9.0, speed: 0.9 }, creative: true },
+    ItemDef { name: "Iron Shovel", max_stack: 1, icon: 101, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 2, damage: 4.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Iron Hoe", max_stack: 1, icon: 102, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 2, damage: 1.0, speed: 3.0 }, creative: true },
+    ItemDef { name: "Iron Sword", max_stack: 1, icon: 103, kind: ItemKind::Tool { tool: Tool::Sword, tier: 2, damage: 6.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Golden Pickaxe", max_stack: 1, icon: 104, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 3, damage: 2.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Golden Axe", max_stack: 1, icon: 105, kind: ItemKind::Tool { tool: Tool::Axe, tier: 3, damage: 7.0, speed: 1.0 }, creative: true },
+    ItemDef { name: "Golden Shovel", max_stack: 1, icon: 106, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 3, damage: 2.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Golden Hoe", max_stack: 1, icon: 107, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 3, damage: 1.0, speed: 1.0 }, creative: true },
+    ItemDef { name: "Golden Sword", max_stack: 1, icon: 108, kind: ItemKind::Tool { tool: Tool::Sword, tier: 3, damage: 4.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Diamond Pickaxe", max_stack: 1, icon: 109, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 4, damage: 5.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Diamond Axe", max_stack: 1, icon: 110, kind: ItemKind::Tool { tool: Tool::Axe, tier: 4, damage: 9.0, speed: 1.0 }, creative: true },
+    ItemDef { name: "Diamond Shovel", max_stack: 1, icon: 111, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 4, damage: 5.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Diamond Hoe", max_stack: 1, icon: 112, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 4, damage: 1.0, speed: 4.0 }, creative: true },
+    ItemDef { name: "Diamond Sword", max_stack: 1, icon: 113, kind: ItemKind::Tool { tool: Tool::Sword, tier: 4, damage: 7.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Iron Helmet", max_stack: 1, icon: 114, kind: ItemKind::Armor { slot: 0, defense: 2, toughness: 0.0, durability: 165 }, creative: true },
+    ItemDef { name: "Iron Chestplate", max_stack: 1, icon: 115, kind: ItemKind::Armor { slot: 1, defense: 6, toughness: 0.0, durability: 240 }, creative: true },
+    ItemDef { name: "Iron Leggings", max_stack: 1, icon: 116, kind: ItemKind::Armor { slot: 2, defense: 5, toughness: 0.0, durability: 225 }, creative: true },
+    ItemDef { name: "Iron Boots", max_stack: 1, icon: 117, kind: ItemKind::Armor { slot: 3, defense: 2, toughness: 0.0, durability: 195 }, creative: true },
+    ItemDef { name: "Golden Helmet", max_stack: 1, icon: 118, kind: ItemKind::Armor { slot: 0, defense: 2, toughness: 0.0, durability: 77 }, creative: true },
+    ItemDef { name: "Golden Chestplate", max_stack: 1, icon: 119, kind: ItemKind::Armor { slot: 1, defense: 5, toughness: 0.0, durability: 112 }, creative: true },
+    ItemDef { name: "Golden Leggings", max_stack: 1, icon: 120, kind: ItemKind::Armor { slot: 2, defense: 3, toughness: 0.0, durability: 105 }, creative: true },
+    ItemDef { name: "Golden Boots", max_stack: 1, icon: 121, kind: ItemKind::Armor { slot: 3, defense: 1, toughness: 0.0, durability: 91 }, creative: true },
+    ItemDef { name: "Diamond Helmet", max_stack: 1, icon: 122, kind: ItemKind::Armor { slot: 0, defense: 3, toughness: 2.0, durability: 363 }, creative: true },
+    ItemDef { name: "Diamond Chestplate", max_stack: 1, icon: 123, kind: ItemKind::Armor { slot: 1, defense: 8, toughness: 2.0, durability: 528 }, creative: true },
+    ItemDef { name: "Diamond Leggings", max_stack: 1, icon: 124, kind: ItemKind::Armor { slot: 2, defense: 6, toughness: 2.0, durability: 495 }, creative: true },
+    ItemDef { name: "Diamond Boots", max_stack: 1, icon: 125, kind: ItemKind::Armor { slot: 3, defense: 3, toughness: 2.0, durability: 429 }, creative: true },
+    ItemDef { name: "Raw Beef", max_stack: 64, icon: 126, kind: ItemKind::Food { food: 3, saturation: 0.3 }, creative: true },
+    ItemDef { name: "Steak", max_stack: 64, icon: 127, kind: ItemKind::Food { food: 8, saturation: 0.8 }, creative: true },
+    ItemDef { name: "Raw Porkchop", max_stack: 64, icon: 128, kind: ItemKind::Food { food: 3, saturation: 0.3 }, creative: true },
+    ItemDef { name: "Cooked Porkchop", max_stack: 64, icon: 129, kind: ItemKind::Food { food: 8, saturation: 0.8 }, creative: true },
+    ItemDef { name: "Raw Chicken", max_stack: 64, icon: 130, kind: ItemKind::Food { food: 2, saturation: 0.3 }, creative: true },
+    ItemDef { name: "Cooked Chicken", max_stack: 64, icon: 131, kind: ItemKind::Food { food: 6, saturation: 0.6 }, creative: true },
+    ItemDef { name: "Raw Mutton", max_stack: 64, icon: 132, kind: ItemKind::Food { food: 2, saturation: 0.3 }, creative: true },
+    ItemDef { name: "Cooked Mutton", max_stack: 64, icon: 133, kind: ItemKind::Food { food: 6, saturation: 0.8 }, creative: true },
+    ItemDef { name: "Rotten Flesh", max_stack: 64, icon: 134, kind: ItemKind::Food { food: 4, saturation: 0.1 }, creative: true },
+    ItemDef { name: "Leather", max_stack: 64, icon: 135, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Feather", max_stack: 64, icon: 136, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Bone", max_stack: 64, icon: 137, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "String", max_stack: 64, icon: 138, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Arrow", max_stack: 64, icon: 139, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Leather Cap", max_stack: 1, icon: 140, kind: ItemKind::Armor { slot: 0, defense: 1, toughness: 0.0, durability: 55 }, creative: true },
+    ItemDef { name: "Leather Tunic", max_stack: 1, icon: 141, kind: ItemKind::Armor { slot: 1, defense: 3, toughness: 0.0, durability: 80 }, creative: true },
+    ItemDef { name: "Leather Pants", max_stack: 1, icon: 142, kind: ItemKind::Armor { slot: 2, defense: 2, toughness: 0.0, durability: 75 }, creative: true },
+    ItemDef { name: "Leather Boots", max_stack: 1, icon: 143, kind: ItemKind::Armor { slot: 3, defense: 1, toughness: 0.0, durability: 65 }, creative: true },
+    ItemDef { name: "Lore Fragment", max_stack: 16, icon: 144, kind: ItemKind::Material, creative: true },
 ];
 
 const _: () = assert!(ITEM_COUNT > BLOCK_COUNT);
@@ -295,60 +302,61 @@ pub static TAGS: [&[Item]; 4] = [
     &[9, 38, 41], // planks
     &[8, 37, 40], // logs
     &[2], // stone_tool_materials
-    &[59, 60], // coals
+    &[66, 67], // coals
 ];
 
 /// Shaped crafting recipes (patterns also match mirrored, as on PC).
-pub static SHAPED: [Shaped; 49] = [
-    Shaped { w: 1, h: 2, cells: [32768, 32768, 0, 0, 0, 0, 0, 0, 0], result: 58, count: 4 }, // stick
-    Shaped { w: 2, h: 2, cells: [32768, 32768, 32768, 32768, 0, 0, 0, 0, 0], result: 53, count: 1 }, // crafting_table
-    Shaped { w: 3, h: 3, cells: [32770, 32770, 32770, 32770, 0, 32770, 32770, 32770, 32770], result: 54, count: 1 }, // furnace
-    Shaped { w: 2, h: 2, cells: [1, 1, 1, 1, 0, 0, 0, 0, 0], result: 44, count: 4 }, // stone_bricks
+pub static SHAPED: [Shaped; 50] = [
+    Shaped { w: 1, h: 2, cells: [32768, 32768, 0, 0, 0, 0, 0, 0, 0], result: 65, count: 4 }, // stick
+    Shaped { w: 1, h: 2, cells: [32771, 65, 0, 0, 0, 0, 0, 0, 0], result: 63, count: 4 }, // torch
+    Shaped { w: 2, h: 2, cells: [32768, 32768, 32768, 32768, 0, 0, 0, 0, 0], result: 59, count: 1 }, // crafting_table
+    Shaped { w: 3, h: 3, cells: [32770, 32770, 32770, 32770, 0, 32770, 32770, 32770, 32770], result: 60, count: 1 }, // furnace
+    Shaped { w: 2, h: 2, cells: [1, 1, 1, 1, 0, 0, 0, 0, 0], result: 50, count: 4 }, // stone_bricks
     Shaped { w: 2, h: 2, cells: [5, 5, 5, 5, 0, 0, 0, 0, 0], result: 16, count: 1 }, // sandstone
-    Shaped { w: 2, h: 2, cells: [16, 16, 16, 16, 0, 0, 0, 0, 0], result: 50, count: 4 }, // cut_sandstone
-    Shaped { w: 2, h: 2, cells: [12, 12, 12, 12, 0, 0, 0, 0, 0], result: 48, count: 4 }, // deepslate_bricks
-    Shaped { w: 3, h: 3, cells: [32768, 32768, 32768, 0, 58, 0, 0, 58, 0], result: 71, count: 1 }, // wooden_pickaxe
-    Shaped { w: 2, h: 3, cells: [32768, 32768, 32768, 58, 0, 58, 0, 0, 0], result: 72, count: 1 }, // wooden_axe
-    Shaped { w: 1, h: 3, cells: [32768, 58, 58, 0, 0, 0, 0, 0, 0], result: 73, count: 1 }, // wooden_shovel
-    Shaped { w: 2, h: 3, cells: [32768, 32768, 0, 58, 0, 58, 0, 0, 0], result: 74, count: 1 }, // wooden_hoe
-    Shaped { w: 1, h: 3, cells: [32768, 32768, 58, 0, 0, 0, 0, 0, 0], result: 75, count: 1 }, // wooden_sword
-    Shaped { w: 3, h: 3, cells: [32770, 32770, 32770, 0, 58, 0, 0, 58, 0], result: 76, count: 1 }, // stone_pickaxe
-    Shaped { w: 2, h: 3, cells: [32770, 32770, 32770, 58, 0, 58, 0, 0, 0], result: 77, count: 1 }, // stone_axe
-    Shaped { w: 1, h: 3, cells: [32770, 58, 58, 0, 0, 0, 0, 0, 0], result: 78, count: 1 }, // stone_shovel
-    Shaped { w: 2, h: 3, cells: [32770, 32770, 0, 58, 0, 58, 0, 0, 0], result: 79, count: 1 }, // stone_hoe
-    Shaped { w: 1, h: 3, cells: [32770, 32770, 58, 0, 0, 0, 0, 0, 0], result: 80, count: 1 }, // stone_sword
-    Shaped { w: 3, h: 3, cells: [65, 65, 65, 0, 58, 0, 0, 58, 0], result: 81, count: 1 }, // iron_pickaxe
-    Shaped { w: 2, h: 3, cells: [65, 65, 65, 58, 0, 58, 0, 0, 0], result: 82, count: 1 }, // iron_axe
-    Shaped { w: 1, h: 3, cells: [65, 58, 58, 0, 0, 0, 0, 0, 0], result: 83, count: 1 }, // iron_shovel
-    Shaped { w: 2, h: 3, cells: [65, 65, 0, 58, 0, 58, 0, 0, 0], result: 84, count: 1 }, // iron_hoe
-    Shaped { w: 1, h: 3, cells: [65, 65, 58, 0, 0, 0, 0, 0, 0], result: 85, count: 1 }, // iron_sword
-    Shaped { w: 3, h: 3, cells: [67, 67, 67, 0, 58, 0, 0, 58, 0], result: 86, count: 1 }, // golden_pickaxe
-    Shaped { w: 2, h: 3, cells: [67, 67, 67, 58, 0, 58, 0, 0, 0], result: 87, count: 1 }, // golden_axe
-    Shaped { w: 1, h: 3, cells: [67, 58, 58, 0, 0, 0, 0, 0, 0], result: 88, count: 1 }, // golden_shovel
-    Shaped { w: 2, h: 3, cells: [67, 67, 0, 58, 0, 58, 0, 0, 0], result: 89, count: 1 }, // golden_hoe
-    Shaped { w: 1, h: 3, cells: [67, 67, 58, 0, 0, 0, 0, 0, 0], result: 90, count: 1 }, // golden_sword
-    Shaped { w: 3, h: 3, cells: [68, 68, 68, 0, 58, 0, 0, 58, 0], result: 91, count: 1 }, // diamond_pickaxe
-    Shaped { w: 2, h: 3, cells: [68, 68, 68, 58, 0, 58, 0, 0, 0], result: 92, count: 1 }, // diamond_axe
-    Shaped { w: 1, h: 3, cells: [68, 58, 58, 0, 0, 0, 0, 0, 0], result: 93, count: 1 }, // diamond_shovel
-    Shaped { w: 2, h: 3, cells: [68, 68, 0, 58, 0, 58, 0, 0, 0], result: 94, count: 1 }, // diamond_hoe
-    Shaped { w: 1, h: 3, cells: [68, 68, 58, 0, 0, 0, 0, 0, 0], result: 95, count: 1 }, // diamond_sword
-    Shaped { w: 3, h: 2, cells: [65, 65, 65, 65, 0, 65, 0, 0, 0], result: 96, count: 1 }, // iron_helmet
-    Shaped { w: 3, h: 3, cells: [65, 0, 65, 65, 65, 65, 65, 65, 65], result: 97, count: 1 }, // iron_chestplate
-    Shaped { w: 3, h: 3, cells: [65, 65, 65, 65, 0, 65, 65, 0, 65], result: 98, count: 1 }, // iron_leggings
-    Shaped { w: 3, h: 2, cells: [65, 0, 65, 65, 0, 65, 0, 0, 0], result: 99, count: 1 }, // iron_boots
-    Shaped { w: 3, h: 2, cells: [67, 67, 67, 67, 0, 67, 0, 0, 0], result: 100, count: 1 }, // golden_helmet
-    Shaped { w: 3, h: 3, cells: [67, 0, 67, 67, 67, 67, 67, 67, 67], result: 101, count: 1 }, // golden_chestplate
-    Shaped { w: 3, h: 3, cells: [67, 67, 67, 67, 0, 67, 67, 0, 67], result: 102, count: 1 }, // golden_leggings
-    Shaped { w: 3, h: 2, cells: [67, 0, 67, 67, 0, 67, 0, 0, 0], result: 103, count: 1 }, // golden_boots
-    Shaped { w: 3, h: 2, cells: [68, 68, 68, 68, 0, 68, 0, 0, 0], result: 104, count: 1 }, // diamond_helmet
-    Shaped { w: 3, h: 3, cells: [68, 0, 68, 68, 68, 68, 68, 68, 68], result: 105, count: 1 }, // diamond_chestplate
-    Shaped { w: 3, h: 3, cells: [68, 68, 68, 68, 0, 68, 68, 0, 68], result: 106, count: 1 }, // diamond_leggings
-    Shaped { w: 3, h: 2, cells: [68, 0, 68, 68, 0, 68, 0, 0, 0], result: 107, count: 1 }, // diamond_boots
-    Shaped { w: 3, h: 2, cells: [117, 117, 117, 117, 0, 117, 0, 0, 0], result: 122, count: 1 }, // leather_helmet
-    Shaped { w: 3, h: 3, cells: [117, 0, 117, 117, 117, 117, 117, 117, 117], result: 123, count: 1 }, // leather_chestplate
-    Shaped { w: 3, h: 3, cells: [117, 117, 117, 117, 0, 117, 117, 0, 117], result: 124, count: 1 }, // leather_leggings
-    Shaped { w: 3, h: 2, cells: [117, 0, 117, 117, 0, 117, 0, 0, 0], result: 125, count: 1 }, // leather_boots
-    Shaped { w: 2, h: 2, cells: [120, 120, 120, 120, 0, 0, 0, 0, 0], result: 56, count: 1 }, // white_wool
+    Shaped { w: 2, h: 2, cells: [16, 16, 16, 16, 0, 0, 0, 0, 0], result: 56, count: 4 }, // cut_sandstone
+    Shaped { w: 2, h: 2, cells: [12, 12, 12, 12, 0, 0, 0, 0, 0], result: 54, count: 4 }, // deepslate_bricks
+    Shaped { w: 3, h: 3, cells: [32768, 32768, 32768, 0, 65, 0, 0, 65, 0], result: 78, count: 1 }, // wooden_pickaxe
+    Shaped { w: 2, h: 3, cells: [32768, 32768, 32768, 65, 0, 65, 0, 0, 0], result: 79, count: 1 }, // wooden_axe
+    Shaped { w: 1, h: 3, cells: [32768, 65, 65, 0, 0, 0, 0, 0, 0], result: 80, count: 1 }, // wooden_shovel
+    Shaped { w: 2, h: 3, cells: [32768, 32768, 0, 65, 0, 65, 0, 0, 0], result: 81, count: 1 }, // wooden_hoe
+    Shaped { w: 1, h: 3, cells: [32768, 32768, 65, 0, 0, 0, 0, 0, 0], result: 82, count: 1 }, // wooden_sword
+    Shaped { w: 3, h: 3, cells: [32770, 32770, 32770, 0, 65, 0, 0, 65, 0], result: 83, count: 1 }, // stone_pickaxe
+    Shaped { w: 2, h: 3, cells: [32770, 32770, 32770, 65, 0, 65, 0, 0, 0], result: 84, count: 1 }, // stone_axe
+    Shaped { w: 1, h: 3, cells: [32770, 65, 65, 0, 0, 0, 0, 0, 0], result: 85, count: 1 }, // stone_shovel
+    Shaped { w: 2, h: 3, cells: [32770, 32770, 0, 65, 0, 65, 0, 0, 0], result: 86, count: 1 }, // stone_hoe
+    Shaped { w: 1, h: 3, cells: [32770, 32770, 65, 0, 0, 0, 0, 0, 0], result: 87, count: 1 }, // stone_sword
+    Shaped { w: 3, h: 3, cells: [72, 72, 72, 0, 65, 0, 0, 65, 0], result: 88, count: 1 }, // iron_pickaxe
+    Shaped { w: 2, h: 3, cells: [72, 72, 72, 65, 0, 65, 0, 0, 0], result: 89, count: 1 }, // iron_axe
+    Shaped { w: 1, h: 3, cells: [72, 65, 65, 0, 0, 0, 0, 0, 0], result: 90, count: 1 }, // iron_shovel
+    Shaped { w: 2, h: 3, cells: [72, 72, 0, 65, 0, 65, 0, 0, 0], result: 91, count: 1 }, // iron_hoe
+    Shaped { w: 1, h: 3, cells: [72, 72, 65, 0, 0, 0, 0, 0, 0], result: 92, count: 1 }, // iron_sword
+    Shaped { w: 3, h: 3, cells: [74, 74, 74, 0, 65, 0, 0, 65, 0], result: 93, count: 1 }, // golden_pickaxe
+    Shaped { w: 2, h: 3, cells: [74, 74, 74, 65, 0, 65, 0, 0, 0], result: 94, count: 1 }, // golden_axe
+    Shaped { w: 1, h: 3, cells: [74, 65, 65, 0, 0, 0, 0, 0, 0], result: 95, count: 1 }, // golden_shovel
+    Shaped { w: 2, h: 3, cells: [74, 74, 0, 65, 0, 65, 0, 0, 0], result: 96, count: 1 }, // golden_hoe
+    Shaped { w: 1, h: 3, cells: [74, 74, 65, 0, 0, 0, 0, 0, 0], result: 97, count: 1 }, // golden_sword
+    Shaped { w: 3, h: 3, cells: [75, 75, 75, 0, 65, 0, 0, 65, 0], result: 98, count: 1 }, // diamond_pickaxe
+    Shaped { w: 2, h: 3, cells: [75, 75, 75, 65, 0, 65, 0, 0, 0], result: 99, count: 1 }, // diamond_axe
+    Shaped { w: 1, h: 3, cells: [75, 65, 65, 0, 0, 0, 0, 0, 0], result: 100, count: 1 }, // diamond_shovel
+    Shaped { w: 2, h: 3, cells: [75, 75, 0, 65, 0, 65, 0, 0, 0], result: 101, count: 1 }, // diamond_hoe
+    Shaped { w: 1, h: 3, cells: [75, 75, 65, 0, 0, 0, 0, 0, 0], result: 102, count: 1 }, // diamond_sword
+    Shaped { w: 3, h: 2, cells: [72, 72, 72, 72, 0, 72, 0, 0, 0], result: 103, count: 1 }, // iron_helmet
+    Shaped { w: 3, h: 3, cells: [72, 0, 72, 72, 72, 72, 72, 72, 72], result: 104, count: 1 }, // iron_chestplate
+    Shaped { w: 3, h: 3, cells: [72, 72, 72, 72, 0, 72, 72, 0, 72], result: 105, count: 1 }, // iron_leggings
+    Shaped { w: 3, h: 2, cells: [72, 0, 72, 72, 0, 72, 0, 0, 0], result: 106, count: 1 }, // iron_boots
+    Shaped { w: 3, h: 2, cells: [74, 74, 74, 74, 0, 74, 0, 0, 0], result: 107, count: 1 }, // golden_helmet
+    Shaped { w: 3, h: 3, cells: [74, 0, 74, 74, 74, 74, 74, 74, 74], result: 108, count: 1 }, // golden_chestplate
+    Shaped { w: 3, h: 3, cells: [74, 74, 74, 74, 0, 74, 74, 0, 74], result: 109, count: 1 }, // golden_leggings
+    Shaped { w: 3, h: 2, cells: [74, 0, 74, 74, 0, 74, 0, 0, 0], result: 110, count: 1 }, // golden_boots
+    Shaped { w: 3, h: 2, cells: [75, 75, 75, 75, 0, 75, 0, 0, 0], result: 111, count: 1 }, // diamond_helmet
+    Shaped { w: 3, h: 3, cells: [75, 0, 75, 75, 75, 75, 75, 75, 75], result: 112, count: 1 }, // diamond_chestplate
+    Shaped { w: 3, h: 3, cells: [75, 75, 75, 75, 0, 75, 75, 0, 75], result: 113, count: 1 }, // diamond_leggings
+    Shaped { w: 3, h: 2, cells: [75, 0, 75, 75, 0, 75, 0, 0, 0], result: 114, count: 1 }, // diamond_boots
+    Shaped { w: 3, h: 2, cells: [124, 124, 124, 124, 0, 124, 0, 0, 0], result: 129, count: 1 }, // leather_helmet
+    Shaped { w: 3, h: 3, cells: [124, 0, 124, 124, 124, 124, 124, 124, 124], result: 130, count: 1 }, // leather_chestplate
+    Shaped { w: 3, h: 3, cells: [124, 124, 124, 124, 0, 124, 124, 0, 124], result: 131, count: 1 }, // leather_leggings
+    Shaped { w: 3, h: 2, cells: [124, 0, 124, 124, 0, 124, 0, 0, 0], result: 132, count: 1 }, // leather_boots
+    Shaped { w: 2, h: 2, cells: [127, 127, 127, 127, 0, 0, 0, 0, 0], result: 62, count: 1 }, // white_wool
 ];
 
 /// Shapeless crafting recipes (ingredients in any place).
@@ -360,35 +368,35 @@ pub static SHAPELESS: [Shapeless; 3] = [
 
 /// Furnace recipes: (ingredient, result, ticks).
 pub static SMELTING: [(u16, Item, u16); 10] = [
-    (62, 65, 200), // raw_iron -> iron_ingot
-    (64, 67, 200), // raw_gold -> gold_ingot
-    (63, 66, 200), // raw_copper -> copper_ingot
+    (69, 72, 200), // raw_iron -> iron_ingot
+    (71, 74, 200), // raw_gold -> gold_ingot
+    (70, 73, 200), // raw_copper -> copper_ingot
     (2, 1, 200), // cobblestone -> stone
     (5, 11, 200), // sand -> glass
-    (32769, 60, 200), // #logs -> charcoal
-    (108, 109, 200), // beef -> cooked_beef
-    (110, 111, 200), // porkchop -> cooked_porkchop
-    (112, 113, 200), // chicken -> cooked_chicken
-    (114, 115, 200), // mutton -> cooked_mutton
+    (32769, 67, 200), // #logs -> charcoal
+    (115, 116, 200), // beef -> cooked_beef
+    (117, 118, 200), // porkchop -> cooked_porkchop
+    (119, 120, 200), // chicken -> cooked_chicken
+    (121, 122, 200), // mutton -> cooked_mutton
 ];
 
 /// Furnace fuels: (item, burn ticks).
 pub static FUELS: [(Item, u16); 15] = [
-    (59, 1600), // coal
-    (60, 1600), // charcoal
+    (66, 1600), // coal
+    (67, 1600), // charcoal
     (8, 300), // oak_log
     (37, 300), // birch_log
     (40, 300), // spruce_log
     (9, 300), // oak_planks
     (38, 300), // birch_planks
     (41, 300), // spruce_planks
-    (53, 300), // crafting_table
-    (58, 100), // stick
-    (71, 200), // wooden_pickaxe
-    (72, 200), // wooden_axe
-    (73, 200), // wooden_shovel
-    (74, 200), // wooden_hoe
-    (75, 200), // wooden_sword
+    (59, 300), // crafting_table
+    (65, 100), // stick
+    (78, 200), // wooden_pickaxe
+    (79, 200), // wooden_axe
+    (80, 200), // wooden_shovel
+    (81, 200), // wooden_hoe
+    (82, 200), // wooden_sword
 ];
 
 /// What each block drops when harvested, indexed by block id.
@@ -403,7 +411,7 @@ pub static DROPS: [&[Drop]; BLOCK_COUNT] = [
     &[], // bedrock
     &[Drop { item: 8, min: 1, max: 1, chance: 1.0 }], // oak_log
     &[Drop { item: 9, min: 1, max: 1, chance: 1.0 }], // oak_planks
-    &[Drop { item: 58, min: 1, max: 1, chance: 0.02 }, Drop { item: 57, min: 1, max: 1, chance: 0.005 }], // oak_leaves
+    &[Drop { item: 65, min: 1, max: 1, chance: 0.02 }, Drop { item: 64, min: 1, max: 1, chance: 0.005 }], // oak_leaves
     &[], // glass
     &[Drop { item: 12, min: 1, max: 1, chance: 1.0 }], // deepslate
     &[Drop { item: 13, min: 1, max: 1, chance: 1.0 }], // granite
@@ -416,38 +424,45 @@ pub static DROPS: [&[Drop]; BLOCK_COUNT] = [
     &[Drop { item: 3, min: 1, max: 1, chance: 1.0 }], // snowy_grass_block
     &[Drop { item: 21, min: 1, max: 1, chance: 1.0 }], // water
     &[Drop { item: 22, min: 1, max: 1, chance: 1.0 }], // lava
-    &[Drop { item: 59, min: 1, max: 1, chance: 1.0 }], // coal_ore
-    &[Drop { item: 59, min: 1, max: 1, chance: 1.0 }], // deepslate_coal_ore
-    &[Drop { item: 62, min: 1, max: 1, chance: 1.0 }], // iron_ore
-    &[Drop { item: 62, min: 1, max: 1, chance: 1.0 }], // deepslate_iron_ore
-    &[Drop { item: 63, min: 2, max: 5, chance: 1.0 }], // copper_ore
-    &[Drop { item: 63, min: 2, max: 5, chance: 1.0 }], // deepslate_copper_ore
-    &[Drop { item: 64, min: 1, max: 1, chance: 1.0 }], // gold_ore
-    &[Drop { item: 64, min: 1, max: 1, chance: 1.0 }], // deepslate_gold_ore
-    &[Drop { item: 68, min: 1, max: 1, chance: 1.0 }], // diamond_ore
-    &[Drop { item: 68, min: 1, max: 1, chance: 1.0 }], // deepslate_diamond_ore
-    &[Drop { item: 70, min: 4, max: 9, chance: 1.0 }], // lapis_ore
-    &[Drop { item: 70, min: 4, max: 9, chance: 1.0 }], // deepslate_lapis_ore
-    &[Drop { item: 69, min: 1, max: 1, chance: 1.0 }], // emerald_ore
-    &[Drop { item: 69, min: 1, max: 1, chance: 1.0 }], // deepslate_emerald_ore
+    &[Drop { item: 66, min: 1, max: 1, chance: 1.0 }], // coal_ore
+    &[Drop { item: 66, min: 1, max: 1, chance: 1.0 }], // deepslate_coal_ore
+    &[Drop { item: 69, min: 1, max: 1, chance: 1.0 }], // iron_ore
+    &[Drop { item: 69, min: 1, max: 1, chance: 1.0 }], // deepslate_iron_ore
+    &[Drop { item: 70, min: 2, max: 5, chance: 1.0 }], // copper_ore
+    &[Drop { item: 70, min: 2, max: 5, chance: 1.0 }], // deepslate_copper_ore
+    &[Drop { item: 71, min: 1, max: 1, chance: 1.0 }], // gold_ore
+    &[Drop { item: 71, min: 1, max: 1, chance: 1.0 }], // deepslate_gold_ore
+    &[Drop { item: 75, min: 1, max: 1, chance: 1.0 }], // diamond_ore
+    &[Drop { item: 75, min: 1, max: 1, chance: 1.0 }], // deepslate_diamond_ore
+    &[Drop { item: 77, min: 4, max: 9, chance: 1.0 }], // lapis_ore
+    &[Drop { item: 77, min: 4, max: 9, chance: 1.0 }], // deepslate_lapis_ore
+    &[Drop { item: 76, min: 1, max: 1, chance: 1.0 }], // emerald_ore
+    &[Drop { item: 76, min: 1, max: 1, chance: 1.0 }], // deepslate_emerald_ore
     &[Drop { item: 37, min: 1, max: 1, chance: 1.0 }], // birch_log
     &[Drop { item: 38, min: 1, max: 1, chance: 1.0 }], // birch_planks
-    &[Drop { item: 58, min: 1, max: 1, chance: 0.02 }], // birch_leaves
+    &[Drop { item: 65, min: 1, max: 1, chance: 0.02 }], // birch_leaves
     &[Drop { item: 40, min: 1, max: 1, chance: 1.0 }], // spruce_log
     &[Drop { item: 41, min: 1, max: 1, chance: 1.0 }], // spruce_planks
-    &[Drop { item: 58, min: 1, max: 1, chance: 0.02 }], // spruce_leaves
+    &[Drop { item: 65, min: 1, max: 1, chance: 0.02 }], // spruce_leaves
     &[Drop { item: 43, min: 1, max: 1, chance: 1.0 }], // cactus
-    &[Drop { item: 44, min: 1, max: 1, chance: 1.0 }], // stone_bricks
-    &[Drop { item: 45, min: 1, max: 1, chance: 1.0 }], // cracked_stone_bricks
-    &[Drop { item: 46, min: 1, max: 1, chance: 1.0 }], // mossy_stone_bricks
-    &[Drop { item: 47, min: 1, max: 1, chance: 1.0 }], // chiseled_stone_bricks
-    &[Drop { item: 48, min: 1, max: 1, chance: 1.0 }], // deepslate_bricks
-    &[Drop { item: 49, min: 1, max: 1, chance: 1.0 }], // cracked_deepslate_bricks
-    &[Drop { item: 50, min: 1, max: 1, chance: 1.0 }], // cut_sandstone
-    &[Drop { item: 51, min: 1, max: 1, chance: 1.0 }], // chiseled_sandstone
+    &[], // short_grass
+    &[], // fern
+    &[Drop { item: 65, min: 0, max: 2, chance: 1.0 }], // dead_bush
+    &[Drop { item: 47, min: 1, max: 1, chance: 1.0 }], // dandelion
+    &[Drop { item: 48, min: 1, max: 1, chance: 1.0 }], // poppy
+    &[Drop { item: 49, min: 1, max: 1, chance: 1.0 }], // cornflower
+    &[Drop { item: 50, min: 1, max: 1, chance: 1.0 }], // stone_bricks
+    &[Drop { item: 51, min: 1, max: 1, chance: 1.0 }], // cracked_stone_bricks
+    &[Drop { item: 52, min: 1, max: 1, chance: 1.0 }], // mossy_stone_bricks
+    &[Drop { item: 53, min: 1, max: 1, chance: 1.0 }], // chiseled_stone_bricks
+    &[Drop { item: 54, min: 1, max: 1, chance: 1.0 }], // deepslate_bricks
+    &[Drop { item: 55, min: 1, max: 1, chance: 1.0 }], // cracked_deepslate_bricks
+    &[Drop { item: 56, min: 1, max: 1, chance: 1.0 }], // cut_sandstone
+    &[Drop { item: 57, min: 1, max: 1, chance: 1.0 }], // chiseled_sandstone
     &[], // lore_tablet
-    &[Drop { item: 53, min: 1, max: 1, chance: 1.0 }], // crafting_table
-    &[Drop { item: 54, min: 1, max: 1, chance: 1.0 }], // furnace
-    &[Drop { item: 54, min: 1, max: 1, chance: 1.0 }], // lit_furnace
-    &[Drop { item: 56, min: 1, max: 1, chance: 1.0 }], // white_wool
+    &[Drop { item: 59, min: 1, max: 1, chance: 1.0 }], // crafting_table
+    &[Drop { item: 60, min: 1, max: 1, chance: 1.0 }], // furnace
+    &[Drop { item: 60, min: 1, max: 1, chance: 1.0 }], // lit_furnace
+    &[Drop { item: 62, min: 1, max: 1, chance: 1.0 }], // white_wool
+    &[Drop { item: 63, min: 1, max: 1, chance: 1.0 }], // torch
 ];

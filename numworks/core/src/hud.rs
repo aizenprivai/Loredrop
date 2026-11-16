@@ -80,7 +80,14 @@ pub fn status_line(p: &mut dyn Platform, left: &str, right: &str) {
     let right_chars = right.chars().count() as u16;
     let left_width = ((SCREEN_W as u16 - 8) / SMALL_W - right_chars - 1) as usize;
     text_padded(p, left, 4, STATUS_Y + 2, left_width, false, TEXT, BAR_BG);
-    p.draw_string(right, SCREEN_W as u16 - 4 - right_chars * SMALL_W, STATUS_Y + 2, false, GOLD, BAR_BG);
+    // Clear the gap between the two texts (a longer right text drawn
+    // before would otherwise leave characters behind).
+    let left_end = 4 + left_width as u16 * SMALL_W;
+    let right_x = SCREEN_W as u16 - 4 - right_chars * SMALL_W;
+    if right_x > left_end {
+        p.fill_rect(left_end, STATUS_Y + 2, right_x - left_end, SMALL_H, BAR_BG);
+    }
+    p.draw_string(right, right_x, STATUS_Y + 2, false, GOLD, BAR_BG);
 }
 
 /// 3x5 digits for stack counts (bit 2 = left column).

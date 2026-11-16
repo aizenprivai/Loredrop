@@ -6,10 +6,17 @@ separate engine written for a machine with no graphics chip and a few
 hundred KB of memory. It shares the PC game's blocks, textures, mining
 numbers and physics.
 
-> Status: **NW phase 3** (creatures, combat, armour, dropped items, ruins
-> with lore). Built and tested on PC through a test harness. It has **not
-> run on a real calculator yet**: the director's test on a real calculator
-> is the first real check.
+> Status: **NW phase 4** (speed and polish: automatic quality, timing
+> display, faster world memory layout, torches with light, plants,
+> creatures that walk around walls). Built and tested on PC through a test
+> harness. It has **not run on a real calculator yet**: the director's
+> test on a real calculator is the first real check.
+>
+> **Reporting speed:** in Settings, turn on *Show timings*. The status line
+> then shows `3D.. G.. B.. P..`: milliseconds per frame spent drawing the
+> 3D view, running the game, and drawing the bottom bar, then the pixel
+> size in use. With *Pixel size* on *Auto* (the default), the game picks
+> 2, 3 or 4 by itself to stay above about 12 frames per second.
 
 ## What's in it
 
@@ -56,6 +63,11 @@ numbers and physics.
   stone-brick ruins on the surface, half-buried desert halls, sealed deep
   vaults in the deepslate. 12 fragments of the story; a lore journal in
   the pause menu.
+- Torches (coal or charcoal on a stick, 4 at a time; they stand on the
+  ground) light up to 13 blocks around them at night and in caves, and
+  monsters can't appear where their light reaches. Plants: short grass,
+  ferns, dandelions, poppies, cornflowers, dead bushes (drawn as crossed
+  planes, walked through; short grass is replaced when you build on it).
 - Creative mode: every item from a paged palette, instant breaking, flying,
   no damage.
 - Day and night (20-minute day), square sun and moon, stars, sunrise
@@ -156,5 +168,9 @@ when the PC game's data changes. (Plants and torches are left out for now.)
 - No saving (calculator apps have no storage access).
 - At most 16 creatures, 24 dropped items and 6 arrows at once, all within
   the loaded area (creatures that leave it disappear). Creatures steer
-  straight at their goal (no full path-finding like on PC).
+  straight at their goal and walk sideways around walls they bump into
+  (no full path-finding like on PC).
 - Hunger can't kill you (Normal difficulty stops at half a heart).
+- Torch light passes through walls (no light flood-fill like on PC), only
+  the 16 torches nearest the camera count, and only torches give block
+  light (not lava or lit furnaces). Torches only stand on the ground.

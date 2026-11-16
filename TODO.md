@@ -185,8 +185,18 @@
 - [ ] NW3 report approval
 - [ ] Real-calculator test (still pending since NW1)
 
+## NumWorks edition — NW phase 4 (speed & polish)
+- [x] Pixel size 3 and automatic pixel size; timing display
+- [x] Layer-major world storage (faster ray block reads)
+- [x] Torches with block light; no monster spawns in torch light
+- [x] Plants (cross-shaped blocks) in world generation
+- [x] Creatures walk around walls
+- [ ] NW4 report approval
+- [ ] Real-calculator test (still pending since NW1) → tune defaults from real timings
+
 ## Deferred / next for the NumWorks edition
-- [ ] Path-finding for creatures (they steer straight for now)
+- [ ] Full path-finding for creatures (only wall-sidestepping for now)
+- [ ] Wall torches; light blocked by walls; lava / lit furnace light
 - [ ] Sheep shearing, breeding, baby animals
 - [ ] Plants (grass, flowers) — need cross-shaped sprites in the ray caster
 - [ ] Falling sand/gravel, flowing water

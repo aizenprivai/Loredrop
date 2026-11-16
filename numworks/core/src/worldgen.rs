@@ -181,6 +181,10 @@ pub fn generate_column(seed: u32, x: i32, z: i32, out: &mut [Block; HEIGHT]) -> 
     // 6. Trees and cacti (they may reach in from neighbouring columns).
     trees(seed, x, z, out);
 
+    // 6b. Plants on the surface: grass and flowers, ferns in the cold,
+    //     dead bushes in the desert.
+    plants(seed, x, z, &info, out);
+
     // 7. Ruins of the Builders, with lore tablets.
     crate::structures::apply(seed, x, z, out);
     info.biome
@@ -228,6 +232,47 @@ fn surface(info: &ColumnInfo, x: i32, z: i32, seed: u32, out: &mut [Block; HEIGH
             deep
         };
     }
+}
+
+/// Puts a plant on top of the column if its biome grows one there.
+fn plants(seed: u32, x: i32, z: i32, info: &ColumnInfo, out: &mut [Block; HEIGHT]) {
+    let y = info.height + 1;
+    if !(1..HEIGHT as i32 - 1).contains(&y) || out[y as usize] != AIR {
+        return;
+    }
+    let ground = out[(y - 1) as usize];
+    let r = hash2(x, z, seed ^ S_MISC ^ 0x9A17) % 1000;
+    let plant = match (info.biome, ground) {
+        (Biome::Plains, GRASS_BLOCK) => match r {
+            0..=219 => SHORT_GRASS,
+            220..=239 => DANDELION,
+            240..=259 => POPPY,
+            260..=269 => CORNFLOWER,
+            _ => AIR,
+        },
+        (Biome::Forest, GRASS_BLOCK) | (Biome::Mountains, GRASS_BLOCK) => match r {
+            0..=139 => SHORT_GRASS,
+            140..=169 => FERN,
+            170..=179 => POPPY,
+            _ => AIR,
+        },
+        (Biome::Snowy, SNOWY_GRASS_BLOCK) => {
+            if r < 60 {
+                FERN
+            } else {
+                AIR
+            }
+        }
+        (Biome::Desert, SAND) => {
+            if r < 12 {
+                DEAD_BUSH
+            } else {
+                AIR
+            }
+        }
+        _ => AIR,
+    };
+    out[y as usize] = plant;
 }
 
 /// Which ore (if any) a vein cell holds at this position.
