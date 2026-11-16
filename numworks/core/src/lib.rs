@@ -27,6 +27,7 @@
 
 pub mod blocks;
 pub mod color;
+pub mod entities;
 pub mod furnace;
 pub mod game;
 #[rustfmt::skip]
@@ -35,16 +36,22 @@ pub mod gen_blocks;
 #[rustfmt::skip]
 #[allow(clippy::all)]
 pub mod gen_items;
+#[rustfmt::skip]
+#[allow(clippy::all)]
+pub mod gen_mobs;
 pub mod hud;
 pub mod input;
 pub mod inventory;
 pub mod items;
 pub mod math;
+pub mod mobs;
+pub mod models;
 pub mod noise;
 pub mod player;
 pub mod render;
 pub mod settings;
 pub mod sky;
+pub mod structures;
 pub mod survival;
 pub mod text;
 pub mod ui;

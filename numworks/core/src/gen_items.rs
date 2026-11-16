@@ -91,39 +91,71 @@ pub const DIAMOND_SHOVEL: Item = 93;
 pub const DIAMOND_HOE: Item = 94;
 /// Diamond Sword.
 pub const DIAMOND_SWORD: Item = 95;
+/// Iron Helmet.
+pub const IRON_HELMET: Item = 96;
+/// Iron Chestplate.
+pub const IRON_CHESTPLATE: Item = 97;
+/// Iron Leggings.
+pub const IRON_LEGGINGS: Item = 98;
+/// Iron Boots.
+pub const IRON_BOOTS: Item = 99;
+/// Golden Helmet.
+pub const GOLDEN_HELMET: Item = 100;
+/// Golden Chestplate.
+pub const GOLDEN_CHESTPLATE: Item = 101;
+/// Golden Leggings.
+pub const GOLDEN_LEGGINGS: Item = 102;
+/// Golden Boots.
+pub const GOLDEN_BOOTS: Item = 103;
+/// Diamond Helmet.
+pub const DIAMOND_HELMET: Item = 104;
+/// Diamond Chestplate.
+pub const DIAMOND_CHESTPLATE: Item = 105;
+/// Diamond Leggings.
+pub const DIAMOND_LEGGINGS: Item = 106;
+/// Diamond Boots.
+pub const DIAMOND_BOOTS: Item = 107;
 /// Raw Beef.
-pub const BEEF: Item = 96;
+pub const BEEF: Item = 108;
 /// Steak.
-pub const COOKED_BEEF: Item = 97;
+pub const COOKED_BEEF: Item = 109;
 /// Raw Porkchop.
-pub const PORKCHOP: Item = 98;
+pub const PORKCHOP: Item = 110;
 /// Cooked Porkchop.
-pub const COOKED_PORKCHOP: Item = 99;
+pub const COOKED_PORKCHOP: Item = 111;
 /// Raw Chicken.
-pub const CHICKEN: Item = 100;
+pub const CHICKEN: Item = 112;
 /// Cooked Chicken.
-pub const COOKED_CHICKEN: Item = 101;
+pub const COOKED_CHICKEN: Item = 113;
 /// Raw Mutton.
-pub const MUTTON: Item = 102;
+pub const MUTTON: Item = 114;
 /// Cooked Mutton.
-pub const COOKED_MUTTON: Item = 103;
+pub const COOKED_MUTTON: Item = 115;
 /// Rotten Flesh.
-pub const ROTTEN_FLESH: Item = 104;
+pub const ROTTEN_FLESH: Item = 116;
 /// Leather.
-pub const LEATHER: Item = 105;
+pub const LEATHER: Item = 117;
 /// Feather.
-pub const FEATHER: Item = 106;
+pub const FEATHER: Item = 118;
 /// Bone.
-pub const BONE: Item = 107;
+pub const BONE: Item = 119;
 /// String.
-pub const STRING: Item = 108;
+pub const STRING: Item = 120;
 /// Arrow.
-pub const ARROW: Item = 109;
+pub const ARROW: Item = 121;
+/// Leather Cap.
+pub const LEATHER_HELMET: Item = 122;
+/// Leather Tunic.
+pub const LEATHER_CHESTPLATE: Item = 123;
+/// Leather Pants.
+pub const LEATHER_LEGGINGS: Item = 124;
+/// Leather Boots.
+pub const LEATHER_BOOTS: Item = 125;
 /// Lore Fragment.
-pub const LORE_FRAGMENT: Item = 110;
+pub const LORE_FRAGMENT: Item = 126;
 
 /// Number of item types (blocks included; 0 = nothing).
-pub const ITEM_COUNT: usize = 111;
+pub const ITEM_COUNT: usize = 127;
 
 /// Every item, indexed by item id. Ids below `BLOCK_COUNT` are the blocks.
 pub static ITEMS: [ItemDef; ITEM_COUNT] = [
@@ -198,46 +230,62 @@ pub static ITEMS: [ItemDef; ITEM_COUNT] = [
     ItemDef { name: "Diamond", max_stack: 64, icon: 79, kind: ItemKind::Material, creative: true },
     ItemDef { name: "Emerald", max_stack: 64, icon: 80, kind: ItemKind::Material, creative: true },
     ItemDef { name: "Lapis Lazuli", max_stack: 64, icon: 81, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Wooden Pickaxe", max_stack: 1, icon: 82, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 0, damage: 2.0 }, creative: true },
-    ItemDef { name: "Wooden Axe", max_stack: 1, icon: 83, kind: ItemKind::Tool { tool: Tool::Axe, tier: 0, damage: 7.0 }, creative: true },
-    ItemDef { name: "Wooden Shovel", max_stack: 1, icon: 84, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 0, damage: 2.5 }, creative: true },
-    ItemDef { name: "Wooden Hoe", max_stack: 1, icon: 85, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 0, damage: 1.0 }, creative: true },
-    ItemDef { name: "Wooden Sword", max_stack: 1, icon: 86, kind: ItemKind::Tool { tool: Tool::Sword, tier: 0, damage: 4.0 }, creative: true },
-    ItemDef { name: "Stone Pickaxe", max_stack: 1, icon: 87, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 1, damage: 3.0 }, creative: true },
-    ItemDef { name: "Stone Axe", max_stack: 1, icon: 88, kind: ItemKind::Tool { tool: Tool::Axe, tier: 1, damage: 9.0 }, creative: true },
-    ItemDef { name: "Stone Shovel", max_stack: 1, icon: 89, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 1, damage: 3.5 }, creative: true },
-    ItemDef { name: "Stone Hoe", max_stack: 1, icon: 90, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 1, damage: 1.0 }, creative: true },
-    ItemDef { name: "Stone Sword", max_stack: 1, icon: 91, kind: ItemKind::Tool { tool: Tool::Sword, tier: 1, damage: 5.0 }, creative: true },
-    ItemDef { name: "Iron Pickaxe", max_stack: 1, icon: 92, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 2, damage: 4.0 }, creative: true },
-    ItemDef { name: "Iron Axe", max_stack: 1, icon: 93, kind: ItemKind::Tool { tool: Tool::Axe, tier: 2, damage: 9.0 }, creative: true },
-    ItemDef { name: "Iron Shovel", max_stack: 1, icon: 94, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 2, damage: 4.5 }, creative: true },
-    ItemDef { name: "Iron Hoe", max_stack: 1, icon: 95, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 2, damage: 1.0 }, creative: true },
-    ItemDef { name: "Iron Sword", max_stack: 1, icon: 96, kind: ItemKind::Tool { tool: Tool::Sword, tier: 2, damage: 6.0 }, creative: true },
-    ItemDef { name: "Golden Pickaxe", max_stack: 1, icon: 97, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 3, damage: 2.0 }, creative: true },
-    ItemDef { name: "Golden Axe", max_stack: 1, icon: 98, kind: ItemKind::Tool { tool: Tool::Axe, tier: 3, damage: 7.0 }, creative: true },
-    ItemDef { name: "Golden Shovel", max_stack: 1, icon: 99, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 3, damage: 2.5 }, creative: true },
-    ItemDef { name: "Golden Hoe", max_stack: 1, icon: 100, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 3, damage: 1.0 }, creative: true },
-    ItemDef { name: "Golden Sword", max_stack: 1, icon: 101, kind: ItemKind::Tool { tool: Tool::Sword, tier: 3, damage: 4.0 }, creative: true },
-    ItemDef { name: "Diamond Pickaxe", max_stack: 1, icon: 102, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 4, damage: 5.0 }, creative: true },
-    ItemDef { name: "Diamond Axe", max_stack: 1, icon: 103, kind: ItemKind::Tool { tool: Tool::Axe, tier: 4, damage: 9.0 }, creative: true },
-    ItemDef { name: "Diamond Shovel", max_stack: 1, icon: 104, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 4, damage: 5.5 }, creative: true },
-    ItemDef { name: "Diamond Hoe", max_stack: 1, icon: 105, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 4, damage: 1.0 }, creative: true },
-    ItemDef { name: "Diamond Sword", max_stack: 1, icon: 106, kind: ItemKind::Tool { tool: Tool::Sword, tier: 4, damage: 7.0 }, creative: true },
-    ItemDef { name: "Raw Beef", max_stack: 64, icon: 107, kind: ItemKind::Food { food: 3, saturation: 0.3 }, creative: true },
-    ItemDef { name: "Steak", max_stack: 64, icon: 108, kind: ItemKind::Food { food: 8, saturation: 0.8 }, creative: true },
-    ItemDef { name: "Raw Porkchop", max_stack: 64, icon: 109, kind: ItemKind::Food { food: 3, saturation: 0.3 }, creative: true },
-    ItemDef { name: "Cooked Porkchop", max_stack: 64, icon: 110, kind: ItemKind::Food { food: 8, saturation: 0.8 }, creative: true },
-    ItemDef { name: "Raw Chicken", max_stack: 64, icon: 111, kind: ItemKind::Food { food: 2, saturation: 0.3 }, creative: true },
-    ItemDef { name: "Cooked Chicken", max_stack: 64, icon: 112, kind: ItemKind::Food { food: 6, saturation: 0.6 }, creative: true },
-    ItemDef { name: "Raw Mutton", max_stack: 64, icon: 113, kind: ItemKind::Food { food: 2, saturation: 0.3 }, creative: true },
-    ItemDef { name: "Cooked Mutton", max_stack: 64, icon: 114, kind: ItemKind::Food { food: 6, saturation: 0.8 }, creative: true },
-    ItemDef { name: "Rotten Flesh", max_stack: 64, icon: 115, kind: ItemKind::Food { food: 4, saturation: 0.1 }, creative: true },
-    ItemDef { name: "Leather", max_stack: 64, icon: 116, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Feather", max_stack: 64, icon: 117, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Bone", max_stack: 64, icon: 118, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "String", max_stack: 64, icon: 119, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Arrow", max_stack: 64, icon: 120, kind: ItemKind::Material, creative: true },
-    ItemDef { name: "Lore Fragment", max_stack: 16, icon: 121, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Wooden Pickaxe", max_stack: 1, icon: 82, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 0, damage: 2.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Wooden Axe", max_stack: 1, icon: 83, kind: ItemKind::Tool { tool: Tool::Axe, tier: 0, damage: 7.0, speed: 0.8 }, creative: true },
+    ItemDef { name: "Wooden Shovel", max_stack: 1, icon: 84, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 0, damage: 2.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Wooden Hoe", max_stack: 1, icon: 85, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 0, damage: 1.0, speed: 1.0 }, creative: true },
+    ItemDef { name: "Wooden Sword", max_stack: 1, icon: 86, kind: ItemKind::Tool { tool: Tool::Sword, tier: 0, damage: 4.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Stone Pickaxe", max_stack: 1, icon: 87, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 1, damage: 3.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Stone Axe", max_stack: 1, icon: 88, kind: ItemKind::Tool { tool: Tool::Axe, tier: 1, damage: 9.0, speed: 0.8 }, creative: true },
+    ItemDef { name: "Stone Shovel", max_stack: 1, icon: 89, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 1, damage: 3.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Stone Hoe", max_stack: 1, icon: 90, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 1, damage: 1.0, speed: 2.0 }, creative: true },
+    ItemDef { name: "Stone Sword", max_stack: 1, icon: 91, kind: ItemKind::Tool { tool: Tool::Sword, tier: 1, damage: 5.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Iron Pickaxe", max_stack: 1, icon: 92, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 2, damage: 4.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Iron Axe", max_stack: 1, icon: 93, kind: ItemKind::Tool { tool: Tool::Axe, tier: 2, damage: 9.0, speed: 0.9 }, creative: true },
+    ItemDef { name: "Iron Shovel", max_stack: 1, icon: 94, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 2, damage: 4.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Iron Hoe", max_stack: 1, icon: 95, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 2, damage: 1.0, speed: 3.0 }, creative: true },
+    ItemDef { name: "Iron Sword", max_stack: 1, icon: 96, kind: ItemKind::Tool { tool: Tool::Sword, tier: 2, damage: 6.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Golden Pickaxe", max_stack: 1, icon: 97, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 3, damage: 2.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Golden Axe", max_stack: 1, icon: 98, kind: ItemKind::Tool { tool: Tool::Axe, tier: 3, damage: 7.0, speed: 1.0 }, creative: true },
+    ItemDef { name: "Golden Shovel", max_stack: 1, icon: 99, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 3, damage: 2.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Golden Hoe", max_stack: 1, icon: 100, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 3, damage: 1.0, speed: 1.0 }, creative: true },
+    ItemDef { name: "Golden Sword", max_stack: 1, icon: 101, kind: ItemKind::Tool { tool: Tool::Sword, tier: 3, damage: 4.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Diamond Pickaxe", max_stack: 1, icon: 102, kind: ItemKind::Tool { tool: Tool::Pickaxe, tier: 4, damage: 5.0, speed: 1.2 }, creative: true },
+    ItemDef { name: "Diamond Axe", max_stack: 1, icon: 103, kind: ItemKind::Tool { tool: Tool::Axe, tier: 4, damage: 9.0, speed: 1.0 }, creative: true },
+    ItemDef { name: "Diamond Shovel", max_stack: 1, icon: 104, kind: ItemKind::Tool { tool: Tool::Shovel, tier: 4, damage: 5.5, speed: 1.0 }, creative: true },
+    ItemDef { name: "Diamond Hoe", max_stack: 1, icon: 105, kind: ItemKind::Tool { tool: Tool::Hoe, tier: 4, damage: 1.0, speed: 4.0 }, creative: true },
+    ItemDef { name: "Diamond Sword", max_stack: 1, icon: 106, kind: ItemKind::Tool { tool: Tool::Sword, tier: 4, damage: 7.0, speed: 1.6 }, creative: true },
+    ItemDef { name: "Iron Helmet", max_stack: 1, icon: 107, kind: ItemKind::Armor { slot: 0, defense: 2, toughness: 0.0, durability: 165 }, creative: true },
+    ItemDef { name: "Iron Chestplate", max_stack: 1, icon: 108, kind: ItemKind::Armor { slot: 1, defense: 6, toughness: 0.0, durability: 240 }, creative: true },
+    ItemDef { name: "Iron Leggings", max_stack: 1, icon: 109, kind: ItemKind::Armor { slot: 2, defense: 5, toughness: 0.0, durability: 225 }, creative: true },
+    ItemDef { name: "Iron Boots", max_stack: 1, icon: 110, kind: ItemKind::Armor { slot: 3, defense: 2, toughness: 0.0, durability: 195 }, creative: true },
+    ItemDef { name: "Golden Helmet", max_stack: 1, icon: 111, kind: ItemKind::Armor { slot: 0, defense: 2, toughness: 0.0, durability: 77 }, creative: true },
+    ItemDef { name: "Golden Chestplate", max_stack: 1, icon: 112, kind: ItemKind::Armor { slot: 1, defense: 5, toughness: 0.0, durability: 112 }, creative: true },
+    ItemDef { name: "Golden Leggings", max_stack: 1, icon: 113, kind: ItemKind::Armor { slot: 2, defense: 3, toughness: 0.0, durability: 105 }, creative: true },
+    ItemDef { name: "Golden Boots", max_stack: 1, icon: 114, kind: ItemKind::Armor { slot: 3, defense: 1, toughness: 0.0, durability: 91 }, creative: true },
+    ItemDef { name: "Diamond Helmet", max_stack: 1, icon: 115, kind: ItemKind::Armor { slot: 0, defense: 3, toughness: 2.0, durability: 363 }, creative: true },
+    ItemDef { name: "Diamond Chestplate", max_stack: 1, icon: 116, kind: ItemKind::Armor { slot: 1, defense: 8, toughness: 2.0, durability: 528 }, creative: true },
+    ItemDef { name: "Diamond Leggings", max_stack: 1, icon: 117, kind: ItemKind::Armor { slot: 2, defense: 6, toughness: 2.0, durability: 495 }, creative: true },
+    ItemDef { name: "Diamond Boots", max_stack: 1, icon: 118, kind: ItemKind::Armor { slot: 3, defense: 3, toughness: 2.0, durability: 429 }, creative: true },
+    ItemDef { name: "Raw Beef", max_stack: 64, icon: 119, kind: ItemKind::Food { food: 3, saturation: 0.3 }, creative: true },
+    ItemDef { name: "Steak", max_stack: 64, icon: 120, kind: ItemKind::Food { food: 8, saturation: 0.8 }, creative: true },
+    ItemDef { name: "Raw Porkchop", max_stack: 64, icon: 121, kind: ItemKind::Food { food: 3, saturation: 0.3 }, creative: true },
+    ItemDef { name: "Cooked Porkchop", max_stack: 64, icon: 122, kind: ItemKind::Food { food: 8, saturation: 0.8 }, creative: true },
+    ItemDef { name: "Raw Chicken", max_stack: 64, icon: 123, kind: ItemKind::Food { food: 2, saturation: 0.3 }, creative: true },
+    ItemDef { name: "Cooked Chicken", max_stack: 64, icon: 124, kind: ItemKind::Food { food: 6, saturation: 0.6 }, creative: true },
+    ItemDef { name: "Raw Mutton", max_stack: 64, icon: 125, kind: ItemKind::Food { food: 2, saturation: 0.3 }, creative: true },
+    ItemDef { name: "Cooked Mutton", max_stack: 64, icon: 126, kind: ItemKind::Food { food: 6, saturation: 0.8 }, creative: true },
+    ItemDef { name: "Rotten Flesh", max_stack: 64, icon: 127, kind: ItemKind::Food { food: 4, saturation: 0.1 }, creative: true },
+    ItemDef { name: "Leather", max_stack: 64, icon: 128, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Feather", max_stack: 64, icon: 129, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Bone", max_stack: 64, icon: 130, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "String", max_stack: 64, icon: 131, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Arrow", max_stack: 64, icon: 132, kind: ItemKind::Material, creative: true },
+    ItemDef { name: "Leather Cap", max_stack: 1, icon: 133, kind: ItemKind::Armor { slot: 0, defense: 1, toughness: 0.0, durability: 55 }, creative: true },
+    ItemDef { name: "Leather Tunic", max_stack: 1, icon: 134, kind: ItemKind::Armor { slot: 1, defense: 3, toughness: 0.0, durability: 80 }, creative: true },
+    ItemDef { name: "Leather Pants", max_stack: 1, icon: 135, kind: ItemKind::Armor { slot: 2, defense: 2, toughness: 0.0, durability: 75 }, creative: true },
+    ItemDef { name: "Leather Boots", max_stack: 1, icon: 136, kind: ItemKind::Armor { slot: 3, defense: 1, toughness: 0.0, durability: 65 }, creative: true },
+    ItemDef { name: "Lore Fragment", max_stack: 16, icon: 137, kind: ItemKind::Material, creative: true },
 ];
 
 const _: () = assert!(ITEM_COUNT > BLOCK_COUNT);
@@ -251,7 +299,7 @@ pub static TAGS: [&[Item]; 4] = [
 ];
 
 /// Shaped crafting recipes (patterns also match mirrored, as on PC).
-pub static SHAPED: [Shaped; 33] = [
+pub static SHAPED: [Shaped; 49] = [
     Shaped { w: 1, h: 2, cells: [32768, 32768, 0, 0, 0, 0, 0, 0, 0], result: 58, count: 4 }, // stick
     Shaped { w: 2, h: 2, cells: [32768, 32768, 32768, 32768, 0, 0, 0, 0, 0], result: 53, count: 1 }, // crafting_table
     Shaped { w: 3, h: 3, cells: [32770, 32770, 32770, 32770, 0, 32770, 32770, 32770, 32770], result: 54, count: 1 }, // furnace
@@ -284,7 +332,23 @@ pub static SHAPED: [Shaped; 33] = [
     Shaped { w: 1, h: 3, cells: [68, 58, 58, 0, 0, 0, 0, 0, 0], result: 93, count: 1 }, // diamond_shovel
     Shaped { w: 2, h: 3, cells: [68, 68, 0, 58, 0, 58, 0, 0, 0], result: 94, count: 1 }, // diamond_hoe
     Shaped { w: 1, h: 3, cells: [68, 68, 58, 0, 0, 0, 0, 0, 0], result: 95, count: 1 }, // diamond_sword
-    Shaped { w: 2, h: 2, cells: [108, 108, 108, 108, 0, 0, 0, 0, 0], result: 56, count: 1 }, // white_wool
+    Shaped { w: 3, h: 2, cells: [65, 65, 65, 65, 0, 65, 0, 0, 0], result: 96, count: 1 }, // iron_helmet
+    Shaped { w: 3, h: 3, cells: [65, 0, 65, 65, 65, 65, 65, 65, 65], result: 97, count: 1 }, // iron_chestplate
+    Shaped { w: 3, h: 3, cells: [65, 65, 65, 65, 0, 65, 65, 0, 65], result: 98, count: 1 }, // iron_leggings
+    Shaped { w: 3, h: 2, cells: [65, 0, 65, 65, 0, 65, 0, 0, 0], result: 99, count: 1 }, // iron_boots
+    Shaped { w: 3, h: 2, cells: [67, 67, 67, 67, 0, 67, 0, 0, 0], result: 100, count: 1 }, // golden_helmet
+    Shaped { w: 3, h: 3, cells: [67, 0, 67, 67, 67, 67, 67, 67, 67], result: 101, count: 1 }, // golden_chestplate
+    Shaped { w: 3, h: 3, cells: [67, 67, 67, 67, 0, 67, 67, 0, 67], result: 102, count: 1 }, // golden_leggings
+    Shaped { w: 3, h: 2, cells: [67, 0, 67, 67, 0, 67, 0, 0, 0], result: 103, count: 1 }, // golden_boots
+    Shaped { w: 3, h: 2, cells: [68, 68, 68, 68, 0, 68, 0, 0, 0], result: 104, count: 1 }, // diamond_helmet
+    Shaped { w: 3, h: 3, cells: [68, 0, 68, 68, 68, 68, 68, 68, 68], result: 105, count: 1 }, // diamond_chestplate
+    Shaped { w: 3, h: 3, cells: [68, 68, 68, 68, 0, 68, 68, 0, 68], result: 106, count: 1 }, // diamond_leggings
+    Shaped { w: 3, h: 2, cells: [68, 0, 68, 68, 0, 68, 0, 0, 0], result: 107, count: 1 }, // diamond_boots
+    Shaped { w: 3, h: 2, cells: [117, 117, 117, 117, 0, 117, 0, 0, 0], result: 122, count: 1 }, // leather_helmet
+    Shaped { w: 3, h: 3, cells: [117, 0, 117, 117, 117, 117, 117, 117, 117], result: 123, count: 1 }, // leather_chestplate
+    Shaped { w: 3, h: 3, cells: [117, 117, 117, 117, 0, 117, 117, 0, 117], result: 124, count: 1 }, // leather_leggings
+    Shaped { w: 3, h: 2, cells: [117, 0, 117, 117, 0, 117, 0, 0, 0], result: 125, count: 1 }, // leather_boots
+    Shaped { w: 2, h: 2, cells: [120, 120, 120, 120, 0, 0, 0, 0, 0], result: 56, count: 1 }, // white_wool
 ];
 
 /// Shapeless crafting recipes (ingredients in any place).
@@ -302,10 +366,10 @@ pub static SMELTING: [(u16, Item, u16); 10] = [
     (2, 1, 200), // cobblestone -> stone
     (5, 11, 200), // sand -> glass
     (32769, 60, 200), // #logs -> charcoal
-    (96, 97, 200), // beef -> cooked_beef
-    (98, 99, 200), // porkchop -> cooked_porkchop
-    (100, 101, 200), // chicken -> cooked_chicken
-    (102, 103, 200), // mutton -> cooked_mutton
+    (108, 109, 200), // beef -> cooked_beef
+    (110, 111, 200), // porkchop -> cooked_porkchop
+    (112, 113, 200), // chicken -> cooked_chicken
+    (114, 115, 200), // mutton -> cooked_mutton
 ];
 
 /// Furnace fuels: (item, burn ticks).

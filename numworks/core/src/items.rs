@@ -40,8 +40,10 @@ pub enum ItemKind {
         tool: Tool,
         /// Tier index.
         tier: u8,
-        /// Attack damage (used once there are creatures to hit).
+        /// Attack damage.
         damage: f32,
+        /// Full-strength attacks per second (Minecraft 1.9+ attack cooldown).
+        speed: f32,
     },
     /// Something to eat.
     Food {
@@ -49,6 +51,17 @@ pub enum ItemKind {
         food: u8,
         /// Saturation modifier (saturation gained = food x modifier x 2).
         saturation: f32,
+    },
+    /// Armour worn in one of four slots.
+    Armor {
+        /// 0 helmet, 1 chestplate, 2 leggings, 3 boots.
+        slot: u8,
+        /// Armour points (half a chestplate icon each, as on PC).
+        defense: u8,
+        /// Armour toughness (reduces strong hits less).
+        toughness: f32,
+        /// Hits it can take.
+        durability: u16,
     },
     /// A crafting material.
     Material,
@@ -165,7 +178,33 @@ pub fn tool_of(i: Item) -> Option<(Tool, &'static TierDef)> {
 
 /// How many uses a tool has in total (0 for non-tools).
 pub fn durability(i: Item) -> u16 {
-    tool_of(i).map_or(0, |(_, t)| t.durability)
+    match item_def(i).kind {
+        ItemKind::Armor { durability, .. } => durability,
+        _ => tool_of(i).map_or(0, |(_, t)| t.durability),
+    }
+}
+
+/// Attack damage of a held item (1 for bare hands and non-weapons, as on PC).
+pub fn attack_damage(i: Item) -> f32 {
+    match item_def(i).kind {
+        ItemKind::Tool { damage, .. } => damage,
+        _ => 1.0,
+    }
+}
+
+/// Full-strength attacks per second with a held item (bare hands: 4).
+pub fn attack_speed(i: Item) -> f32 {
+    match item_def(i).kind {
+        ItemKind::Tool { speed, .. } => speed,
+        _ => 4.0,
+    }
+}
+
+/// Damage left after armour, with Minecraft's formula: each armour point
+/// blocks 4 %, less against strong hits unless the armour is tough.
+pub fn armor_reduce(damage: f32, defense: f32, toughness: f32) -> f32 {
+    let eff = (defense - damage / (2.0 + toughness / 4.0)).max(defense / 5.0).min(20.0);
+    damage * (1.0 - eff / 25.0)
 }
 
 /// Whether recipe ingredient `ing` accepts item `i`.

@@ -53,6 +53,8 @@ pub enum SlotRef {
     FurnaceOut,
     /// Creative palette entry (index on the current page).
     Palette(u8),
+    /// Armour slot (0 helmet .. 3 boots).
+    Armor(u8),
 }
 
 /// Distance between slot centres.
@@ -139,6 +141,7 @@ impl InvScreen {
             SlotRef::FurnaceIn => (100, 32),
             SlotRef::FurnaceFuel => (100, 76),
             SlotRef::FurnaceOut => (176, 54),
+            SlotRef::Armor(i) => (40, 112 + i as u16 * PITCH),
             SlotRef::Palette(i) => {
                 (INV_X + (i as u16 % PAL_COLS as u16) * PITCH, 30 + (i as u16 / PAL_COLS as u16) * PITCH)
             }
@@ -180,6 +183,11 @@ impl InvScreen {
         for i in 0..SLOTS {
             push(SlotRef::Inv(i as u8));
         }
+        if self.container == Container::Inventory {
+            for i in 0..4 {
+                push(SlotRef::Armor(i));
+            }
+        }
         n
     }
 
@@ -213,6 +221,7 @@ impl InvScreen {
     fn get(&self, s: SlotRef, inv: &Inventory, furnace: Option<&Furnace>) -> Stack {
         match s {
             SlotRef::Inv(i) => inv.slots[i as usize],
+            SlotRef::Armor(i) => inv.armor[i as usize],
             SlotRef::Grid(i) => self.grid[i as usize],
             SlotRef::Result => {
                 craft_result(&self.grid[..self.grid_size() * self.grid_size()], self.grid_size())
@@ -237,6 +246,7 @@ impl InvScreen {
     ) -> Option<&'a mut Stack> {
         match s {
             SlotRef::Inv(i) => Some(&mut inv.slots[i as usize]),
+            SlotRef::Armor(i) => Some(&mut inv.armor[i as usize]),
             SlotRef::Grid(i) => Some(&mut self.grid[i as usize]),
             SlotRef::FurnaceIn => furnace.map(|f| &mut f.input),
             SlotRef::FurnaceFuel => furnace.map(|f| &mut f.fuel),
@@ -328,6 +338,13 @@ impl InvScreen {
                 let held = self.held;
                 if is_fuel_slot && !held.is_empty() && fuel_ticks(held.item) == 0 {
                     self.say("That doesn't burn.");
+                    return true;
+                }
+                if let SlotRef::Armor(k) = cur
+                    && !held.is_empty()
+                    && !matches!(item_def(held.item).kind, ItemKind::Armor { slot, .. } if slot == k)
+                {
+                    self.say("That doesn't go there.");
                     return true;
                 }
                 let Some(slot) = self.slot_mut(cur, inv, furnace) else { return true };
@@ -444,13 +461,18 @@ impl InvScreen {
         }
     }
 
-    /// Closes the screen: grid and hand go back to the inventory. Returns
-    /// how many items didn't fit (and were lost).
-    pub fn close(&mut self, inv: &mut Inventory) -> u32 {
+    /// Closes the screen: grid and hand go back to the inventory; what
+    /// doesn't fit is passed to `overflow` (the game drops it on the
+    /// ground). Returns how many items didn't fit.
+    pub fn close(&mut self, inv: &mut Inventory, mut overflow: impl FnMut(Stack)) -> u32 {
         let mut lost = 0;
         for s in self.grid.iter_mut().chain(core::iter::once(&mut self.held)) {
             if !s.is_empty() {
-                lost += inv.add(*s) as u32;
+                let left = inv.add(*s);
+                if left > 0 {
+                    overflow(Stack { count: left, ..*s });
+                }
+                lost += left as u32;
                 *s = Stack::EMPTY;
             }
         }
@@ -620,7 +642,7 @@ mod tests {
         ui.update(&inp, &mut inv, None);
         assert_eq!(inv.count(OAK_PLANKS as Item), 4);
         // Closing returns the held logs.
-        assert_eq!(ui.close(&mut inv), 0);
+        assert_eq!(ui.close(&mut inv, |_| {}), 0);
         assert_eq!(inv.count(OAK_LOG as Item), 2);
     }
 

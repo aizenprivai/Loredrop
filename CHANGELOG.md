@@ -351,3 +351,39 @@
   recipe book, furnace, survival rules, inventory screen, game-level tests
   for tool wear/breaking, eating, furnace contents, death and respawn).
 - `loredrop.nwa`: 333 KB (155 KB code, 69 KB game state), nwlink check passed.
+
+### 2026-11-16 — NumWorks edition, NW phase 3: creatures, combat, lore (director approved)
+- **Data**: generator now also writes `gen_mobs.rs` from `mobs.toml` (8
+  creatures with health, speed, damage, drops, spawn rules and their box
+  models + textures) and `lore.toml` (12 fragments, names substituted);
+  armour items and recipes are now included; tools carry attack speed.
+- **Entities** (`entities`): up to 16 creatures, 24 dropped items, 6 arrows.
+  Minecraft creature movement (acceleration = speed²), wandering, panic,
+  chasing, melee with cooldown and knock-back, skeleton archery (aimed,
+  gravity, line of sight), spider leaps and daylight calm, daylight
+  burning, lava, swimming, cliff/lava avoidance. The Hollow moves blocks
+  it likes, remembers what it placed; hitting one angers only it, breaking
+  its blocks angers Hollows within 16. Spawning: animals on grass in their
+  biomes, monsters/Hollows in the dark (night surface or caves), caps 6/5.
+  Dropped items: physics, merging, pickup, 5-minute lifetime.
+- **Drawing creatures** (`models`): per-frame oriented boxes with walk
+  animation (legs, arms, wings), per-pixel ray–box tests against the
+  terrain depth, textured faces with lighting, hurt/burning tint, carried
+  block, spinning item sprites/cubes, arrows. Per-entity and per-box screen
+  rectangles keep the cost down (23 → 8.6 M instructions/frame with 5
+  creatures close by).
+- **Combat & armour**: OK hits the targeted creature (reach 3) with the
+  1.9+ attack cooldown and weapon damage; tools wear (swords 1, others 2).
+  4 armour slots in the inventory; Minecraft armour formula and wear.
+  Creature/arrow deaths get their own message.
+- **Ruins** (`structures`): surface stone-brick ruins, desert halls and
+  deep vaults (48x48-block cells), each with a lore tablet whose fragment
+  depends on the era. EXE reads a tablet or a lore fragment item; lore
+  journal (pause menu).
+- Breaking blocks, furnace contents and death now drop items on the ground
+  (death no longer destroys the inventory); Backspace throws an item;
+  armour points in the status line; controls screen updated.
+- 47 unit tests (10 new: zombie chase/hit/speed, loot and pickup, the
+  Hollow, skeleton arrows, ruins with tablets, sword kills, cooldown,
+  death drops, armour formula, tablet reading).
+- `loredrop.nwa`: 449 KB (234 KB code + textures, 80 KB game state), nwlink check passed.

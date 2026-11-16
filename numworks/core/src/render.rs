@@ -21,6 +21,7 @@
 use crate::blocks::*;
 use crate::color::{mix, scale};
 use crate::math::{abs, cos, ifloor, sin, sqrt, tan};
+use crate::models::{EntityScene, MAX_VIEWS};
 use crate::settings::Settings;
 use crate::sky::Sky;
 use crate::world::World;
@@ -75,6 +76,16 @@ struct Scene<'a> {
     ceiling: i32,
 }
 
+/// Brightness (x256) of places that see the sky and of places that don't
+/// (caves). The brightness setting lifts the darkest values.
+pub fn light_levels(sky: &Sky, settings: &Settings) -> (u32, u32) {
+    let b = settings.brightness as f32;
+    let night_floor = 0.12 + 0.05 * b;
+    let sun_light = ((night_floor + (1.0 - night_floor) * sky.daylight) * 256.0) as u32;
+    let cave_light = ((0.06 + 0.06 * b) * 256.0) as u32;
+    (sun_light, cave_light)
+}
+
 /// Draws the 3D view (screen rows `0..VIEW_H`).
 pub fn render(
     p: &mut dyn Platform,
@@ -83,6 +94,7 @@ pub fn render(
     cam: Camera,
     settings: &Settings,
     target: Option<Target>,
+    ents: &mut EntityScene,
 ) {
     let ps = (settings.pixel_size as usize).clamp(1, MAX_PIXEL);
     let (rw, rh) = (SCREEN_W / ps, VIEW_H / ps);
@@ -105,11 +117,7 @@ pub fn render(
     if eye_in_water {
         max_dist = max_dist.min(8.0);
     }
-    // Brightness levels: the setting lifts the darkest values.
-    let b = settings.brightness as f32;
-    let night_floor = 0.12 + 0.05 * b;
-    let sun_light = ((night_floor + (1.0 - night_floor) * sky.daylight) * 256.0) as u32;
-    let cave_light = ((0.06 + 0.06 * b) * 256.0) as u32;
+    let (sun_light, cave_light) = light_levels(sky, settings);
 
     let scene = Scene {
         world,
@@ -125,16 +133,41 @@ pub fn render(
         ceiling: world.ceiling().min(HEIGHT as i32 - 1),
     };
 
+    ents.place(cam.eye, fwd, right, up, half_w, half_h, rw, rh);
+
     let mut buf = [0u16; SCREEN_W * MAX_PIXEL];
     let center_y = VIEW_H / 2;
     for j in 0..rh {
         let v = (1.0 - 2.0 * (j as f32 + 0.5) / rh as f32) * half_h;
         let row = [fwd[0] + up[0] * v, fwd[1] + up[1] * v, fwd[2] + up[2] * v];
+        // Entities whose screen rectangle covers this row.
+        let mut active = [0usize; MAX_VIEWS];
+        let mut n_active = 0;
+        for (k, view) in ents.views[..ents.count].iter().enumerate() {
+            if view.rect[1] <= j as i32 && j as i32 <= view.rect[3] {
+                active[n_active] = k;
+                n_active += 1;
+            }
+        }
         for i in 0..rw {
             let u = (2.0 * (i as f32 + 0.5) / rw as f32 - 1.0) * half_w;
             let d = [row[0] + right[0] * u, row[1] + right[1] * u, row[2] + right[2] * u];
             let inv = 1.0 / sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
-            let c = scene.cast([d[0] * inv, d[1] * inv, d[2] * inv]);
+            let d = [d[0] * inv, d[1] * inv, d[2] * inv];
+            let (mut c, t) = scene.cast(d);
+            if n_active > 0 {
+                let mut best = t.min(max_dist);
+                for &k in &active[..n_active] {
+                    let r = ents.views[k].rect;
+                    if (i as i32) < r[0] || (i as i32) > r[2] {
+                        continue;
+                    }
+                    if let Some((te, ce)) = ents.hit(k, i as i32, j as i32, cam.eye, d, best) {
+                        best = te;
+                        c = scene.finish(ce, te, None, false, d);
+                    }
+                }
+            }
             for k in 0..ps {
                 buf[i * ps + k] = c;
             }
@@ -162,7 +195,8 @@ pub fn render(
 impl Scene<'_> {
     /// Colour seen along unit direction `d` from the eye.
     #[inline]
-    fn cast(&self, d: [f32; 3]) -> u16 {
+    /// Returns the colour and the distance of what was hit (infinite for sky).
+    fn cast(&self, d: [f32; 3]) -> (u16, f32) {
         let o = self.eye;
         let mut cell = [ifloor(o[0]), ifloor(o[1]), ifloor(o[2])];
         let mut step = [0i32; 3];
@@ -196,7 +230,7 @@ impl Scene<'_> {
             };
             let t = t_max[axis];
             if t > self.max_dist {
-                return self.finish(self.sky.fog, self.max_dist, water_from, true, d);
+                return (self.finish(self.sky.fog, self.max_dist, water_from, true, d), f32::INFINITY);
             }
             cell[axis] += step[axis];
             t_max[axis] += t_delta[axis];
@@ -205,7 +239,7 @@ impl Scene<'_> {
             // can only reach the sky.
             if y > self.ceiling {
                 if step[1] >= 0 {
-                    return self.finish(self.sky.color(d), t, water_from, true, d);
+                    return (self.finish(self.sky.color(d), t, water_from, true, d), f32::INFINITY);
                 }
                 continue;
             }
@@ -283,7 +317,7 @@ impl Scene<'_> {
                     c = scale(c, 90);
                 }
             }
-            return self.finish(c, t, water_from, false, d);
+            return (self.finish(c, t, water_from, false, d), t);
         }
     }
 

@@ -38,18 +38,22 @@ pub enum Cause {
     Fire,
     /// Starving.
     Starvation,
+    /// Hit by a creature (kind) or its arrow.
+    Mob(u8),
 }
 
 impl Cause {
-    /// Death message.
-    pub fn death_message(self) -> &'static str {
-        match self {
-            Cause::Fall => "You hit the ground too hard.",
-            Cause::Drowning => "You drowned.",
-            Cause::Lava => "You tried to swim in lava.",
-            Cause::Fire => "You burned to death.",
-            Cause::Starvation => "You starved to death.",
-        }
+    /// Writes the death message.
+    pub fn death_message(self, out: &mut crate::text::Text<48>) {
+        use core::fmt::Write;
+        let _ = match self {
+            Cause::Fall => out.write_str("You hit the ground too hard."),
+            Cause::Drowning => out.write_str("You drowned."),
+            Cause::Lava => out.write_str("You tried to swim in lava."),
+            Cause::Fire => out.write_str("You burned to death."),
+            Cause::Starvation => out.write_str("You starved to death."),
+            Cause::Mob(k) => write!(out, "You were slain by a {}.", crate::mobs::mob_def(k).name),
+        };
     }
 }
 

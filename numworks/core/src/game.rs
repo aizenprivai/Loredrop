@@ -7,12 +7,15 @@
 
 use crate::Platform;
 use crate::blocks::*;
+use crate::entities::{Entities, Target as MobTarget};
 use crate::furnace::{Furnace, MAX_FURNACES};
 use crate::hud;
 use crate::input::{Input, Key};
 use crate::inventory::{HOTBAR, Inventory};
 use crate::items::*;
 use crate::math::{PI, clamp, ifloor};
+use crate::mobs::LORE;
+use crate::models::{self, EntityScene};
 use crate::player::{MoveInput, Player};
 use crate::render::{self, Camera, Target};
 use crate::settings::Settings;
@@ -78,6 +81,10 @@ pub enum Screen {
     Controls,
     /// "You died" screen.
     Dead,
+    /// Reading a lore fragment.
+    Lore,
+    /// List of the lore fragments found so far.
+    Journal,
 }
 
 /// The whole game state. Large (the world is ~66 KB): keep it in a `static`.
@@ -106,6 +113,17 @@ pub struct Game {
     pub ui: InvScreen,
     /// Placed furnaces.
     pub furnaces: [Furnace; MAX_FURNACES],
+    /// Creatures, dropped items and arrows.
+    pub entities: Entities,
+    /// Entities prepared for drawing (scratch space, rebuilt every frame).
+    scene: EntityScene,
+    /// Lore fragments found (bit i = `LORE[i]`).
+    pub lore_found: u16,
+    /// Fragment being read, and where to go back to.
+    lore_shown: usize,
+    lore_back: Screen,
+    /// Ticks since the last attack (for the attack cooldown).
+    attack_ticks: u32,
     /// World time in ticks since the world was created.
     pub time: u32,
     /// Where the player (re)spawns.
@@ -150,6 +168,12 @@ impl Game {
             selected: 0,
             ui: InvScreen::new(),
             furnaces: [Furnace::EMPTY; MAX_FURNACES],
+            entities: Entities::new(),
+            scene: EntityScene::new(),
+            lore_found: 0,
+            lore_shown: 0,
+            lore_back: Screen::Playing,
+            attack_ticks: 100,
             time: 0,
             spawn: [0.0; 3],
             rng: Rng(0x1234_5678),
@@ -184,6 +208,8 @@ impl Game {
         self.mode = mode;
         self.inventory.clear();
         self.furnaces = [Furnace::EMPTY; MAX_FURNACES];
+        self.entities.clear(seed);
+        self.lore_found = 0;
         if mode == Mode::Creative {
             for (s, &i) in self.inventory.slots.iter_mut().zip(CREATIVE_HOTBAR.iter()) {
                 *s = Stack::new(i, 1);
@@ -235,6 +261,8 @@ impl Game {
             Screen::Settings => self.settings_screen(p),
             Screen::Controls => self.controls(p),
             Screen::Dead => self.dead(p),
+            Screen::Lore => self.lore_screen(p),
+            Screen::Journal => self.journal(p),
         }
     }
 
@@ -314,7 +342,9 @@ impl Game {
 
     fn paused(&mut self, p: &mut dyn Platform) -> bool {
         let mode = if self.mode == Mode::Survival { "Mode: Survival" } else { "Mode: Creative" };
-        let items = ["Resume", mode, "Settings", "Controls", "Quit to title"];
+        let mut journal: Text<24> = Text::new();
+        let _ = write!(journal, "Lore journal {}/{}", self.lore_found.count_ones(), LORE.len());
+        let items = ["Resume", mode, journal.as_str(), "Settings", "Controls", "Quit to title"];
         let chosen = self.menu_nav(items.len());
         if self.input.pressed(Key::Back) {
             self.resume();
@@ -323,13 +353,13 @@ impl Game {
         if self.menu_dirty {
             self.menu_dirty = false;
             hud::menu_frame(p, "PAUSED");
-            hud::menu_items(p, &items, self.menu_index, 50);
+            hud::menu_items(p, &items, self.menu_index, 40);
             let mut t: Text<64> = Text::new();
             let pos = self.player.pos;
             let biome = column_info(self.world.seed, ifloor(pos[0]), ifloor(pos[2])).biome;
             let _ =
                 write!(t, "{}  x {} y {} z {}", biome.name(), ifloor(pos[0]), ifloor(pos[1]), ifloor(pos[2]));
-            hud::centered_small(p, t.as_str(), 176, hud::DIM);
+            hud::centered_small(p, t.as_str(), 184, hud::DIM);
             t.clear();
             // Tick 0 is 6:00 in the morning, as on PC.
             let minutes = ((self.time % DAY_TICKS + 6000) % DAY_TICKS) * 1440 / DAY_TICKS;
@@ -341,11 +371,11 @@ impl Game {
                 minutes % 60,
                 self.world.seed
             );
-            hud::centered_small(p, t.as_str(), 192, hud::DIM);
+            hud::centered_small(p, t.as_str(), 200, hud::DIM);
             t.clear();
             let _ = write!(t, "Changed blocks {}/{}", self.world.edit_count(), crate::world::MAX_EDITS);
-            hud::centered_small(p, t.as_str(), 208, hud::DIM);
-            hud::centered_small(p, "The world is not saved when you quit.", 224, hud::DIM);
+            hud::centered_small(p, t.as_str(), 214, hud::DIM);
+            hud::centered_small(p, "The world is not saved when you quit.", 227, hud::DIM);
         }
         if chosen {
             match self.menu_index {
@@ -354,10 +384,112 @@ impl Game {
                     self.toggle_mode();
                     self.menu_dirty = true;
                 }
-                2 => self.open(Screen::Settings),
-                3 => self.open(Screen::Controls),
+                2 => self.open(Screen::Journal),
+                3 => self.open(Screen::Settings),
+                4 => self.open(Screen::Controls),
                 _ => self.open(Screen::Title),
             }
+        } else {
+            p.sleep(20);
+        }
+        true
+    }
+
+    /// Shows lore fragment `i` and records it in the journal.
+    fn read_lore(&mut self, i: usize, back: Screen) {
+        let new = self.lore_found & (1 << i) == 0;
+        self.lore_found |= 1 << i;
+        self.lore_shown = i;
+        self.lore_back = back;
+        self.screen = Screen::Lore;
+        self.menu_dirty = true;
+        self.mining = None;
+        if new {
+            self.say("New entry in your lore journal.");
+        }
+    }
+
+    fn lore_screen(&mut self, p: &mut dyn Platform) -> bool {
+        if self.menu_dirty {
+            self.menu_dirty = false;
+            hud::menu_frame(p, "THE BUILDERS");
+            let mut t: Text<24> = Text::new();
+            let era = match LORE[self.lore_shown].0 {
+                crate::mobs::Era::Golden => "The golden age",
+                crate::mobs::Era::Expansion => "The gateways",
+                crate::mobs::Era::Deep => "What they became",
+            };
+            let _ = write!(t, "{}  ({}/{})", era, self.lore_shown + 1, LORE.len());
+            hud::centered_small(p, t.as_str(), 40, hud::DIM);
+            // Word-wrap to 42 characters per line.
+            let text = LORE[self.lore_shown].1;
+            let (mut line_start, mut last_space, mut y) = (0usize, None::<usize>, 66u16);
+            let bytes = text.as_bytes();
+            let mut i = 0;
+            while i <= bytes.len() {
+                let end = i == bytes.len();
+                if end || bytes[i] == b' ' {
+                    if i - line_start > 42
+                        && let Some(s) = last_space
+                    {
+                        p.draw_string(&text[line_start..s], 16, y, false, hud::TEXT, hud::MENU_BG);
+                        y += 18;
+                        line_start = s + 1;
+                    }
+                    last_space = Some(i);
+                }
+                if end {
+                    p.draw_string(&text[line_start..], 16, y, false, hud::TEXT, hud::MENU_BG);
+                }
+                i += 1;
+            }
+            hud::centered_small(p, "Back or OK to close", 222, hud::DIM);
+        }
+        if self.input.pressed(Key::Back) || self.input.pressed(Key::Ok) {
+            self.screen = self.lore_back;
+            self.menu_dirty = true;
+            self.hud_dirty = true;
+        } else {
+            p.sleep(20);
+        }
+        true
+    }
+
+    fn journal(&mut self, p: &mut dyn Platform) -> bool {
+        let n = LORE.len();
+        let chosen = self.menu_nav(n);
+        if self.input.pressed(Key::Back) {
+            self.open(Screen::Paused);
+            return true;
+        }
+        if self.menu_dirty {
+            self.menu_dirty = false;
+            hud::menu_frame(p, "LORE JOURNAL");
+            for (i, (_, words)) in LORE.iter().enumerate() {
+                let y = 40 + i as u16 * 14;
+                let sel = i == self.menu_index;
+                let mut t: Text<48> = Text::new();
+                if self.lore_found & (1 << i) != 0 {
+                    let cut = words.char_indices().nth(36).map_or(words.len(), |(k, _)| k);
+                    let _ = write!(t, "{}{:2}. {}...", if sel { ">" } else { " " }, i + 1, &words[..cut]);
+                } else {
+                    let _ = write!(t, "{}{:2}. ???", if sel { ">" } else { " " }, i + 1);
+                }
+                hud::text_padded(
+                    p,
+                    t.as_str(),
+                    6,
+                    y,
+                    44,
+                    false,
+                    if sel { hud::GOLD } else { hud::TEXT },
+                    hud::MENU_BG,
+                );
+            }
+            hud::centered_small(p, "Find tablets in ruins. OK: read", 222, hud::DIM);
+        }
+        if chosen && self.lore_found & (1 << self.menu_index) != 0 {
+            self.read_lore(self.menu_index, Screen::Journal);
         } else {
             p.sleep(20);
         }
@@ -437,13 +569,13 @@ impl Game {
                 ("8 5 4 6", "Walk: fwd, back, left, right"),
                 ("0 / 1", "Jump, swim up / sneak"),
                 ("3", "Sprint (until you stop)"),
-                ("OK (hold)", "Mine the block you look at"),
+                ("OK", "Hit a creature, mine (hold)"),
                 ("EXE", "Place, use (table...), eat"),
                 ("7 / 9", "Previous / next hotbar slot"),
                 ("Var", "Inventory and crafting"),
                 ("Toolbox", "Recipes / creative: fly"),
-                ("Back", "Pause menu, close screens"),
-                ("Home", "Quit"),
+                ("Backspace", "Throw one held item"),
+                ("Back / Home", "Pause menu / quit"),
             ];
             for (i, (k, a)) in LINES.iter().enumerate() {
                 let y = 42 + i as u16 * 16;
@@ -461,16 +593,22 @@ impl Game {
         if self.menu_dirty {
             self.menu_dirty = false;
             p.fill_rect(0, 0, crate::SCREEN_W as u16, crate::SCREEN_H as u16, crate::color::hex(0x3A0C0C));
-            let msg = self.vitals.last_cause.map_or("You died.", |c| c.death_message());
+            let mut msg: Text<48> = Text::new();
+            match self.vitals.last_cause {
+                Some(c) => c.death_message(&mut msg),
+                None => {
+                    let _ = msg.write_str("You died.");
+                }
+            }
             let bg = crate::color::hex(0x3A0C0C);
             p.draw_string("You died!", 115, 70, true, hud::TEXT, bg);
-            let w = msg.chars().count() as u16 * hud::SMALL_W;
-            p.draw_string(msg, (320 - w) / 2, 104, false, hud::TEXT, bg);
-            p.draw_string("Your items were lost.", 86, 124, false, hud::DIM, bg);
-            p.draw_string("OK: respawn", 121, 170, false, hud::GOLD, bg);
+            let w = msg.as_str().chars().count() as u16 * hud::SMALL_W;
+            p.draw_string(msg.as_str(), (320u16).saturating_sub(w) / 2, 104, false, hud::TEXT, bg);
+            p.draw_string("Your items lie where you died", 58, 124, false, hud::DIM, bg);
+            p.draw_string("(for 5 minutes).", 102, 140, false, hud::DIM, bg);
+            p.draw_string("OK: respawn", 121, 180, false, hud::GOLD, bg);
         }
         if self.input.pressed(Key::Ok) || self.input.pressed(Key::Exe) {
-            self.inventory.clear();
             self.vitals = Vitals::new();
             self.player = Player::new(self.spawn);
             self.mining = None;
@@ -481,6 +619,18 @@ impl Game {
             p.sleep(20);
         }
         true
+    }
+
+    /// The player died: everything carried falls on the ground (as on PC;
+    /// at most as many stacks as the item list holds), then the death screen.
+    fn die(&mut self) {
+        let pos = self.player.pos;
+        let stacks = self.inventory.slots.iter().chain(self.inventory.armor.iter()).copied();
+        for s in stacks.filter(|s| !s.is_empty()) {
+            self.entities.drop_item(s, [pos[0], pos[1] + 1.0, pos[2]], 10);
+        }
+        self.inventory.clear();
+        self.open(Screen::Dead);
     }
 
     // -------------------------------------------------------- inventory UI
@@ -506,9 +656,11 @@ impl Game {
             self.ui.update(&input, &mut self.inventory, f)
         };
         if !open {
-            let lost = self.ui.close(&mut self.inventory);
+            let (pos, ents) = (self.player.pos, &mut self.entities);
+            let lost =
+                self.ui.close(&mut self.inventory, |s| ents.drop_item(s, [pos[0], pos[1] + 1.0, pos[2]], 40));
             if lost > 0 {
-                self.say("Inventory full: some items were lost.");
+                self.say("Inventory full: items dropped.");
             }
             self.resume();
             return true;
@@ -528,8 +680,8 @@ impl Game {
             self.tick_acc = 0;
         }
         if self.vitals.dead() {
-            self.ui.close(&mut self.inventory);
-            self.open(Screen::Dead);
+            self.ui.close(&mut self.inventory, |_| {});
+            self.die();
             return true;
         }
         let f = furnace_idx.map(|i| &self.furnaces[i]);
@@ -600,6 +752,20 @@ impl Game {
                 return true;
             }
         }
+        // Attack the creature in front (OK), if it's closer than any block.
+        if i.pressed(Key::Ok)
+            && let Some(m) = self.mob_target()
+        {
+            self.attack(m);
+        }
+        // Throw one of the held item (Backspace, like Q on PC).
+        if i.pressed(Key::Backspace) && !self.held().is_empty() {
+            let s = self.held();
+            let one = Stack { count: 1, ..s };
+            self.inventory.slots[self.selected].take(1);
+            self.entities.throw_item(one, self.player.eye(), self.player.look_dir());
+            self.hud_dirty = true;
+        }
 
         // Fixed-rate simulation.
         self.tick_acc += dt;
@@ -613,7 +779,7 @@ impl Game {
             self.tick_acc = 0; // too slow: drop time rather than spiral
         }
         if self.vitals.dead() {
-            self.open(Screen::Dead);
+            self.die();
             return true;
         }
 
@@ -635,7 +801,17 @@ impl Game {
         });
         let sky = Sky::at(self.time);
         let cam = Camera { eye: self.player.eye(), yaw: self.player.yaw, pitch: self.player.pitch };
-        render::render(p, &self.world, &sky, cam, &self.settings, target);
+        let (sun, cave) = render::light_levels(&sky, &self.settings);
+        models::build(
+            &mut self.scene,
+            &self.entities,
+            &self.world,
+            cam.eye,
+            self.settings.view_distance as f32,
+            sun,
+            cave,
+        );
+        render::render(p, &self.world, &sky, cam, &self.settings, target, &mut self.scene);
         if self.vitals.since_hurt < 4 || self.vitals.fire > 0 {
             // Red (hurt) or orange (burning) frame around the view.
             let c = if self.vitals.since_hurt < 4 {
@@ -659,18 +835,90 @@ impl Game {
         true
     }
 
-    /// The targeted block and the face's outward offset.
+    /// The targeted block and the face's outward offset (none when a
+    /// creature is in the way).
     fn target(&self) -> Option<([i32; 3], [i32; 3])> {
         let reach = if self.mode == Mode::Creative { REACH_CREATIVE } else { REACH_SURVIVAL };
-        render::pick(&self.world, self.player.eye(), self.player.look_dir(), reach)
+        let hit = render::pick(&self.world, self.player.eye(), self.player.look_dir(), reach)?;
+        if let Some((_, tm)) = self.entities.pick(self.player.eye(), self.player.look_dir(), 3.0) {
+            let e = self.player.eye();
+            let c =
+                [hit.0[0] as f32 + 0.5 - e[0], hit.0[1] as f32 + 0.5 - e[1], hit.0[2] as f32 + 0.5 - e[2]];
+            if tm * tm < c[0] * c[0] + c[1] * c[1] + c[2] * c[2] {
+                return None;
+            }
+        }
+        Some(hit)
+    }
+
+    /// The creature the player is aiming at within attack reach (3 blocks,
+    /// as on PC), if no block is closer.
+    fn mob_target(&self) -> Option<usize> {
+        let (eye, dir) = (self.player.eye(), self.player.look_dir());
+        let (m, tm) = self.entities.pick(eye, dir, 3.0)?;
+        match render::pick(&self.world, eye, dir, tm) {
+            Some(_) => None,
+            None => Some(m),
+        }
+    }
+
+    /// Hits creature `m` with the held item. Damage follows Minecraft's
+    /// attack cooldown: a full-strength hit needs `20 / attack speed` ticks
+    /// since the last one, quicker hits do less (down to 20 %).
+    fn attack(&mut self, m: usize) {
+        let held = self.held().item;
+        let full = 20.0 / attack_speed(held);
+        let charge = ((self.attack_ticks as f32 + 0.5) / full).min(1.0);
+        let damage = attack_damage(held) * (0.2 + charge * charge * 0.8);
+        self.attack_ticks = 0;
+        let killed = self.entities.hurt(m, damage, Some(self.player.pos));
+        if self.mode == Mode::Survival {
+            self.vitals.exhaust(0.1);
+            if let Some((tool, _)) = tool_of(held) {
+                let s = &mut self.inventory.slots[self.selected];
+                s.wear += if tool == Tool::Sword { 1 } else { 2 };
+                if s.wear >= durability(s.item) {
+                    *s = Stack::EMPTY;
+                    self.say("Your tool broke!");
+                }
+                self.hud_dirty = true;
+            }
+        }
+        if killed {
+            self.mining = None;
+        }
     }
 
     /// The use key was just pressed: open a crafting table or furnace if
     /// looking at one, otherwise place or eat (handled in `tick_world`).
     fn use_pressed(&mut self) {
+        // Reading a lore fragment item: it reveals a fragment not yet found
+        // (or a random one) and is used up.
+        if self.held().item == LORE_FRAGMENT {
+            let unread: u32 = (0..LORE.len()).filter(|&k| self.lore_found & (1 << k) == 0).count() as u32;
+            let r = self.rng.next_u32();
+            let pick = if unread > 0 {
+                (0..LORE.len())
+                    .filter(|&k| self.lore_found & (1 << k) == 0)
+                    .nth((r % unread) as usize)
+                    .unwrap_or(0)
+            } else {
+                r as usize % LORE.len()
+            };
+            if self.mode == Mode::Survival {
+                self.inventory.slots[self.selected].take(1);
+            }
+            self.hud_dirty = true;
+            self.read_lore(pick, Screen::Playing);
+            return;
+        }
         let Some((cell, _)) = self.target() else { return };
         let b = self.world.get(cell[0], cell[1], cell[2]);
-        if b == CRAFTING_TABLE {
+        if b == LORE_TABLET {
+            let f = crate::structures::fragment_at(self.world.seed, cell[0], cell[1], cell[2]);
+            self.read_lore(f, Screen::Playing);
+            self.place_cooldown = PLACE_REPEAT;
+        } else if b == CRAFTING_TABLE {
             self.open_container(Container::Table);
             self.place_cooldown = PLACE_REPEAT;
         } else if b == FURNACE || b == LIT_FURNACE {
@@ -731,6 +979,27 @@ impl Game {
                 landed_fall: pl.landed_fall,
             };
             self.vitals.tick(&a);
+        }
+
+        // Creatures, items on the ground, arrows.
+        self.attack_ticks = self.attack_ticks.saturating_add(1);
+        let daylight = Sky::at(self.time).daylight;
+        let me = MobTarget { pos: self.player.pos, attackable: survival };
+        let ev = self.entities.tick(&mut self.world, me, daylight);
+        if ev.damage > 0.0 && survival {
+            let (def, tough) = self.inventory.armor_points();
+            let dmg = armor_reduce(ev.damage, def, tough);
+            if self.vitals.hurt(dmg, ev.cause.unwrap_or(crate::survival::Cause::Fall)) {
+                for k in 0..3 {
+                    self.player.vel[k] += ev.knock[k];
+                }
+                if def > 0.0 && self.inventory.wear_armor(ev.damage) {
+                    self.say("Your armour broke!");
+                }
+            }
+        }
+        if self.entities.pickup(self.player.pos, &mut self.inventory) {
+            self.hud_dirty = true;
         }
 
         // Furnaces.
@@ -829,27 +1098,24 @@ impl Game {
         if !self.world.set(cell[0], cell[1], cell[2], AIR) {
             self.say("Too many changes: far ones get forgotten");
         }
+        // Drops land on the ground at the block, as on PC.
+        let at = [cell[0] as f32 + 0.5, cell[1] as f32 + 0.25, cell[2] as f32 + 0.5];
         if let Some(fi) = self.furnace_index(cell) {
             let f = self.furnaces[fi];
             for s in [f.input, f.fuel, f.output] {
-                if self.mode == Mode::Survival {
-                    self.inventory.add(s);
-                }
+                self.entities.drop_item(s, at, 10);
             }
             self.furnaces[fi] = Furnace::EMPTY;
         }
+        if self.entities.block_broken(cell) {
+            self.say("The Hollow saw you break its work...");
+        }
         if self.mode == Mode::Survival {
             let held = self.held().item;
-            let mut lost = false;
             let mut rng = self.rng;
-            let inv = &mut self.inventory;
-            roll_drops(b, held, &mut rng, |item, n| {
-                lost |= inv.add(Stack::new(item, n)) > 0;
-            });
+            let ents = &mut self.entities;
+            roll_drops(b, held, &mut rng, |item, n| ents.drop_item(Stack::new(item, n), at, 10));
             self.rng = rng;
-            if lost {
-                self.say("Inventory full.");
-            }
             // Tool wear.
             let wear = wear_for(b, held);
             if wear > 0 {
@@ -917,7 +1183,11 @@ impl Game {
                 let _ = write!(status, "{} x{}", item_def(held.item).name, held.count);
             }
         }
-        let mut right: Text<12> = Text::new();
+        let mut right: Text<20> = Text::new();
+        let armor = self.inventory.armor_points().0 as u32;
+        if armor > 0 && self.mode == Mode::Survival {
+            let _ = write!(right, "Armor {}  ", armor);
+        }
         if self.settings.show_fps {
             // The counter needs one full second of play before it has a value.
             if self.fps == 0 {
@@ -991,6 +1261,17 @@ mod tests {
         [ifloor(p[0]) + 2, ifloor(p[1]) + 1, ifloor(p[2])]
     }
 
+    /// Walks over every item on the ground, picking it up.
+    fn collect(g: &mut Game) {
+        for k in 0..crate::entities::MAX_ITEMS {
+            let it = g.entities.items[k];
+            if it.used {
+                g.entities.items[k].age = 100;
+                g.entities.pickup([it.pos[0], it.pos[1] - 0.5, it.pos[2]], &mut g.inventory);
+            }
+        }
+    }
+
     #[test]
     fn mining_with_a_tool_drops_and_wears_it() {
         let mut g = game();
@@ -999,13 +1280,105 @@ mod tests {
         g.inventory.slots[0] = Stack::new(WOODEN_PICKAXE, 1);
         g.break_block(c, STONE);
         assert_eq!(g.world.get(c[0], c[1], c[2]), AIR);
+        // The cobblestone lies on the ground until picked up.
+        assert_eq!(g.inventory.count(COBBLESTONE as Item), 0);
+        collect(&mut g);
         assert_eq!(g.inventory.count(COBBLESTONE as Item), 1);
         assert_eq!(g.inventory.slots[0].wear, 1);
         // By hand, stone gives nothing.
         g.selected = 5;
         g.world.set(c[0], c[1], c[2], STONE);
         g.break_block(c, STONE);
+        collect(&mut g);
         assert_eq!(g.inventory.count(COBBLESTONE as Item), 1);
+    }
+
+    /// Flattens a 9x9 area around the player and returns the player's feet y.
+    fn flatten(g: &mut Game) -> i32 {
+        let p = g.player.pos;
+        let (px, py, pz) = (ifloor(p[0]), ifloor(p[1]), ifloor(p[2]));
+        for x in px - 4..=px + 4 {
+            for z in pz - 4..=pz + 4 {
+                g.world.set(x, py - 1, z, STONE);
+                for y in py..py + 4 {
+                    g.world.set(x, y, z, AIR);
+                }
+            }
+        }
+        py
+    }
+
+    #[test]
+    fn killing_a_cow_with_a_sword() {
+        let mut g = game();
+        let y = flatten(&mut g) as f32;
+        g.entities.mobs = [crate::entities::Mob::EMPTY; crate::entities::MAX_MOBS];
+        let p = g.player.pos;
+        let cow = g.entities.spawn(crate::mobs::COW, [p[0], y, p[2] + 2.0]).unwrap();
+        g.player.yaw = 0.0; // facing +Z
+        g.player.pitch = -0.3;
+        assert_eq!(g.mob_target(), Some(cow));
+        assert!(g.target().is_none(), "the cow hides the ground behind it");
+        g.inventory.slots[0] = Stack::new(DIAMOND_SWORD, 1);
+        // Diamond sword: 7 damage at full charge; a cow has 10 health.
+        for _ in 0..2 {
+            g.attack_ticks = 100;
+            g.entities.mobs[cow].hurt = 0;
+            g.attack(cow);
+        }
+        assert!(!g.entities.mobs[cow].used, "the cow died");
+        assert!(g.entities.items.iter().any(|it| it.used && it.stack.item == BEEF));
+        assert_eq!(g.inventory.slots[0].wear, 2, "swords wear 1 per hit");
+        // Spamming does little damage (attack cooldown).
+        let c2 = g.entities.spawn(crate::mobs::COW, [p[0], y, p[2] + 2.0]).unwrap();
+        g.attack_ticks = 0;
+        g.attack(c2);
+        assert!(g.entities.mobs[c2].health > 8.0, "uncharged hit: {}", g.entities.mobs[c2].health);
+    }
+
+    #[test]
+    fn death_drops_the_inventory() {
+        let mut g = game();
+        g.inventory.slots[0] = Stack::new(DIAMOND, 5);
+        g.inventory.armor[1] = Stack::new(IRON_CHESTPLATE, 1);
+        g.die();
+        assert_eq!(g.inventory.count(DIAMOND), 0);
+        let on_ground = g.entities.items.iter().filter(|it| it.used).count();
+        assert_eq!(on_ground, 2);
+        collect(&mut g);
+        assert_eq!(g.inventory.count(DIAMOND), 5);
+    }
+
+    #[test]
+    fn armour_reduces_creature_damage() {
+        // Minecraft: full diamond (20 points, toughness 8) leaves 24 % of a
+        // 4-damage hit: 20 - 4 / (2 + 8/4) = 19 effective points → 76 % blocked.
+        assert!((armor_reduce(4.0, 20.0, 8.0) - 0.96).abs() < 1e-4);
+        assert_eq!(armor_reduce(4.0, 0.0, 0.0), 4.0);
+        let mut inv = Inventory::new();
+        inv.armor = [
+            Stack::new(IRON_HELMET, 1),
+            Stack::new(IRON_CHESTPLATE, 1),
+            Stack::new(IRON_LEGGINGS, 1),
+            Stack::new(IRON_BOOTS, 1),
+        ];
+        assert_eq!(inv.armor_points().0, 15.0, "full iron = 15 points");
+    }
+
+    #[test]
+    fn reading_a_tablet_fills_the_journal() {
+        let mut g = game();
+        let c = spot(&g);
+        g.world.set(c[0], c[1], c[2], LORE_TABLET);
+        // Look straight at it.
+        let e = g.player.eye();
+        let d = [c[0] as f32 + 0.5 - e[0], c[1] as f32 + 0.5 - e[1], c[2] as f32 + 0.5 - e[2]];
+        let len = crate::math::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+        g.player.yaw = libm::atan2f(-d[0], d[2]);
+        g.player.pitch = libm::asinf(d[1] / len);
+        g.use_pressed();
+        assert_eq!(g.screen, Screen::Lore);
+        assert_eq!(g.lore_found.count_ones(), 1);
     }
 
     #[test]
@@ -1049,6 +1422,7 @@ mod tests {
         g.inventory.slots[1] = Stack::new(WOODEN_PICKAXE, 1);
         g.selected = 1;
         g.break_block(c, LIT_FURNACE);
+        collect(&mut g);
         assert_eq!(g.inventory.count(RAW_IRON), 3);
         assert_eq!(g.inventory.count(FURNACE as Item), 1, "a lit furnace drops a furnace");
         assert!(g.furnace_index(c).is_none());

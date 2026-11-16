@@ -18,6 +18,8 @@
 //! * `--look YAW PITCH`    set the view (degrees) after loading
 //! * `--time TICKS`        set the time of day after loading
 //! * `--give ITEMS`        fill the inventory, e.g. `oak_log:10,wooden_pickaxe`
+//! * `--summon KINDS`      creatures in a row 4 blocks in front, e.g. `cow,zombie`
+//!   (they are placed after `--pos`/`--look`)
 //! * `--health N`, `--food N`  set health / food points (0–20)
 //! * `--pos X Y Z`         move the player (feet) after loading; with
 //!   `--creative` the player starts flying there
@@ -131,6 +133,7 @@ fn key_by_name(name: &str) -> Key {
         "Exe" => Exe,
         "Toolbox" => Toolbox,
         "Var" => Var,
+        "Backspace" => Backspace,
         "(" => LeftParen,
         ")" => RightParen,
         "0" => Zero,
@@ -171,6 +174,7 @@ struct Options {
     out: String,
     pos: Option<[f32; 3]>,
     give: String,
+    summon: String,
     health: Option<f32>,
     food: Option<u8>,
 }
@@ -188,6 +192,7 @@ fn parse_args(args: &[String]) -> Options {
         out: "shot.png".into(),
         pos: None,
         give: String::new(),
+        summon: String::new(),
         health: None,
         food: None,
     };
@@ -208,6 +213,7 @@ fn parse_args(args: &[String]) -> Options {
             }
             "--time" => o.time = Some(next(&mut i).parse().unwrap()),
             "--give" => o.give = next(&mut i),
+            "--summon" => o.summon = next(&mut i),
             "--health" => o.health = Some(next(&mut i).parse().unwrap()),
             "--food" => o.food = Some(next(&mut i).parse().unwrap()),
             "--pos" => {
@@ -270,6 +276,26 @@ fn start(o: &Options, d: &mut Desktop) -> Box<Game> {
     if let Some(v) = o.view {
         g.settings.view_distance = v;
     }
+    // Creatures in a row in front of the player, standing on the ground,
+    // facing the player.
+    let kinds: Vec<&str> = o.summon.split(',').filter(|s| !s.is_empty()).collect();
+    let fwd = [-g.player.yaw.sin(), g.player.yaw.cos()];
+    let side = [fwd[1], -fwd[0]];
+    for (n, name) in kinds.iter().enumerate() {
+        use ld_nw_core::mobs::{MOB_COUNT, mob_def};
+        let k = (0..MOB_COUNT as u8)
+            .find(|&k| mob_def(k).name.eq_ignore_ascii_case(name))
+            .unwrap_or_else(|| panic!("unknown creature '{name}'"));
+        let off = (n as f32 - (kinds.len() as f32 - 1.0) / 2.0) * 2.2;
+        let x = g.player.pos[0] + fwd[0] * 4.5 + side[0] * off;
+        let z = g.player.pos[2] + fwd[1] * 4.5 + side[1] * off;
+        let (bx, bz) = (x.floor() as i32, z.floor() as i32);
+        let y =
+            (0..47).rev().find(|&y| ld_nw_core::blocks::def(g.world.get(bx, y, bz)).solid).unwrap_or(20) + 1;
+        if let Some(i) = g.entities.spawn(k, [x, y as f32, z]) {
+            g.entities.mobs[i].yaw = g.player.yaw + std::f32::consts::PI;
+        }
+    }
     g
 }
 
@@ -293,9 +319,16 @@ fn main() {
             g.frame(&mut d);
             d.save_png(&o.out);
             let p = g.player.pos;
+            let mobs: Vec<&str> = g
+                .entities
+                .mobs
+                .iter()
+                .filter(|m| m.used)
+                .map(|m| ld_nw_core::mobs::mob_def(m.kind).name)
+                .collect();
             println!(
-                "saved {} (player at {:.1} {:.1} {:.1}, screen {:?})",
-                o.out, p[0], p[1], p[2], g.screen
+                "saved {} (player at {:.1} {:.1} {:.1}, health {}, screen {:?}, creatures {:?})",
+                o.out, p[0], p[1], p[2], g.vitals.health, g.screen, mobs
             );
         }
         "title" => {
@@ -356,6 +389,9 @@ fn main() {
                 }
             }
             println!("deep water column: {water:?}  cave air at: {cave:?}");
+            let ruin = ld_nw_core::structures::nearest_tablet(o.seed, 0, 0, true);
+            let vault = ld_nw_core::structures::nearest_tablet(o.seed, 0, 0, false);
+            println!("nearest surface ruin tablet: {ruin:?}  deep vault tablet: {vault:?}");
         }
         "map" => {
             use ld_nw_core::worldgen::{Biome, SEA_LEVEL, column_info};

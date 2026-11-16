@@ -413,6 +413,13 @@ A separate Cargo workspace, so the PC workspace (`crates/*`) is untouched and
     (vitals and Minecraft's hunger/damage rules, fed an `Activity` built
     from the player's motion each tick), `ui` (inventory/table/furnace/
     creative screens driven by a cursor; the world keeps ticking while open).
+  - NW3: `mobs` (generated creature kinds, box models, lore), `entities`
+    (fixed lists of creatures / dropped items / arrows; AI, physics via the
+    player's `collide_box`, spawning, the Hollow's block moving),
+    `models` (per-frame oriented boxes in an `EntityScene` kept in the
+    game state; the renderer's `cast` now returns hit distance so boxes
+    can be depth-tested per pixel inside their screen rectangles),
+    `structures` (ruins as a pure function of seed and column, like trees).
 - **`gen_blocks.rs` / `gen_items.rs`** are generated from the PC game's
   `blocks.toml`, `items.toml`, `recipes.toml` and textures
   (`numworks/tools/gen_blocks.py`) — one source of truth for both editions.

@@ -6,10 +6,10 @@ separate engine written for a machine with no graphics chip and a few
 hundred KB of memory. It shares the PC game's blocks, textures, mining
 numbers and physics.
 
-> Status: **NW phase 2** (survival: health, hunger, inventory, crafting,
-> tools, furnace). Built and tested on PC through a test harness. It has
-> **not run on a real calculator yet**: the director's test on a real
-> calculator is the first real check.
+> Status: **NW phase 3** (creatures, combat, armour, dropped items, ruins
+> with lore). Built and tested on PC through a test harness. It has **not
+> run on a real calculator yet**: the director's test on a real calculator
+> is the first real check.
 
 ## What's in it
 
@@ -38,6 +38,24 @@ numbers and physics.
   - Furnaces (up to 8): smelt ores, sand, cobblestone, logs, meat, with
     fuel times from the PC game (coal = 8 items); lit furnaces glow.
   - Eating (hold EXE, 1.6 s).
+- Creatures (NW3), with the PC game's box models, textures and numbers:
+  cows, pigs, sheep and chickens (wander, flee when hurt, drop meat,
+  leather, wool, feathers); zombies and skeletons (burn in daylight;
+  skeletons keep their distance and shoot arrows); spiders (leap, calm in
+  daylight unless hurt); and **the Hollow** — wanders in the dark moving
+  blocks around, turns on you if you hit it or break a block it placed,
+  and sometimes drops a lore fragment. Animals live on grass in their
+  biomes; monsters appear in the dark (night or caves).
+- Combat: hit with OK (reach 3), Minecraft 1.9+ attack cooldown, weapon
+  damage, knock-back; creatures hurt you back. Armour (leather, iron,
+  golden, diamond) in 4 slots, with Minecraft's damage reduction and wear.
+- Dropped items lie on the ground (spinning), are picked up by walking
+  over them and vanish after 5 minutes; dying drops your inventory where
+  you died; Backspace throws one item.
+- Ruins of the Builders with lore tablets (EXE to read): broken
+  stone-brick ruins on the surface, half-buried desert halls, sealed deep
+  vaults in the deepslate. 12 fragments of the story; a lore journal in
+  the pause menu.
 - Creative mode: every item from a paged palette, instant breaking, flying,
   no damage.
 - Day and night (20-minute day), square sun and moon, stars, sunrise
@@ -56,8 +74,9 @@ numbers and physics.
 | 0 | Jump, swim up, fly up |
 | 1 | Sneak, fly down |
 | 3 | Sprint (until you stop walking) |
-| OK (hold) | Mine the block you look at |
-| EXE | Place the held block; use a crafting table or furnace; hold to eat |
+| OK | Hit the creature you look at; hold to mine a block |
+| EXE | Place the held block; use a crafting table, furnace or lore tablet; read a lore fragment; hold to eat |
+| Backspace | Throw one of the held item |
 | 7 / 9 | Previous / next hotbar slot |
 | Var | Inventory (creative: item palette) |
 | Toolbox | Creative: fly on / off |
@@ -112,17 +131,19 @@ See the header of `desktop/src/main.rs` for every option.
 ```text
 numworks/
   core/        the game (no_std, no heap): world, worldgen, render, player,
-               items, inventory (+ crafting), furnace, survival, ui, hud, game
+               items, inventory (+ crafting), furnace, survival, ui, hud, game,
+               mobs, entities (creatures/items/arrows), models (drawing them),
+               structures (ruins)
   desktop/     PC test harness (fake screen and keyboard, PNG screenshots, benchmark)
   app/         the calculator app: EADK bindings, icon, .cargo config for ARM
   tools/       Python generators: blocks+textures from the PC game's data, icon, PC font
   build_nwa.sh builds app/ and writes loredrop.nwa
 ```
 
-`core/src/gen_blocks.rs` and `core/src/gen_items.rs` are generated from the
-PC game's `assets/data/blocks.toml`, `items.toml`, `recipes.toml` and
-textures by `tools/gen_blocks.py`; re-run it when the PC game's data
-changes. (Plants, torches and armour are left out for now.)
+`core/src/gen_blocks.rs`, `gen_items.rs` and `gen_mobs.rs` are generated
+from the PC game's `assets/data/blocks.toml`, `items.toml`, `recipes.toml`,
+`mobs.toml`, `lore.toml` and textures by `tools/gen_blocks.py`; re-run it
+when the PC game's data changes. (Plants and torches are left out for now.)
 
 ## Limits (by design, for the calculator)
 
@@ -133,7 +154,7 @@ changes. (Plants, torches and armour are left out for now.)
   forgotten).
 - View distance 6 to 14 blocks.
 - No saving (calculator apps have no storage access).
-- No dropped items lying on the ground yet: drops go straight into the
-  inventory (lost if it's full), and dying loses everything.
-- Until creatures arrive (NW3), apples (rare, from oak leaves) are the only
-  food; hunger can't kill you (Normal difficulty stops at half a heart).
+- At most 16 creatures, 24 dropped items and 6 arrows at once, all within
+  the loaded area (creatures that leave it disappear). Creatures steer
+  straight at their goal (no full path-finding like on PC).
+- Hunger can't kill you (Normal difficulty stops at half a heart).

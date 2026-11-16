@@ -14,6 +14,8 @@ pub const HOTBAR: usize = 9;
 pub struct Inventory {
     /// All slots; `0..HOTBAR` is the hotbar.
     pub slots: [Stack; SLOTS],
+    /// Worn armour: helmet, chestplate, leggings, boots.
+    pub armor: [Stack; 4],
 }
 
 impl Default for Inventory {
@@ -25,12 +27,38 @@ impl Default for Inventory {
 impl Inventory {
     /// An empty inventory.
     pub const fn new() -> Self {
-        Self { slots: [Stack::EMPTY; SLOTS] }
+        Self { slots: [Stack::EMPTY; SLOTS], armor: [Stack::EMPTY; 4] }
     }
 
     /// Empties every slot.
     pub fn clear(&mut self) {
         self.slots = [Stack::EMPTY; SLOTS];
+        self.armor = [Stack::EMPTY; 4];
+    }
+
+    /// Total armour points and toughness worn.
+    pub fn armor_points(&self) -> (f32, f32) {
+        self.armor.iter().fold((0.0, 0.0), |(d, t), s| match item_def(s.item).kind {
+            ItemKind::Armor { defense, toughness, .. } if !s.is_empty() => {
+                (d + defense as f32, t + toughness)
+            }
+            _ => (d, t),
+        })
+    }
+
+    /// Wears armour down after a hit of `damage` (each piece loses
+    /// max(1, damage / 4) uses, as on PC). Returns true if a piece broke.
+    pub fn wear_armor(&mut self, damage: f32) -> bool {
+        let n = ((damage / 4.0) as u16).max(1);
+        let mut broke = false;
+        for s in self.armor.iter_mut().filter(|s| !s.is_empty()) {
+            s.wear += n;
+            if s.wear >= durability(s.item) {
+                *s = Stack::EMPTY;
+                broke = true;
+            }
+        }
+        broke
     }
 
     /// Adds a stack, filling matching stacks first, then empty slots

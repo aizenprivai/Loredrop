@@ -176,9 +176,18 @@
 - [ ] NW2 report approval
 - [ ] Real-calculator test (still pending since NW1)
 
+## NumWorks edition — NW phase 3 (creatures, combat, lore)
+- [x] Creatures from the PC data (models, textures, numbers), AI, spawning
+- [x] The Hollow: block moving, provocation rules
+- [x] Combat (attack cooldown, knock-back), armour slots and formula
+- [x] Dropped items (pickup, merge, lifetime, death drops, throwing)
+- [x] Ruins (surface, desert halls, deep vaults) with lore tablets; journal
+- [ ] NW3 report approval
+- [ ] Real-calculator test (still pending since NW1)
+
 ## Deferred / next for the NumWorks edition
-- [ ] Dropped items on the ground (needs entities: NW3); keep items after death
-- [ ] Armour (needs creatures to matter)
+- [ ] Path-finding for creatures (they steer straight for now)
+- [ ] Sheep shearing, breeding, baby animals
 - [ ] Plants (grass, flowers) — need cross-shaped sprites in the ray caster
 - [ ] Falling sand/gravel, flowing water
 - [ ] Torches and block light

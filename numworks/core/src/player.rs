@@ -260,14 +260,21 @@ fn bounds(p: [f32; 3]) -> ([f32; 3], [f32; 3]) {
     ([p[0] - HALF_WIDTH, p[1], p[2] - HALF_WIDTH], [p[0] + HALF_WIDTH, p[1] + BODY_HEIGHT, p[2] + HALF_WIDTH])
 }
 
-/// How far the hitbox at `pos` can move by `delta` along `axis` before
-/// touching a solid block.
+/// How far the player's hitbox at `pos` can move by `delta` along `axis`
+/// before touching a solid block.
 fn collide(world: &World, pos: [f32; 3], axis: usize, delta: f32) -> f32 {
+    collide_box(world, pos, HALF_WIDTH, BODY_HEIGHT, axis, delta)
+}
+
+/// Like `collide`, for any upright box (`half` = half width, `height`),
+/// with `pos` at the centre of its bottom face. Used by creatures and items too.
+pub fn collide_box(world: &World, pos: [f32; 3], half: f32, height: f32, axis: usize, delta: f32) -> f32 {
     if delta == 0.0 {
         return 0.0;
     }
     const EPS: f32 = 1e-4;
-    let (min, max) = bounds(pos);
+    let min = [pos[0] - half, pos[1], pos[2] - half];
+    let max = [pos[0] + half, pos[1] + height, pos[2] + half];
     // Blocks the moving box could touch.
     let mut lo = [0i32; 3];
     let mut hi = [0i32; 3];

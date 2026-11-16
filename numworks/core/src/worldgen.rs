@@ -180,6 +180,9 @@ pub fn generate_column(seed: u32, x: i32, z: i32, out: &mut [Block; HEIGHT]) -> 
 
     // 6. Trees and cacti (they may reach in from neighbouring columns).
     trees(seed, x, z, out);
+
+    // 7. Ruins of the Builders, with lore tablets.
+    crate::structures::apply(seed, x, z, out);
     info.biome
 }
 

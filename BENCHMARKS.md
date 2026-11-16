@@ -143,6 +143,12 @@ After NW2 (survival, inventory, crafting): `loredrop.nwa` is 333 KB (155 KB
 code + textures, 69 KB game state). The 3D view's cost is unchanged; the
 hearts/food panel is only redrawn when what it shows changes.
 
+After NW3 (creatures): `loredrop.nwa` is 449 KB (234 KB code + textures,
+80 KB game state). Callgrind, 30 frames turning with five creatures 4.5
+blocks away (worst case): terrain 14.3 M + creatures 8.6 M instructions per
+frame (creatures were 23 M before per-box screen rectangles). With no
+creature in view the cost is the same as before.
+
 Rough guess for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
 settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
 about 3–4 times faster.
