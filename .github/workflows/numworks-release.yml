@@ -1,0 +1,26 @@
+# Publishes a GitHub release for the NumWorks edition when a tag named
+# `numworks-v*` is pushed, attaching the prebuilt numworks/loredrop.nwa
+# from the tagged commit (the file is built and checked by numworks/build_nwa.sh).
+name: NumWorks release
+
+on:
+  push:
+    tags:
+      - "numworks-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the release with loredrop.nwa
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" numworks/loredrop.nwa \
+            --title "Loredrop NumWorks ${TAG#numworks-}" \
+            --notes-file numworks/RELEASE_NOTES.md
