@@ -460,3 +460,7 @@
   through a **32-texture RAM cache** (`ramcache`, 16 KB; a texture is copied
   in once when first needed). Pictures identical. A "hot flash" probe was
   added to the speed test. Game state ≈ 110 KB RAM.
+- 2026-11-19: a further speed build (integer fixed-point ray loop,
+  `+execute-only`, hardware square root) broke the camera on the N0120
+  although PC pictures were identical; **reverted** at the director's
+  request, optimisation stopped for now.
