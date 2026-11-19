@@ -460,22 +460,3 @@
   through a **32-texture RAM cache** (`ramcache`, 16 KB; a texture is copied
   in once when first needed). Pictures identical. A "hot flash" probe was
   added to the speed test. Game state ≈ 110 KB RAM.
-- Director's third speed test (after the RAM caches): 3D maths 31–39 ms,
-  no clear gain; RAM reads ~30 ns, hot flash reads **46 ns** (flash is
-  slow even for the same few bytes). Disassembly of the renderer showed a
-  software square root per pixel, ~100 constants loaded from flash next to
-  the code, and the ray state spilled to the stack. So:
-  - **hardware square root** (`vsqrt.f32`) instead of `libm::sqrtf`;
-  - **no constants in flash**: the app is built with `+execute-only`, so
-    constants are built in registers (`movw`/`movt`) instead of read from
-    literal pools in flash (same relocation types as before);
-  - **new ray marching loop**: fixed-point integer distances (no float
-    maths while stepping), one copy of the loop per direction octant (step
-    signs are constants), cells recovered by a division only on a hit, and
-    **sky skipping done in integers** from the index's low bits; shading
-    moved to a separate function. Pictures identical on all 10 test views;
-    host instructions for the 3D view −8 %;
-  - creature views are no longer copied (≈ 900 bytes each) every frame;
-  - the speed test now looks level in the four compass directions (results
-    no longer depend on where the player looks), and the memory probes use
-    bit masks instead of a division (calc, ram1k, ram32k, flash, hot).

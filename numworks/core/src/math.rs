@@ -19,24 +19,10 @@ pub fn tan(x: f32) -> f32 {
     libm::tanf(x)
 }
 
-/// Square root. On the calculator this is the FPU's own `vsqrt` instruction
-/// (about 14 cycles); `libm::sqrtf` there is a slow software routine, and
-/// the renderer takes one square root per pixel.
+/// Square root.
 #[inline]
 pub fn sqrt(x: f32) -> f32 {
-    #[cfg(target_arch = "arm")]
-    {
-        let r: f32;
-        // SAFETY: a single FPU instruction on registers, no memory access.
-        unsafe {
-            core::arch::asm!("vsqrt.f32 {0}, {1}", out(sreg) r, in(sreg) x, options(pure, nomem, nostack));
-        }
-        r
-    }
-    #[cfg(not(target_arch = "arm"))]
-    {
-        libm::sqrtf(x)
-    }
+    libm::sqrtf(x)
 }
 
 /// Largest integer value not greater than `x`.

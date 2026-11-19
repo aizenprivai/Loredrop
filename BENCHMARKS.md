@@ -202,17 +202,6 @@ into the game state, 32-texture RAM cache). A "hot" probe (same 64 bytes
 of flash again and again) tells whether constants stored next to the code
 are cached.
 
-Third test (director, pixel 3, view 12): 3D maths 31.5–38.6 ms (varies
-with where the player looks), RAM ~30 ns, hot flash **46 ns** — so even
-constants next to the code cost ~25 cycles each. Changes that followed:
-hardware square root, `+execute-only` (no flash constants: 98 → 0 literal
-loads in the renderer), integer fixed-point ray loop per octant (stack
-accesses in the hot loop down to a few per step), integer sky skipping.
-Host callgrind (bench, seed 1, 20 frames): 3D view ≈ 288 M → 265 M x86
-instructions; the real gain on the calculator should be larger (the
-removed costs were FPU-to-core moves and flash reads, which x86 doesn't
-have). The speed test is now level in four directions, so runs compare.
-
 Rough guess made before the test for the N0120 (Cortex-M7, 550 MHz): 15–30 FPS at default
 settings; older N0110 (216 MHz): roughly 2.5 times slower. Pixel size 4 is
 about 3–4 times faster.

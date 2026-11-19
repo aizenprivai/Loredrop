@@ -130,62 +130,6 @@ impl Torches {
     }
 }
 
-/// Fixed-point units per block for distances in the marching loop
-/// (20 fraction bits: about a millionth of a block).
-const FIX: f32 = (1u32 << 20) as f32;
-/// Fixed-point "never": 1024 blocks, far past any view distance, and small
-/// enough that adding one more step can't overflow a `u32`.
-const FIX_NEVER: u32 = 1 << 30;
-
-/// One block in fixed point.
-const FIX_ONE: u32 = 1 << 20;
-
-/// How many steps of `dt` an axis whose next boundary is at `tm` takes
-/// before reaching distance `te` (boundaries at exactly `te` excluded).
-#[inline(always)]
-fn steps_before(tm: u32, dt: u32, te: u32) -> u32 {
-    if tm >= te { 0 } else { (te - tm).div_ceil(dt) }
-}
-
-/// Distance in blocks (>= 0) to fixed point, saturating at `FIX_NEVER`.
-#[inline(always)]
-fn to_fix(x: f32) -> u32 {
-    let v = x * FIX;
-    if v >= FIX_NEVER as f32 { FIX_NEVER } else { v as u32 }
-}
-
-/// Fixed-point distance back to blocks.
-#[inline(always)]
-fn fix_to_f32(t: u32) -> f32 {
-    t as f32 * (1.0 / FIX)
-}
-
-/// A ray's fixed set-up, to find its cell when it hits something.
-struct Ray {
-    /// Cell holding the eye.
-    start: [i32; 3],
-    /// Step sign per axis.
-    s: [i32; 3],
-    /// Distance to the first cell boundary per axis (fixed point).
-    tm0: [u32; 3],
-    /// Distance between cell boundaries per axis (fixed point).
-    dt: [u32; 3],
-}
-
-impl Ray {
-    /// The current cell, from the distances to the next boundaries `tm`:
-    /// on each axis `tm = tm0 + k * dt` exactly, where `k` is the number of
-    /// steps taken along it.
-    #[inline]
-    fn cell(&self, tm: [u32; 3]) -> [i32; 3] {
-        let mut c = self.start;
-        for a in 0..3 {
-            c[a] += self.s[a] * ((tm[a] - self.tm0[a]) / self.dt[a]) as i32;
-        }
-        c
-    }
-}
-
 impl Scene<'_> {
     #[inline]
     fn torch_light(&self, x: i32, y: i32, z: i32) -> u32 {
@@ -335,58 +279,22 @@ impl Scene<'_> {
     #[inline]
     /// Returns the colour and the distance of what was hit (infinite for sky).
     fn cast(&self, d: [f32; 3]) -> (u16, f32) {
-        // One copy of the marching loop per direction octant, so the step
-        // signs are constants inside it (an axis the ray doesn't move along
-        // counts as positive; it is never stepped).
-        match (d[0] < 0.0, d[1] < 0.0, d[2] < 0.0) {
-            (false, false, false) => self.march::<1, 1, 1>(d),
-            (false, false, true) => self.march::<1, 1, -1>(d),
-            (false, true, false) => self.march::<1, -1, 1>(d),
-            (false, true, true) => self.march::<1, -1, -1>(d),
-            (true, false, false) => self.march::<-1, 1, 1>(d),
-            (true, false, true) => self.march::<-1, 1, -1>(d),
-            (true, true, false) => self.march::<-1, -1, 1>(d),
-            (true, true, true) => self.march::<-1, -1, -1>(d),
-        }
-    }
-
-    /// The ray marching loop for one direction octant (step signs `SX`,
-    /// `SY`, `SZ`).
-    ///
-    /// This is the hottest code in the game, written so that everything it
-    /// touches fits in the calculator CPU's registers:
-    ///
-    /// * distances along the ray are **fixed-point integers** (`FIX` units
-    ///   per block), so stepping needs no floating-point maths at all;
-    /// * the step signs are constants, so moving the storage index is one or
-    ///   two instructions per step;
-    /// * the cell coordinates are not tracked step by step: each axis's
-    ///   distance is `start + k * delta` exactly, so the number of steps `k`
-    ///   (and the cell) is recovered by one division when something is hit.
-    ///
-    /// Shading a hit (and water, plants, see-through texels) lives in a
-    /// separate function, as it happens once or twice per ray.
-    #[inline(never)]
-    fn march<const SX: i32, const SY: i32, const SZ: i32>(&self, d: [f32; 3]) -> (u16, f32) {
         let o = self.eye;
-        let s = [SX, SY, SZ];
-        let start = [ifloor(o[0]), ifloor(o[1]), ifloor(o[2])];
-        let mut dt = [FIX_NEVER; 3];
-        let mut tm0 = [FIX_NEVER; 3];
+        let mut cell = [ifloor(o[0]), ifloor(o[1]), ifloor(o[2])];
+        let mut step = [0i32; 3];
+        let mut t_delta = [f32::INFINITY; 3];
+        let mut t_max = [f32::INFINITY; 3];
         for a in 0..3 {
-            if d[a] != 0.0 {
-                let inv = 1.0 / abs(d[a]);
-                dt[a] = to_fix(inv).max(1);
-                let dist = if s[a] > 0 { start[a] as f32 + 1.0 - o[a] } else { o[a] - start[a] as f32 };
-                tm0[a] = to_fix(dist * inv);
+            if d[a] > 0.0 {
+                step[a] = 1;
+                t_delta[a] = 1.0 / d[a];
+                t_max[a] = (cell[a] as f32 + 1.0 - o[a]) * t_delta[a];
+            } else if d[a] < 0.0 {
+                step[a] = -1;
+                t_delta[a] = -1.0 / d[a];
+                t_max[a] = (o[a] - cell[a] as f32) * t_delta[a];
             }
         }
-        let ray = Ray { start, s, tm0, dt };
-        let max = to_fix(self.max_dist);
-        let ceiling = self.ceiling as u32;
-        let (mut idx, add, mask) = World::index_stepper(start, s);
-        let [mut t0, mut t1, mut t2] = tm0;
-        let [d0, d1, d2] = dt;
         // Where the ray entered water and the colour of the water there
         // (None = not in water).
         let mut water_from: Option<(f32, u16)> = if self.eye_in_water {
@@ -394,228 +302,211 @@ impl Scene<'_> {
         } else {
             None
         };
-        let fog = |water_from| (self.finish(self.sky.fog, self.max_dist, water_from, true, d), f32::INFINITY);
+        // Every step moves `t` forward by at least the smallest `t_delta`,
+        // so the `max_dist` test below always ends the loop.
+        //
+        // Speed trick: all `t` values here are >= 0, and for non-negative
+        // floats the bit patterns sort in the same order as the numbers. So
+        // they are compared as integers: on the calculator's ARM CPU this
+        // avoids moving each float comparison result from the FPU to the
+        // main core (a slow step) in the hottest loop of the game.
+        let max_bits = self.max_dist.to_bits();
+        let (mut idx, idx_add, idx_mask) = World::index_stepper(cell, step);
         loop {
-            // March until a filled cell (or the end of the ray).
-            let (axis, t, b) = loop {
-                // Step along the axis whose next cell boundary is nearest.
-                // Every step moves forward by at least the smallest delta,
-                // so the `max` test always ends the loop.
-                let (axis, t) = if t0 < t1 {
-                    if t0 < t2 { (0, t0) } else { (2, t2) }
-                } else if t1 < t2 {
-                    (1, t1)
-                } else {
-                    (2, t2)
-                };
-                if t > max {
-                    return fog(water_from);
+            let (b0, b1, b2) = (t_max[0].to_bits(), t_max[1].to_bits(), t_max[2].to_bits());
+            let axis = if b0 < b1 {
+                if b0 < b2 { 0 } else { 2 }
+            } else if b1 < b2 {
+                1
+            } else {
+                2
+            };
+            let t = t_max[axis];
+            if t.to_bits() > max_bits {
+                return (self.finish(self.sky.fog, self.max_dist, water_from, true, d), f32::INFINITY);
+            }
+            cell[axis] += step[axis];
+            t_max[axis] += t_delta[axis];
+            // Move the storage index one cell along `axis` (wrapping x and z
+            // inside the window), instead of rebuilding it from x, y, z.
+            idx = (idx & !idx_mask[axis]) | (idx.wrapping_add(idx_add[axis]) & idx_mask[axis]);
+            let y = cell[1];
+            // Above every block of the window: a ray that isn't going down
+            // can only reach the sky.
+            if y > self.ceiling {
+                if step[1] >= 0 {
+                    return (self.finish(self.sky.color(d), t, water_from, true, d), f32::INFINITY);
                 }
-                // Move the storage index one cell along `axis` (wrapping x
-                // and z inside the window); `add`/`mask` are constants here.
-                match axis {
-                    0 => t0 += d0,
-                    1 => t1 += d1,
-                    _ => t2 += d2,
-                }
-                idx = (idx & !mask[axis]) | (idx.wrapping_add(add[axis]) & mask[axis]);
-                let y = World::index_y(idx);
-                // One unsigned compare catches both "below the world" (y < 0
-                // wraps to a huge number) and "above every block".
-                if y as u32 > ceiling {
-                    if y < 0 {
-                        break (axis, t, BEDROCK);
-                    }
-                    // Above every block of the window: a ray that isn't
-                    // going down can only reach the sky.
-                    if SY > 0 {
-                        return (
-                            self.finish(self.sky.color(d), fix_to_f32(t), water_from, true, d),
-                            f32::INFINITY,
-                        );
-                    }
-                    continue;
-                }
-                if !self.world.is_filled(idx) {
-                    // Sky skipping: a ray that isn't going down, and is
-                    // already above every block of this 4x4 group of
-                    // columns, can't hit anything until it leaves the group.
-                    if SY > 0 && y > self.world.group_high_at(idx) {
-                        // Distance to where the ray leaves the group: on x
-                        // and z, the cells left inside the group come from
-                        // the index's low bits (groups are 4 cells wide).
-                        let (xl, zl) = World::index_xz(idx);
-                        let nx = if SX > 0 { 3 - (xl & 3) } else { xl & 3 };
-                        let nz = if SZ > 0 { 3 - (zl & 3) } else { zl & 3 };
-                        let ex = t0.saturating_add(nx * d0);
-                        let ez = t2.saturating_add(nz * d2);
-                        let te = ex.min(ez);
-                        if te > max {
-                            return fog(water_from);
-                        }
-                        // Only worth it when the jump skips more than a cell.
-                        if te > t + FIX_ONE {
-                            // Advance every axis to just before `te`: the exit
-                            // axis by its cells left, the others by the
-                            // boundaries they cross before `te`.
-                            let (m0, m2) = if ex <= ez {
-                                (nx, steps_before(t2, d2, te))
-                            } else {
-                                (steps_before(t0, d0, te), nz)
-                            };
-                            let m1 = steps_before(t1, d1, te);
-                            t0 += m0 * d0;
-                            t1 += m1 * d1;
-                            t2 += m2 * d2;
-                            for (a, m) in [(0, m0), (1, m1), (2, m2)] {
-                                idx = (idx & !mask[a]) | (idx.wrapping_add(add[a].wrapping_mul(m)) & mask[a]);
+                continue;
+            }
+            let b = if y < 0 {
+                BEDROCK
+            } else if self.world.is_filled(idx) {
+                self.world.get_index(idx)
+            } else {
+                AIR
+            };
+            if b == AIR {
+                // Sky skipping: a ray that isn't going down, and is already
+                // above every block of this 4x4 group of columns, can't hit
+                // anything until it leaves the group, so jump to its edge.
+                if step[1] >= 0 && y > self.world.group_high(cell[0], cell[2]) {
+                    let (mut te, mut ea) = (f32::INFINITY, 0);
+                    for a in [0, 2] {
+                        if step[a] != 0 {
+                            let bound = if step[a] > 0 { (cell[a] | 3) + 1 } else { cell[a] & !3 };
+                            let ta = (bound as f32 - o[a]) * step[a] as f32 * t_delta[a];
+                            if ta < te {
+                                te = ta;
+                                ea = a;
                             }
                         }
                     }
-                    continue;
+                    if te.to_bits() > max_bits {
+                        return (
+                            self.finish(self.sky.fog, self.max_dist, water_from, true, d),
+                            f32::INFINITY,
+                        );
+                    }
+                    // Only worth it when the jump skips more than a cell.
+                    if te > t + 1.0 {
+                        for a in 0..3 {
+                            let c = if a == ea {
+                                if step[a] > 0 { cell[a] | 3 } else { cell[a] & !3 }
+                            } else {
+                                ifloor(o[a] + d[a] * te)
+                            };
+                            // Never move back against the ray (rounding at corners).
+                            cell[a] = match step[a] {
+                                1 => c.max(cell[a]),
+                                -1 => c.min(cell[a]),
+                                _ => cell[a],
+                            };
+                            if step[a] != 0 {
+                                let next = if step[a] > 0 { cell[a] + 1 } else { cell[a] };
+                                t_max[a] = (next as f32 - o[a]) * step[a] as f32 * t_delta[a];
+                            }
+                        }
+                        (idx, _, _) = World::index_stepper(cell, step);
+                    }
                 }
-                let b = self.world.get_index(idx);
-                if b != AIR {
-                    break (axis, t, b);
-                }
-            };
-            let cell = ray.cell([t0, t1, t2]);
-            let t_exit = fix_to_f32(t0.min(t1).min(t2));
-            if let Some(hit) = self.surface(b, axis, s, cell, fix_to_f32(t), t_exit, d, &mut water_from) {
-                return hit;
+                continue;
             }
-        }
-    }
-
-    /// Colour of block `b` hit by the ray, or `None` if the ray goes on
-    /// (water, see-through texels, missed plant planes). `axis` is the axis
-    /// of the face it crossed, `t` where it entered the cell and `t_exit`
-    /// where it leaves it.
-    #[allow(clippy::too_many_arguments)]
-    #[inline(never)]
-    fn surface(
-        &self,
-        b: Block,
-        axis: usize,
-        step: [i32; 3],
-        cell: [i32; 3],
-        t: f32,
-        t_exit: f32,
-        d: [f32; 3],
-        water_from: &mut Option<(f32, u16)>,
-    ) -> Option<(u16, f32)> {
-        let o = self.eye;
-        let y = cell[1];
-        let bd = self.ram.def(b);
-        if bd.layer == Layer::Water {
-            if water_from.is_none() {
-                // Surface colour from the water texture, for ripples.
-                let hit = [o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t];
-                let (fu, fv) = match axis {
-                    0 => (hit[2] - cell[2] as f32, hit[1] - y as f32),
-                    2 => (hit[0] - cell[0] as f32, hit[1] - y as f32),
-                    _ => (hit[0] - cell[0] as f32, hit[2] - cell[2] as f32),
+            let bd = self.ram.def(b);
+            if bd.layer == Layer::Water {
+                if water_from.is_none() {
+                    // Surface colour from the water texture, for ripples.
+                    let hit = [o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t];
+                    let (fu, fv) = match axis {
+                        0 => (hit[2] - cell[2] as f32, hit[1] - y as f32),
+                        2 => (hit[0] - cell[0] as f32, hit[1] - y as f32),
+                        _ => (hit[0] - cell[0] as f32, hit[2] - cell[2] as f32),
+                    };
+                    let tu = ((fu * 16.0) as i32).clamp(0, 15) as usize;
+                    let tv = ((fv * 16.0) as i32).clamp(0, 15) as usize;
+                    let texel = self.ram.texel(bd.tex[0], tv * 16 + tu);
+                    let lit = y + 1 >= HEIGHT as i32 || self.world.sees_sky(cell[0], y + 1, cell[2]);
+                    let light = if lit { self.sun_light } else { self.cave_light * 2 };
+                    water_from = Some((t, scale(texel, light)));
+                }
+                continue;
+            }
+            if bd.layer == Layer::Cross {
+                // Plants and torches: two see-through planes along the
+                // cell's diagonals (local x - z = 0 and x + z = 1).
+                let t_exit = t_max[0].min(t_max[1]).min(t_max[2]);
+                let (lx, lz) = (o[0] - cell[0] as f32, o[2] - cell[2] as f32);
+                let mut best: Option<(f32, u16)> = None;
+                for (den, num) in [(d[0] - d[2], lz - lx), (d[0] + d[2], 1.0 - lx - lz)] {
+                    if den.abs() < 1e-6 {
+                        continue;
+                    }
+                    let tp = num / den;
+                    if tp < t - 1e-4 || tp > t_exit + 1e-4 || best.is_some_and(|(bt, _)| tp >= bt) {
+                        continue;
+                    }
+                    let (px, py) = (lx + d[0] * tp, o[1] + d[1] * tp - y as f32);
+                    if !(0.0..1.0).contains(&px) || !(0.0..1.0).contains(&py) {
+                        continue;
+                    }
+                    let tu = ((px * 16.0) as usize).min(15);
+                    let tv = (15 - (py * 16.0) as i32).clamp(0, 15) as usize;
+                    let texel = self.ram.texel(bd.tex[1], tv * 16 + tu);
+                    if texel != TRANSPARENT {
+                        best = Some((tp, texel));
+                    }
+                }
+                let Some((tp, texel)) = best else { continue };
+                let light = if bd.light > 0 {
+                    256 // torches glow
+                } else {
+                    let base = if self.world.sees_sky(cell[0], y, cell[2]) {
+                        self.sun_light
+                    } else {
+                        self.cave_light
+                    };
+                    base.max(self.torch_light(cell[0], y, cell[2]))
                 };
-                let tu = ((fu * 16.0) as i32).clamp(0, 15) as usize;
-                let tv = ((fv * 16.0) as i32).clamp(0, 15) as usize;
-                let texel = self.ram.texel(bd.tex[0], tv * 16 + tu);
-                let lit = y + 1 >= HEIGHT as i32 || self.world.sees_sky(cell[0], y + 1, cell[2]);
-                let light = if lit { self.sun_light } else { self.cave_light * 2 };
-                *water_from = Some((t, scale(texel, light)));
+                let mut c = scale(texel, (light * 230) >> 8);
+                if self.target.is_some_and(|tg| tg.cell == [cell[0], y, cell[2]]) {
+                    c = mix(c, 0xFFFF, 60); // targeted plant: slightly brighter
+                }
+                return (self.finish(c, tp, water_from, false, d), tp);
             }
-            return None;
-        }
-        if bd.layer == Layer::Cross {
-            // Plants and torches: two see-through planes along the
-            // cell's diagonals (local x - z = 0 and x + z = 1).
-            let (lx, lz) = (o[0] - cell[0] as f32, o[2] - cell[2] as f32);
-            let mut best: Option<(f32, u16)> = None;
-            for (den, num) in [(d[0] - d[2], lz - lx), (d[0] + d[2], 1.0 - lx - lz)] {
-                if den.abs() < 1e-6 {
-                    continue;
-                }
-                let tp = num / den;
-                if tp < t - 1e-4 || tp > t_exit + 1e-4 || best.is_some_and(|(bt, _)| tp >= bt) {
-                    continue;
-                }
-                let (px, py) = (lx + d[0] * tp, o[1] + d[1] * tp - y as f32);
-                if !(0.0..1.0).contains(&px) || !(0.0..1.0).contains(&py) {
-                    continue;
-                }
-                let tu = ((px * 16.0) as usize).min(15);
-                let tv = (15 - (py * 16.0) as i32).clamp(0, 15) as usize;
-                let texel = self.ram.texel(bd.tex[1], tv * 16 + tu);
-                if texel != TRANSPARENT {
-                    best = Some((tp, texel));
-                }
-            }
-            let (tp, texel) = best?;
-            let light = if bd.light > 0 {
-                256 // torches glow
-            } else {
-                let base =
-                    if self.world.sees_sky(cell[0], y, cell[2]) { self.sun_light } else { self.cave_light };
-                base.max(self.torch_light(cell[0], y, cell[2]))
+            // Exact hit point and the texel under it.
+            let hit = [o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t];
+            let (fu, fv, face) = match axis {
+                0 => (hit[2] - cell[2] as f32, hit[1] - y as f32, 1),
+                2 => (hit[0] - cell[0] as f32, hit[1] - y as f32, 1),
+                _ => (hit[0] - cell[0] as f32, hit[2] - cell[2] as f32, if step[1] < 0 { 0 } else { 2 }),
             };
-            let mut c = scale(texel, (light * 230) >> 8);
-            if self.target.is_some_and(|tg| tg.cell == [cell[0], y, cell[2]]) {
-                c = mix(c, 0xFFFF, 60); // targeted plant: slightly brighter
+            let tu = ((fu * 16.0) as i32).clamp(0, 15) as usize;
+            let tv = if axis == 1 {
+                ((fv * 16.0) as i32).clamp(0, 15) as usize
+            } else {
+                (15 - (fv * 16.0) as i32).clamp(0, 15) as usize
+            };
+            let mut c = self.ram.texel(bd.tex[face], tv * 16 + tu);
+            if c == TRANSPARENT {
+                continue; // see-through texel of leaves or glass
             }
-            return Some((self.finish(c, tp, *water_from, false, d), tp));
-        }
-        // Exact hit point and the texel under it.
-        let hit = [o[0] + d[0] * t, o[1] + d[1] * t, o[2] + d[2] * t];
-        let (fu, fv, face) = match axis {
-            0 => (hit[2] - cell[2] as f32, hit[1] - y as f32, 1),
-            2 => (hit[0] - cell[0] as f32, hit[1] - y as f32, 1),
-            _ => (hit[0] - cell[0] as f32, hit[2] - cell[2] as f32, if step[1] < 0 { 0 } else { 2 }),
-        };
-        let tu = ((fu * 16.0) as i32).clamp(0, 15) as usize;
-        let tv = if axis == 1 {
-            ((fv * 16.0) as i32).clamp(0, 15) as usize
-        } else {
-            (15 - (fv * 16.0) as i32).clamp(0, 15) as usize
-        };
-        let mut c = self.ram.texel(bd.tex[face], tv * 16 + tu);
-        if c == TRANSPARENT {
-            return None; // see-through texel of leaves or glass
-        }
 
-        // Lighting.
-        let shade: u32 = match (axis, face) {
-            (1, 0) => 256,
-            (1, _) => 128,
-            (0, _) => 154,
-            _ => 205,
-        };
-        let light = if bd.layer == Layer::Lava {
-            256
-        } else {
-            // The air cell the ray came from decides if the face sees the sky.
-            let (nx, ny, nz) = (
-                cell[0] - if axis == 0 { step[0] } else { 0 },
-                y - if axis == 1 { step[1] } else { 0 },
-                cell[2] - if axis == 2 { step[2] } else { 0 },
-            );
-            let lit = ny >= HEIGHT as i32 || (ny >= 0 && self.world.sees_sky(nx, ny, nz));
-            let base = if lit { self.sun_light } else { self.cave_light };
-            (base.max(self.torch_light(nx, ny, nz)) * shade) >> 8
-        };
-        c = scale(c, light);
+            // Lighting.
+            let shade: u32 = match (axis, face) {
+                (1, 0) => 256,
+                (1, _) => 128,
+                (0, _) => 154,
+                _ => 205,
+            };
+            let light = if bd.layer == Layer::Lava {
+                256
+            } else {
+                // The air cell the ray came from decides if the face sees the sky.
+                let (nx, ny, nz) = (
+                    cell[0] - if axis == 0 { step[0] } else { 0 },
+                    y - if axis == 1 { step[1] } else { 0 },
+                    cell[2] - if axis == 2 { step[2] } else { 0 },
+                );
+                let lit = ny >= HEIGHT as i32 || (ny >= 0 && self.world.sees_sky(nx, ny, nz));
+                let base = if lit { self.sun_light } else { self.cave_light };
+                (base.max(self.torch_light(nx, ny, nz)) * shade) >> 8
+            };
+            c = scale(c, light);
 
-        // Outline and cracks on the targeted block.
-        if let Some(tg) = self.target
-            && tg.cell == [cell[0], y, cell[2]]
-        {
-            let w = (self.pixel_angle * t * 0.8).clamp(0.01, 0.08);
-            let edge = fu < w || fu > 1.0 - w || fv < w || fv > 1.0 - w;
-            if edge {
-                c = OUTLINE;
-            } else if tg.crack > 0 && (CRACKS[(tg.crack - 1).min(9) as usize][tv] >> tu) & 1 == 1 {
-                c = scale(c, 90);
+            // Outline and cracks on the targeted block.
+            if let Some(tg) = self.target
+                && tg.cell == [cell[0], y, cell[2]]
+            {
+                let w = (self.pixel_angle * t * 0.8).clamp(0.01, 0.08);
+                let edge = fu < w || fu > 1.0 - w || fv < w || fv > 1.0 - w;
+                if edge {
+                    c = OUTLINE;
+                } else if tg.crack > 0 && (CRACKS[(tg.crack - 1).min(9) as usize][tv] >> tu) & 1 == 1 {
+                    c = scale(c, 90);
+                }
             }
+            return (self.finish(c, t, water_from, false, d), t);
         }
-        Some((self.finish(c, t, *water_from, false, d), t))
     }
 
     /// Applies water tint and fog to a hit (or sky) colour at distance `t`.
